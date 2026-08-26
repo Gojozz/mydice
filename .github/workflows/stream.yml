@@ -74,7 +74,7 @@ jobs:
           YOUTUBE_STREAM_KEY: ${{ secrets.YOUTUBE_STREAM_KEY }}
           YOUTUBE_VERTICAL_STREAM_KEY: ${{ secrets.YOUTUBE_VERTICAL_STREAM_KEY }}
         run: |
-          echo "===== CREATE YOUTUBE BROADCAST (LANDSCAPE + VERTICAL) ====="
+          echo "===== CREATE YOUTUBE BROADCAST (9:16 via stream key biasa) ====="
           python3 youtube_broadcast.py | tee youtube-broadcast.log
           VIDEO_ID=$(grep '^VIDEO_ID=' youtube-broadcast.log | tail -1 | cut -d= -f2)
           if [ -z "$VIDEO_ID" ]; then
@@ -168,12 +168,12 @@ jobs:
           set +e
 
           # Stream key: prioritaskan VERTICAL, fallback ke STREAM_KEY
-          STREAM_OUT_KEY="${YOUTUBE_VERTICAL_STREAM_KEY:-$YOUTUBE_STREAM_KEY}"
+          STREAM_OUT_KEY="$YOUTUBE_STREAM_KEY"
           if [ -z "$STREAM_OUT_KEY" ]; then
-            echo "ERROR: Tidak ada stream key (YOUTUBE_VERTICAL_STREAM_KEY / YOUTUBE_STREAM_KEY)"
+            echo "ERROR: YOUTUBE_STREAM_KEY kosong"
             exit 1
           fi
-          echo "Menggunakan stream key untuk output 720x1280 (9:16)"
+          echo "Output 720x1280 (9:16) → YOUTUBE_STREAM_KEY"
 
           while true; do
             ffmpeg \
@@ -201,7 +201,7 @@ jobs:
               -b:a 128k \
               -ar 44100 \
               -f flv \
-              "rtmp://a.rtmp.youtube.com/live2/$STREAM_OUT_KEY"
+              "rtmp://a.rtmp.youtube.com/live2/$YOUTUBE_STREAM_KEY"
 
             echo "FFmpeg terhenti. Reconnect dalam 3 detik..."
             sleep 3
