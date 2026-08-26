@@ -6,3 +6,5 @@ Gas {name}, semoga dapat JACKPOT!
 Gas {name}, jangan zonk ya bro!
 Gas {name}, highest number wins!
 Gas {name}, siap-siap spin!
+Gas {name}, round berikutnya bakal seru!
+Gas {name}, ketik 1 sampai 6 saat fase pilih!

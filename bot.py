@@ -223,22 +223,22 @@ engagement_index = 0
 
 
 ENGAGE_PROMOS = [
-    "Woy jangan lupa laik-nya, biar balapannya nambah gila!",
-    "Klik subs kreb dong, biar kagak ketinggalan balapan berikutnya!",
+    "Woy jangan lupa laik-nya, biar game dadunya nambah gila!",
+    "Klik subs kreb dong, biar kagak ketinggalan game dadu berikutnya!",
     "Komen di kolom komentar, LUNA baca kok, jangan diem aja!",
-    "Laik, subs kreb, trus ketik join kalau berani turun lintasan!",
+    "Laik, subs kreb, trus ketik join kalau berani turun game!",
     "Yang baru datang: laik dulu, subs kreb, baru nonton sambil ngegas!",
     "Komen gas di kolom komentar, biar suasana langsung panas!",
-    "Subs kreb-nya jangan pelit, balapan ini butuh dukungan kalian!",
-    "Pencet laik biar algoritma gak tidur, balapan tetap ramai!",
+    "Subs kreb-nya jangan pelit, game dadu ini butuh dukungan kalian!",
+    "Pencet laik biar algoritma gak tidur, game dadu tetap ramai!",
 ]
 
 JOIN_PROMOS = [
-    "Mau turun ke lintasan? Ketik join di komentar, nama kalian jadi pembalap!",
-    "Berani balapan? Ketik join, nanti nama kalian ikut ngegas!",
-    "Jangan cuma nonton! Ketik join dan siap-siap jadi pembalap!",
-    "Pengen balapan? Ketik join di komentar, siapa tahu mobil kalian paling brutal!",
-    "Ketik join kalau berani! Nama kalian bisa muncul di lintasan!",
+    "Mau turun ke game? Ketik join di komentar, nama kalian jadi pemain!",
+    "Berani game dadu? Ketik join, nanti nama kalian ikut ngegas!",
+    "Jangan cuma nonton! Ketik join dan siap-siap jadi pemain!",
+    "Pengen game dadu? Ketik join di komentar, siapa tahu mobil kalian paling brutal!",
+    "Ketik join kalau berani! Nama kalian bisa muncul di game!",
 ]
 
 
@@ -1015,7 +1015,7 @@ def template_category(text):
     if any(
         w in t
         for w in [
-            "balap", "balapan", "race", "lap",
+            "balap", "game dadu", "race", "lap",
             "mobil", "overtake", "nyalip",
             "finish", "p1", "p2", "p3"
         ]
@@ -1063,8 +1063,8 @@ COMBO_PARTS = {
             "Yo", "Woy", "Halo", "Hai", "Nah", "Akhirnya nongol"
         ],
         "middle": [
-            "balapannya lagi panas",
-            "lintasan lagi rame",
+            "game dadunya lagi panas",
+            "game lagi rame",
             "kita gas nonton",
             "aksi lagi brutal",
             "suasana makin pecah"
@@ -1114,7 +1114,7 @@ COMBO_PARTS = {
         "end": [
             "jangan kedip!",
             "pantengin terus!",
-            "gas sampai finish!",
+            "gas sampai hadiah!",
             "ini belum kelar!",
             "siapa yang bakal P1?"
         ],
@@ -1154,7 +1154,7 @@ COMBO_PARTS = {
         "end": [
             "lanjut terus!",
             "jangan pergi!",
-            "gas sampai finish!",
+            "gas sampai hadiah!",
             "makasih!",
             "tetap ramaikan!"
         ],
@@ -1169,7 +1169,7 @@ COMBO_PARTS = {
             "ketik join kalau mau turun",
             "tinggal ketik join",
             "masuk antrean dulu",
-            "lintasan masih terbuka",
+            "game masih terbuka",
             "kesempatan masih ada"
         ],
         "end": [
@@ -1209,8 +1209,8 @@ COMBO_PARTS = {
             "chat lu bikin rame",
             "suasana makin panas",
             "live makin pecah",
-            "balapannya makin seru",
-            "lintasan makin brutal"
+            "game dadunya makin seru",
+            "game makin brutal"
         ],
         "end": [
             "lanjut terus!",

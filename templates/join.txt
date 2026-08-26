@@ -1,10 +1,10 @@
-Gas {name}, ketik join kalau mau ikut main dadu sekarang!
-Gas {name}, ketik join kalau mau ikut spin di chat!
-Gas {name}, ketik join kalau mau ikut main dadu bro!
+Gas {name}, ketik join kalau mau ikut main dadu!
+Gas {name}, ketik join biar bisa pilih angka!
 Gas {name}, join sekarang sebelum slot penuh!
 Gas {name}, ketik join untuk ikut spin wheel!
-Gas {name}, ketik join biar nama muncul di game!
 Gas {name}, mau hadiah? ketik join sekarang!
 Gas {name}, siap pilih angka? ketik join!
 Gas {name}, slot masih ada, ketik join!
 Gas {name}, jangan cuma nonton, ketik join!
+Gas {name}, ikut main dadu yuk ketik join!
+Gas {name}, ketik join biar nama muncul di game!

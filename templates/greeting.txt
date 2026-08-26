@@ -1,6 +1,8 @@
 Halo {name}, selamat datang di Spin Dice ya!
-Halo {name}, selamat datang di Spin Dice bro!
-Halo {name}, selamat datang di game dadu hari ini!
-Halo {name}, selamat datang, ketik join kalau mau main!
-Halo {name}, welcome! Ketik join biar ikut main!
+Halo {name}, selamat datang di game dadu bro!
+Halo {name}, welcome! Ketik join kalau mau main!
 Halo {name}, hai, jangan lupa laik dan join ya!
+Halo {name}, selamat datang, siap spin wheel?
+Halo {name}, halo halo, angka berapa yang beruntung?
+Halo {name}, selamat datang di live hari ini!
+Halo {name}, ketik join biar ikut main dadu!
