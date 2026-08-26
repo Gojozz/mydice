@@ -21,10 +21,10 @@ html,body{width:100%;height:100%;overflow:hidden;font-family:Arial,sans-serif;ba
 .card.low{opacity:.5}
 .name{font-size:12px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#e0f0ff;margin-bottom:4px}
 .card.human .name{color:#00e5ff}
-.dice{width:56px;height:56px;margin:0 auto 4px;background:linear-gradient(145deg,#fff,#ddd);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:28px;font-weight:900;color:#1a1a2e;box-shadow:0 3px 10px #000}
+.dice{width:72px;height:72px;margin:0 auto 4px;background:linear-gradient(145deg,#fff,#ddd);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:28px;font-weight:900;color:#1a1a2e;box-shadow:0 3px 10px #000}
 .dice.empty{background:linear-gradient(145deg,#2a3a4a,#1a2a3a);color:#4a6a8a;font-size:18px}
-.dice.roll{animation:sh .12s infinite}
-@keyframes sh{0%,100%{transform:rotate(-8deg)}50%{transform:rotate(8deg)}}
+.dice.roll{animation:sh .15s infinite;background:linear-gradient(145deg,#ffe066,#ffcc00)!important;box-shadow:0 0 16px rgba(255,200,0,.75)}
+@keyframes sh{0%{transform:rotate(-20deg) scale(1.15)}25%{transform:rotate(20deg) scale(1.2)}50%{transform:rotate(-15deg) scale(1.1)}75%{transform:rotate(15deg) scale(1.18)}100%{transform:rotate(-20deg) scale(1.15)}}
 .tag{font-size:9px;font-weight:700;color:#7a9ab0;text-transform:uppercase}
 .card.human .tag{color:#00c9ee}
 #boxes{display:grid;grid-template-columns:repeat(6,1fr);gap:6px;width:100%;max-width:480px}
@@ -34,10 +34,10 @@ html,body{width:100%;height:100%;overflow:hidden;font-family:Arial,sans-serif;ba
 .hint{font-size:12px;color:#b0d0f0;background:rgba(0,20,40,.75);padding:5px 12px;border-radius:16px;border:1px solid #1a4a6a}
 .hint b{color:#ffd700}
 #wheel-area{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:0}
-.ww{position:relative;width:min(300px,68vw);height:min(300px,68vw)}
+.ww{position:relative;width:min(600px,92vw);height:min(600px,92vw)}
 #wheel{width:100%;height:100%;border-radius:50%;filter:drop-shadow(0 6px 20px #000)}
 #wheel.spin{transition:transform 5.5s cubic-bezier(.15,.85,.25,1)}
-#ptr{position:absolute;top:-16px;left:50%;transform:translateX(-50%);width:50px;height:50px;z-index:10;filter:drop-shadow(0 3px 6px #000)}
+#ptr{position:absolute;top:-28px;left:50%;transform:translateX(-50%);width:90px;height:90px;z-index:10;filter:drop-shadow(0 3px 6px #000)}
 .wlabel{margin-top:10px;font-size:16px;font-weight:800;color:#ffd700;min-height:24px;text-align:center}
 #side{position:fixed;bottom:8px;left:8px;right:8px;display:flex;gap:8px;z-index:20;pointer-events:none}
 .panel{flex:1;background:rgba(5,12,25,.9);border:1px solid #1a3a5c;border-radius:8px;padding:6px 8px;max-height:80px;overflow:hidden}
@@ -88,7 +88,7 @@ html,body{width:100%;height:100%;overflow:hidden;font-family:Arial,sans-serif;ba
 <audio id="s3" src="assets/sounds/win.mp3" preload="auto"></audio>
 <audio id="s4" src="assets/sounds/jackpot.wav" preload="auto"></audio>
 <script>
-const DN=["Bot Alpha","Bot Beta","Bot Gamma","Bot Delta"],MP=4,CS=12,RS=4,SD=5500,RSH=5000;
+const NAME_POOL=["Raka","Sinta","Budi","Dewi","Andi","Putri","Fajar","Nina","Rizky","Maya","Dimas","Ayu","Gilang","Lestari","Yoga","Intan","Hendra","Wulan","Agus","Citra","Bayu","Sari"];function pickBotNames(n){const a=NAME_POOL.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a.slice(0,n);}let DN=pickBotNames(4),MP=4,CS=12,RS=4,SD=5500,RSH=5000;
 const PR=["ZONK","Hadiah Kecil","Ulang Lagi","Hadiah Sedang","JACKPOT","Hadiah Kecil","ZONK","Hadiah Besar"],SG=PR.length;
 let phase="idle",pt=0,players=[],chatA=[],chatQ=[],rid=1,rotSent=false,wAng=0,winI=-1,lastC={};
 const pEl=document.getElementById("players"),ph=document.getElementById("ph"),tm=document.getElementById("tm");
@@ -117,7 +117,7 @@ function rend(){
     const iw=(phase==="reveal"||phase==="spin"||phase==="result")&&i===winI;
     const il=(phase==="reveal"||phase==="spin"||phase==="result")&&winI>=0&&i!==winI&&p.choice!=null;
     let fc="dice",ft="?";
-    if(phase==="choose"&&p.choice==null&&!p.isH){fc+=" roll";ft="🎲"}
+    if(phase==="choose"&&p.choice==null){fc+=" roll";ft=(p._sf||"🎲")}
     else if(p.choice!=null&&(phase!=="choose"||p.isH))ft=p.choice;
     else{fc+=" empty";ft="—"}
     if(phase==="reveal"&&p.choice!=null)ft=p.choice;
@@ -174,7 +174,7 @@ let lt=performance.now();
 function tick(now){
   const dt=(now-lt)/1000;lt=now;
   if(pt>0){pt-=dt;if(pt<=0){pt=0;tm.textContent="";adv()}else tm.textContent=Math.ceil(pt)+"s"}
-  if(phase==="choose")players.forEach(x=>{if(!x.isH&&x.choice==null&&Math.random()<0.02){x.choice=1+Math.floor(Math.random()*6);rend();ubox()}});
+  if(phase==="choose"){let n=0;players.forEach(x=>{if(x.choice==null){x._sf=1+Math.floor(Math.random()*6);n=1;}if(!x.isH&&x.choice==null&&Math.random()<0.03){x.choice=1+Math.floor(Math.random()*6);n=1;}});if(n){rend();ubox();}}
   requestAnimationFrame(tick);
 }
 function adv(){
