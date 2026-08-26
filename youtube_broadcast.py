@@ -178,7 +178,7 @@ def create_broadcasts():
     if not landscape_key:
         raise RuntimeError("YOUTUBE_STREAM_KEY belum tersedia.")
 
-    landscape_title = "🏁 AI Racing Battle LIVE | JOIN & DRIVE Your Own Car! 🚗💨"
+    landscape_title = "🎲 SPIN DICE LIVE | JOIN & PILIH ANGKA 1-6 | SPIN WHEEL! 🎰"
     land_broadcast_id, land_stream_id = create_and_bind_broadcast(
         youtube,
         landscape_title,
@@ -197,7 +197,7 @@ def create_broadcasts():
     print(land_broadcast_id)
 
     if vertical_key:
-        vertical_title = "🏁 AI Racing Battle VERTICAL | JOIN & DRIVE! 🚗💨"
+        vertical_title = "🎲 SPIN DICE LIVE | JOIN & PILIH ANGKA 1-6 | SPIN WHEEL! 🎰"
         vert_broadcast_id, vert_stream_id = create_and_bind_broadcast(
             youtube,
             vertical_title,
