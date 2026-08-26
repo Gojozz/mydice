@@ -188,7 +188,7 @@ CHANNEL_ID = os.environ.get("YOUTUBE_CHANNEL_ID", "").strip()
 
 STATE_FILE = Path("chat_state.json")
 
-MAX_PLAYERS = 5
+MAX_PLAYERS = 4
 ROTATION_PORT = 8765
 
 last_processed_race = None
@@ -1445,7 +1445,7 @@ def start_bot():
     else:
         print("[BOT] Vertical chat tidak di-start.")
 
-    speak("Luna siap di landscape dan vertical. Ketik join untuk ikut balapan.")
+    speak("Luna siap di landscape dan vertical. Ketik join untuk ikut main Spin Dice!")
 
     print("====================================")
 
@@ -1470,13 +1470,20 @@ def start_bot():
 
             print(f"[CHAT:{label}] {user}: {raw_msg}")
 
+            # Pilihan angka dadu 1-6
             controls = {
-                "nitro": "nitro",
-                "n": "nitro",
-                "stop": "stop",
-                "s": "stop",
-                "gas": "gas",
-                "g": "gas",
+                "1": "1",
+                "2": "2",
+                "3": "3",
+                "4": "4",
+                "5": "5",
+                "6": "6",
+                "satu": "1",
+                "dua": "2",
+                "tiga": "3",
+                "empat": "4",
+                "lima": "5",
+                "enam": "6",
             }
 
             control = controls.get(msg)
@@ -1498,19 +1505,14 @@ def start_bot():
                     save_state(state)
 
                     print(
-                        f"[GAME CONTROL] {user} -> {control}"
+                        f"[GAME CONTROL] {user} -> pilih {control}"
                     )
 
-                    if control == "nitro":
-                        speak(f"Woy {user}, NITROOO! Gaspol!")
-                    elif control == "stop":
-                        speak(f"{user} ngerem! Mobil berhenti!")
-                    else:
-                        speak(f"{user} gas lagi! Cus!")
+                    speak(f"{user} pilih angka {control}!")
 
                 else:
                     print(
-                        f"[CONTROL IGNORE] {user} belum jadi pembalap"
+                        f"[CONTROL IGNORE] {user} belum ikut main"
                     )
 
                 continue
@@ -1530,7 +1532,7 @@ def start_bot():
 
                     print(
                         f"[JOIN] {user} -> "
-                        f"PEMBALAP AKTIF "
+                        f"PEMAIN AKTIF "
                         f"({len(state['active'])}/"
                         f"{MAX_PLAYERS})"
                     )
@@ -1543,7 +1545,7 @@ def start_bot():
                     )
 
                     speak(
-                        f"Woy {user} masuk lintasan, gas pol!"
+                        f"Woy {user} masuk game, siap pilih angka!"
                     )
 
                 elif result == "queue":
@@ -1560,7 +1562,7 @@ def start_bot():
                     save_state(state)
 
                     speak(
-                        f"{user} antri dulu ya, bentar lagi gas!"
+                        f"{user} antri dulu ya, bentar lagi masuk!"
                     )
 
                 else:
