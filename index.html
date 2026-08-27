@@ -548,15 +548,62 @@ let marbleTemplate=null;
 const loader=new GLTFLoader();
 
 
+/* =========================================================
+   LOAD DAN NORMALISASI GLB MARBLE
+========================================================= */
+
 loader.load(
 
  'assets/roter_ball_glb.glb',
 
  gltf=>{
 
-  marbleTemplate=gltf.scene;
+  const model=gltf.scene;
 
-  marbleTemplate.traverse(
+  /*
+   * Hitung bounding box asli GLB.
+   * Ini penting karena asset 3D bisa mempunyai
+   * ukuran/origin yang berbeda-beda.
+   */
+
+  const box=new THREE.Box3().setFromObject(model);
+
+  const center=new THREE.Vector3();
+
+  box.getCenter(center);
+
+  model.position.sub(center);
+
+
+  const size=new THREE.Vector3();
+
+  box.getSize(size);
+
+  const maxSize=Math.max(
+   size.x,
+   size.y,
+   size.z
+  );
+
+
+  /*
+   * Normalisasi agar diameter marble
+   * kira-kira 1 unit Three.js.
+   */
+
+  if(maxSize>0){
+
+   const normalize=
+    1.0/maxSize;
+
+   model.scale.setScalar(
+    normalize
+   );
+
+  }
+
+
+  model.traverse(
    object=>{
 
     if(object.isMesh){
@@ -564,11 +611,32 @@ loader.load(
      object.castShadow=true;
      object.receiveShadow=true;
 
+     /*
+      * Pastikan material terlihat.
+      */
+
+     if(object.material){
+
+      object.material =
+       object.material.clone();
+
+      object.material.roughness=.3;
+      object.material.metalness=.05;
+
+     }
+
     }
 
    }
   );
 
+
+  marbleTemplate=model;
+
+
+  /*
+   * Buat empat marble.
+   */
 
   for(
    let i=0;
@@ -579,11 +647,44 @@ loader.load(
    const marble=
     marbleTemplate.clone(true);
 
-   marble.scale.setScalar(
-    .52
+   marble.visible=true;
+
+   /*
+    * Ukuran final marble.
+    */
+
+   marble.scale.multiplyScalar(
+    .95
    );
 
-   marble.visible=true;
+
+   /*
+    * Warna setiap pemain.
+    */
+
+   marble.traverse(
+    object=>{
+
+     if(
+      object.isMesh &&
+      object.material
+     ){
+
+      object.material=
+       object.material.clone();
+
+      object.material.color.setHex(
+       marbleColors[i]
+      );
+
+      object.material.roughness=.28;
+      object.material.metalness=.08;
+
+     }
+
+    }
+   );
+
 
    scene.add(marble);
 
@@ -593,6 +694,12 @@ loader.load(
 
 
   resetMarbles();
+
+
+  document.getElementById(
+   'status'
+  ).textContent=
+   'Marble siap menggelinding...';
 
  },
 
@@ -605,55 +712,63 @@ loader.load(
    error
   );
 
+
+  /*
+   * FALLBACK:
+   * kalau GLB gagal, tetap tampilkan
+   * bola 3D agar kita tahu sistem game bekerja.
+   */
+
+  for(
+   let i=0;
+   i<4;
+   i++
+  ){
+
+   const marble=
+    new THREE.Mesh(
+
+     new THREE.SphereGeometry(
+      .48,
+      32,
+      20
+     ),
+
+     new THREE.MeshStandardMaterial({
+
+      color:
+       marbleColors[i],
+
+      roughness:.25,
+
+      metalness:.08
+
+     })
+
+    );
+
+
+   marble.castShadow=true;
+   marble.receiveShadow=true;
+
+   scene.add(marble);
+
+   marbles.push(marble);
+
+  }
+
+
+  resetMarbles();
+
+
   document.getElementById(
    'status'
   ).textContent=
-   'Gagal memuat marble GLB';
+   'Marble aktif (fallback 3D)';
 
  }
 
 );
-
-
-/* =========================================================
-   MARBLE RESET
-========================================================= */
-
-function resetMarbles(){
-
- const starts=[
-
-  [-10,-10],
-  [-7.5,-10],
-  [-10,-7.5],
-  [-7.5,-7.5]
-
- ];
-
-
- marbles.forEach(
-  (marble,index)=>{
-
-   marble.position.set(
-    starts[index][0],
-    .58,
-    starts[index][1]
-   );
-
-
-   marble.userData={
-    vx:0,
-    vz:0,
-    finished:false
-   };
-
-  }
- );
-
-
- updatePlayers();
-
-}
 
 
 /* =========================================================
