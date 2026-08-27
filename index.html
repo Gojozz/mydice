@@ -2,190 +2,1086 @@
 <html lang="id">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Spin Dice</title>
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Marble Maze</title>
+
 <style>
-*{box-sizing:border-box;margin:0;padding:0}
-html,body{width:100%;height:100%;overflow:hidden;font-family:Arial,sans-serif;background:#0a0e1a;color:#fff}
-#bg{position:fixed;inset:0;width:100%;height:100%;object-fit:cover;z-index:0}
-.overlay{position:fixed;inset:0;background:linear-gradient(180deg,rgba(0,0,0,.55),rgba(0,0,0,.3) 50%,rgba(0,0,0,.65));z-index:1;pointer-events:none}
-#app{position:relative;z-index:2;width:100%;height:100%;display:flex;flex-direction:column;align-items:center;padding:10px 12px;gap:8px}
-.title{font-size:clamp(26px,6vw,42px);font-weight:900;letter-spacing:3px;background:linear-gradient(90deg,#ffd700,#ff6b00,#ffd700);-webkit-background-clip:text;-webkit-text-fill-color:transparent;filter:drop-shadow(0 2px 6px #000)}
-.sub{font-size:12px;color:#a0d8ff;letter-spacing:1px;margin-top:2px}
-.badge{display:inline-block;margin-top:6px;padding:5px 14px;background:rgba(0,30,60,.9);border:2px solid #00c9ee;border-radius:24px;font-size:14px;font-weight:800;color:#00e5ff}
-.timer{color:#ffeb3b;margin-left:6px;font-size:18px}
-#players{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;width:100%;max-width:900px}
-.card{background:rgba(8,16,32,.9);border:3px solid #1a3a5c;border-radius:12px;padding:8px 6px;text-align:center;transition:.3s}
-.card.human{border-color:#00c9ee;box-shadow:0 0 14px rgba(0,200,255,.3)}
-.card.winner{border-color:#ffd700;box-shadow:0 0 24px rgba(255,215,0,.5);transform:scale(1.06);z-index:5}
-.card.low{opacity:.5}
-.name{font-size:12px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#e0f0ff;margin-bottom:4px}
-.card.human .name{color:#00e5ff}
-.dice{width:72px;height:72px;margin:0 auto 4px;background:linear-gradient(145deg,#fff,#ddd);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:28px;font-weight:900;color:#1a1a2e;box-shadow:0 3px 10px #000}
-.dice.empty{background:linear-gradient(145deg,#2a3a4a,#1a2a3a);color:#4a6a8a;font-size:18px}
-.dice.roll{animation:sh .15s infinite;background:linear-gradient(145deg,#ffe066,#ffcc00)!important;box-shadow:0 0 16px rgba(255,200,0,.75)}
-@keyframes sh{0%{transform:rotate(-20deg) scale(1.15)}25%{transform:rotate(20deg) scale(1.2)}50%{transform:rotate(-15deg) scale(1.1)}75%{transform:rotate(15deg) scale(1.18)}100%{transform:rotate(-20deg) scale(1.15)}}
-.tag{font-size:9px;font-weight:700;color:#7a9ab0;text-transform:uppercase}
-.card.human .tag{color:#00c9ee}
-#boxes{display:grid;grid-template-columns:repeat(6,1fr);gap:6px;width:100%;max-width:480px}
-.box{aspect-ratio:1;background:rgba(10,25,50,.9);border:3px solid #2a5a8a;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:clamp(18px,5vw,26px);font-weight:900;color:#7ec8ff;transition:.2s;position:relative}
-.box.on{background:linear-gradient(145deg,#00a8e8,#0066aa);border-color:#00e5ff;color:#fff;box-shadow:0 0 12px rgba(0,200,255,.5);transform:scale(1.08)}
-.box.on::after{content:attr(data-o);position:absolute;bottom:0;left:0;right:0;font-size:7px;background:rgba(0,0,0,.5);padding:1px;border-radius:0 0 8px 8px}
-.hint{font-size:12px;color:#b0d0f0;background:rgba(0,20,40,.75);padding:5px 12px;border-radius:16px;border:1px solid #1a4a6a}
-.hint b{color:#ffd700}
-#wheel-area{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:0}
-.ww{position:relative;width:min(600px,92vw);height:min(600px,92vw)}
-#wheel{width:100%;height:100%;border-radius:50%;filter:drop-shadow(0 6px 20px #000)}
-#wheel.spin{transition:transform 5.5s cubic-bezier(.15,.85,.25,1)}
-#ptr{position:absolute;top:-28px;left:50%;transform:translateX(-50%);width:90px;height:90px;z-index:10;filter:drop-shadow(0 3px 6px #000)}
-.wlabel{margin-top:10px;font-size:16px;font-weight:800;color:#ffd700;min-height:24px;text-align:center}
-#side{position:fixed;bottom:8px;left:8px;right:8px;display:flex;gap:8px;z-index:20;pointer-events:none}
-.panel{flex:1;background:rgba(5,12,25,.9);border:1px solid #1a3a5c;border-radius:8px;padding:6px 8px;max-height:80px;overflow:hidden}
-.pt{font-size:9px;font-weight:800;color:#00c9ee;letter-spacing:1px;text-transform:uppercase;margin-bottom:3px}
-.pl{font-size:11px;font-weight:700;color:#c0d8f0;line-height:1.35}
-.pe{color:#5a7a9a;font-style:italic;font-size:10px}
-#pop{position:fixed;inset:0;z-index:100;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.7)}
-#pop.show{display:flex}
-.pc{background:linear-gradient(160deg,#0d2137,#1a3a5c);border:3px solid #ffd700;border-radius:16px;padding:24px 32px;text-align:center;max-width:90%;box-shadow:0 0 40px rgba(255,200,0,.35)}
-.pt2{font-size:12px;color:#a0d8ff;letter-spacing:2px;text-transform:uppercase}
-.pw{font-size:24px;font-weight:900;color:#ffd700;margin:6px 0}
-.pp{font-size:32px;font-weight:900;color:#fff}
+*{box-sizing:border-box}
+html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#160d07;font-family:Arial,sans-serif;color:#fff}
+#game{position:fixed;inset:0}
+canvas{display:block}
+
+#hud{
+ position:fixed;z-index:5;top:10px;left:50%;
+ transform:translateX(-50%);width:100%;
+ text-align:center;pointer-events:none;
+ text-shadow:0 2px 5px #000
+}
+h1{
+ margin:0;font-size:clamp(25px,6vw,42px);
+ font-weight:900;letter-spacing:3px;color:#ffd166
+}
+.sub{
+ font-size:10px;letter-spacing:2px;color:#f5d7a0
+}
+.badge{
+ display:inline-block;margin-top:7px;padding:5px 14px;
+ background:#24140ae8;border:2px solid #b9782e;
+ border-radius:20px;font-size:12px;font-weight:bold
+}
+#timer{color:#ffe45c;margin-left:8px}
+
+#players{
+ position:fixed;z-index:6;top:10px;right:10px;
+ display:flex;gap:5px
+}
+.player{
+ min-width:65px;padding:5px;
+ background:#21130be8;border:2px solid #6d4525;
+ border-radius:9px;text-align:center;font-size:9px
+}
+.dot{
+ width:14px;height:14px;border-radius:50%;
+ margin:0 auto 3px;box-shadow:0 2px 5px #000
+}
+
+#status{
+ position:fixed;z-index:6;bottom:12px;left:50%;
+ transform:translateX(-50%);
+ padding:7px 14px;background:#21130be8;
+ border:1px solid #87582d;border-radius:20px;
+ font-size:11px;white-space:nowrap
+}
+
+#message{
+ position:fixed;z-index:10;inset:0;
+ display:none;align-items:center;justify-content:center;
+ background:#0009
+}
+#message.show{display:flex}
+.messageBox{
+ padding:25px 35px;text-align:center;
+ background:linear-gradient(145deg,#3b210d,#160d07);
+ border:3px solid #e9ae45;border-radius:18px;
+ box-shadow:0 0 40px #000
+}
+.messageBox small{color:#e9c88f}
+.messageBox h2{
+ margin:5px 0;color:#ffd166;font-size:30px
+}
 </style>
 </head>
+
 <body>
-<img id="bg" src="assets/bg.png" alt="">
-<div class="overlay"></div>
-<div id="app">
-<header style="text-align:center;width:100%">
-<div class="title">SPIN DICE</div>
-<div class="sub">HIGHEST NUMBER WINS • SPIN THE WHEEL</div>
-<div class="badge"><span id="ph">MENUNGGU...</span><span class="timer" id="tm"></span></div>
-</header>
+
+<div id="game"></div>
+
+<div id="hud">
+ <h1>MARBLE MAZE</h1>
+ <div class="sub">WOODEN LABYRINTH</div>
+ <div class="badge">
+   RONDE <span id="round">1</span>
+   <span id="timer">00:00</span>
+ </div>
+</div>
+
 <div id="players"></div>
-<div style="text-align:center;width:100%;max-width:480px">
-<div style="font-size:11px;font-weight:800;color:#a0d8ff;letter-spacing:1px;margin-bottom:6px">PILIHAN ANGKA (KETIK 1-6 DI CHAT)</div>
-<div id="boxes">
-<div class="box" data-n="1">1</div><div class="box" data-n="2">2</div><div class="box" data-n="3">3</div>
-<div class="box" data-n="4">4</div><div class="box" data-n="5">5</div><div class="box" data-n="6">6</div>
+
+<div id="status">Menyiapkan labirin...</div>
+
+<div id="message">
+ <div class="messageBox">
+   <small>PEMENANG</small>
+   <h2 id="winner">MERAH</h2>
+   <small>Marble berhasil keluar!</small>
+ </div>
 </div>
-</div>
-<div class="hint">Ketik <b>join</b> untuk ikut • Ketik <b>1-6</b> untuk pilih angka</div>
-<div id="wheel-area">
-<div class="ww">
-<img id="wheel" src="assets/wheel.png" alt="w">
-<img id="ptr" src="assets/pointer.png" alt="p">
-</div>
-<div class="wlabel" id="wl"></div>
-</div>
-</div>
-<div id="side">
-<div class="panel"><div class="pt">Pemain Aktif</div><div class="pl" id="al"><span class="pe">Bot main</span></div></div>
-<div class="panel"><div class="pt">Antrean</div><div class="pl" id="ql"><span class="pe">Kosong</span></div></div>
-</div>
-<div id="pop"><div class="pc"><div class="pt2">PEMENANG</div><div class="pw" id="popw">-</div><div class="pp" id="popp">-</div></div></div>
-<audio id="s1" src="assets/sounds/spin.wav" preload="auto"></audio>
-<audio id="s2" src="assets/sounds/result.wav" preload="auto"></audio>
-<audio id="s3" src="assets/sounds/win.mp3" preload="auto"></audio>
-<audio id="s4" src="assets/sounds/jackpot.wav" preload="auto"></audio>
-<script>
-const NAME_POOL=["Raka","Sinta","Budi","Dewi","Andi","Putri","Fajar","Nina","Rizky","Maya","Dimas","Ayu","Gilang","Lestari","Yoga","Intan","Hendra","Wulan","Agus","Citra","Bayu","Sari"];function pickBotNames(n){const a=NAME_POOL.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a.slice(0,n);}let DN=pickBotNames(4),MP=4,CS=12,RS=4,SD=5500,RSH=5000;
-const PR=["ZONK","Hadiah Kecil","Ulang Lagi","Hadiah Sedang","JACKPOT","Hadiah Kecil","ZONK","Hadiah Besar"],SG=PR.length;
-let phase="idle",pt=0,players=[],chatA=[],chatQ=[],rid=1,rotSent=false,wAng=0,winI=-1,lastC={};
-const pEl=document.getElementById("players"),ph=document.getElementById("ph"),tm=document.getElementById("tm");
-const boxes=document.querySelectorAll(".box"),wh=document.getElementById("wheel"),wl=document.getElementById("wl");
-const pop=document.getElementById("pop"),popw=document.getElementById("popw"),popp=document.getElementById("popp");
-const al=document.getElementById("al"),ql=document.getElementById("ql");
-const s1=document.getElementById("s1"),s2=document.getElementById("s2"),s3=document.getElementById("s3"),s4=document.getElementById("s4");
-function sfx(a){try{a.currentTime=0;a.play().catch(()=>{})}catch(e){}}
-function esc(s){return String(s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;")}
-function build(){
-  const ns=[];
-  for(let i=0;i<MP;i++){
-    if(chatA[i]) ns.push({name:chatA[i].name||chatA[i].user,isH:true,ctrl:chatA[i].control,cid:+(chatA[i].controlId||0)});
-    else ns.push({name:DN[i],isH:false,ctrl:null,cid:0});
+
+<audio
+ id="rollingSound"
+ src="assets/sound/marble-rolling.mp3"
+ preload="auto"
+ loop>
+</audio>
+
+<script type="module">
+
+import * as THREE from
+'https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js';
+
+import {GLTFLoader} from
+'https://cdn.jsdelivr.net/npm/three@0.180.0/examples/jsm/loaders/GLTFLoader.js';
+
+
+/* =========================================================
+   BASIC THREE.JS
+========================================================= */
+
+const game=document.getElementById('game');
+
+const scene=new THREE.Scene();
+
+scene.background=new THREE.Color(0x21150b);
+
+scene.fog=new THREE.Fog(
+ 0x21150b,
+ 28,
+ 65
+);
+
+
+const camera=new THREE.PerspectiveCamera(
+ 45,
+ innerWidth/innerHeight,
+ 0.1,
+ 100
+);
+
+camera.position.set(
+ 0,
+ 29,
+ 24
+);
+
+camera.lookAt(
+ 0,
+ 0,
+ 0
+);
+
+
+const renderer=new THREE.WebGLRenderer({
+ antialias:true,
+ powerPreference:'high-performance'
+});
+
+renderer.setPixelRatio(
+ Math.min(devicePixelRatio,2)
+);
+
+renderer.setSize(
+ innerWidth,
+ innerHeight
+);
+
+renderer.shadowMap.enabled=true;
+
+renderer.shadowMap.type=
+ THREE.PCFSoftShadowMap;
+
+game.appendChild(
+ renderer.domElement
+);
+
+
+/* =========================================================
+   LIGHT
+========================================================= */
+
+const ambient=new THREE.HemisphereLight(
+ 0xffe4b5,
+ 0x352010,
+ 2.2
+);
+
+scene.add(ambient);
+
+
+const light=new THREE.DirectionalLight(
+ 0xffd79a,
+ 3
+);
+
+light.position.set(
+ -15,
+ 30,
+ 12
+);
+
+light.castShadow=true;
+
+light.shadow.mapSize.width=2048;
+light.shadow.mapSize.height=2048;
+
+scene.add(light);
+
+
+/* =========================================================
+   WOODEN BOARD
+========================================================= */
+
+const board=new THREE.Mesh(
+
+ new THREE.BoxGeometry(
+  25,
+  .5,
+  25
+ ),
+
+ new THREE.MeshStandardMaterial({
+  color:0x8b5528,
+  roughness:.72
+ })
+
+);
+
+board.position.y=-.35;
+
+board.receiveShadow=true;
+
+scene.add(board);
+
+
+/* =========================================================
+   MAZE
+========================================================= */
+
+const maze=new THREE.Group();
+
+scene.add(maze);
+
+const walls=[];
+
+const CELL=2.5;
+const SIZE=9;
+const HALF=(SIZE-1)/2;
+
+
+function wall(
+ x,
+ z,
+ width,
+ depth
+){
+
+ const mesh=new THREE.Mesh(
+
+  new THREE.BoxGeometry(
+   width,
+   1.7,
+   depth
+  ),
+
+  new THREE.MeshStandardMaterial({
+   color:0x6f3f19,
+   roughness:.68
+  })
+
+ );
+
+ mesh.position.set(
+  x,
+  .55,
+  z
+ );
+
+ mesh.castShadow=true;
+ mesh.receiveShadow=true;
+
+ maze.add(mesh);
+
+ walls.push({
+  x,
+  z,
+  width,
+  depth
+ });
+
+}
+
+
+/* =========================================================
+   PROCEDURAL MAZE
+========================================================= */
+
+let exitPosition={
+ x:0,
+ z:0
+};
+
+
+function generateMaze(){
+
+ while(maze.children.length)
+  maze.remove(
+   maze.children[0]
+  );
+
+ walls.length=0;
+
+
+ const cells=[];
+
+ for(let z=0;z<SIZE;z++){
+
+  cells[z]=[];
+
+  for(let x=0;x<SIZE;x++){
+
+   cells[z][x]={
+    visited:false,
+    walls:[true,true,true,true]
+   };
+
   }
-  const om={};players.forEach(p=>om[p.name]=p);
-  players=ns.map(n=>{
-    let ch=om[n.name]?om[n.name].choice:null;
-    if(n.isH&&n.ctrl&&n.cid){const num=+n.ctrl;if(num>=1&&num<=6){if(!lastC[n.name]||lastC[n.name]!==n.cid){ch=num;lastC[n.name]=n.cid}}}
-    return {name:n.name,isH:n.isH,choice:ch,cid:n.cid};
-  });
-  rend();ubox();
-}
-function rend(){
-  pEl.innerHTML=players.map((p,i)=>{
-    const iw=(phase==="reveal"||phase==="spin"||phase==="result")&&i===winI;
-    const il=(phase==="reveal"||phase==="spin"||phase==="result")&&winI>=0&&i!==winI&&p.choice!=null;
-    let fc="dice",ft="?";
-    if(phase==="choose"&&p.choice==null){fc+=" roll";ft=(p._sf||"🎲")}
-    else if(p.choice!=null&&(phase!=="choose"||p.isH))ft=p.choice;
-    else{fc+=" empty";ft="—"}
-    if(phase==="reveal"&&p.choice!=null)ft=p.choice;
-    return `<div class="card ${p.isH?"human":""} ${iw?"winner":""} \( {il?"low":""}"><div class="name"> \){esc(p.name)}</div><div class="\( {fc}"> \){ft}</div><div class="tag">${p.isH?"PENONTON":"BOT"}</div></div>`;
-  }).join("");
-}
-function ubox(){
-  const o={1:[],2:[],3:[],4:[],5:[],6:[]};
-  players.forEach(p=>{if(p.choice>=1&&p.choice<=6)o[p.choice].push(p.name.split(" ")[0].slice(0,8))});
-  boxes.forEach(b=>{const n=+b.dataset.n;if(o[n].length){b.classList.add("on");b.setAttribute("data-o",o[n].join(","))}else{b.classList.remove("on");b.removeAttribute("data-o")}});
-}
-async function load(){
-  try{
-    const r=await fetch("chat_state.json?t="+Date.now(),{cache:"no-store"});if(!r.ok)return;
-    const st=await r.json();chatA=Array.isArray(st.active)?st.active:[];chatQ=Array.isArray(st.queue)?st.queue:[];
-    al.innerHTML=chatA.length?chatA.map(p=>esc(p.name||p.user)).join("<br>"):'<span class="pe">Bot main</span>';
-    ql.innerHTML=chatQ.length?chatQ.map((p,i)=>(i+1)+". "+esc(p.name||p.user)).join("<br>"):'<span class="pe">Kosong</span>';
-    build();
-  }catch(e){if(!players.length)build()}
-}
-async function sendRot(name){
-  if(rotSent)return;rotSent=true;
-  try{const r=await fetch("http://127.0.0.1:8765/race-result",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({raceId:String(rid),eliminated:name})});console.log("[ROT]",r.status,await r.text());setTimeout(load,800)}catch(e){console.warn(e)}
-}
-function setPh(p,sec){
-  phase=p;pt=sec||0;
-  const L={idle:"SIAP...",choose:"PILIH ANGKA!",reveal:"HASIL DADU",spin:"SPIN WHEEL!",result:"HADIAH"};
-  ph.textContent=L[p]||p;tm.textContent=pt>0?pt+"s":"";
-  if(p==="choose"){winI=-1;wl.textContent="";players.forEach(x=>x.choice=null);lastC={};rend();ubox();pop.classList.remove("show")}
-  if(p==="reveal"){
-    sfx(s2);players.forEach(x=>{if(x.choice==null)x.choice=1+Math.floor(Math.random()*6)});
-    let mx=-1,c=[];players.forEach((x,i)=>{if(x.choice>mx){mx=x.choice;c=[i]}else if(x.choice===mx)c.push(i)});
-    winI=c[Math.floor(Math.random()*c.length)];rend();ubox();
-    wl.textContent="🏆 "+players[winI].name+" (angka "+players[winI].choice+")";
+
+ }
+
+
+ const directions=[
+
+  [0,-1,0,2],
+  [1,0,1,3],
+  [0,1,2,0],
+  [-1,0,3,1]
+
+ ];
+
+
+ function carve(x,z){
+
+  cells[z][x].visited=true;
+
+  const order=[
+   0,1,2,3
+  ].sort(
+   ()=>Math.random()-.5
+  );
+
+
+  for(const d of order){
+
+   const nx=
+    x+directions[d][0];
+
+   const nz=
+    z+directions[d][1];
+
+
+   if(
+    nx>=0 &&
+    nx<SIZE &&
+    nz>=0 &&
+    nz<SIZE &&
+    !cells[nz][nx].visited
+   ){
+
+    cells[z][x]
+     .walls[
+      directions[d][2]
+     ]=false;
+
+    cells[nz][nx]
+     .walls[
+      directions[d][3]
+     ]=false;
+
+    carve(nx,nz);
+
+   }
+
   }
-  if(p==="spin")startSpin();
+
+ }
+
+
+ carve(0,0);
+
+
+ for(let z=0;z<SIZE;z++){
+
+  for(let x=0;x<SIZE;x++){
+
+   const c=cells[z][x];
+
+   const px=
+    (x-HALF)*CELL;
+
+   const pz=
+    (z-HALF)*CELL;
+
+
+   /* TOP */
+
+   if(c.walls[0]){
+
+    wall(
+     px,
+     pz-CELL/2,
+     CELL+.12,
+     .25
+    );
+
+   }
+
+
+   /* LEFT */
+
+   if(c.walls[3]){
+
+    wall(
+     px-CELL/2,
+     pz,
+     .25,
+     CELL+.12
+    );
+
+   }
+
+
+   /* RIGHT EDGE */
+
+   if(x===SIZE-1){
+
+    wall(
+     px+CELL/2,
+     pz,
+     .25,
+     CELL+.12
+    );
+
+   }
+
+
+   /* BOTTOM EDGE */
+
+   if(z===SIZE-1){
+
+    /*
+      Buka sedikit dinding di posisi finish
+      agar marble bisa keluar.
+    */
+
+    if(x!==SIZE-1){
+
+     wall(
+      px,
+      pz+CELL/2,
+      CELL+.12,
+      .25
+     );
+
+    }
+
+   }
+
+  }
+
+ }
+
+
+ exitPosition={
+  x:HALF*CELL,
+  z:HALF*CELL
+ };
+
+
+ createFinish();
+
 }
-function startSpin(){
-  sfx(s1);const seg=Math.floor(Math.random()*SG),prize=PR[seg];
-  const sa=360/SG,ti=seg*sa+sa/2,fm=(360-ti+360)%360,sp=5+Math.floor(Math.random()*3);
-  const na=wAng+sp*360+fm-(wAng%360);
-  wh.classList.add("spin");wh.style.transform="rotate("+na+"deg)";wAng=na;
-  setTimeout(()=>{wh.classList.remove("spin");showRes(prize)},SD+100);
+
+
+/* =========================================================
+   FINISH
+========================================================= */
+
+function createFinish(){
+
+ const finish=new THREE.Mesh(
+
+  new THREE.CylinderGeometry(
+   .72,
+   .72,
+   .08,
+   32
+  ),
+
+  new THREE.MeshStandardMaterial({
+   color:0xffd43b,
+   emissive:0x6d4200,
+   emissiveIntensity:1.2
+  })
+
+ );
+
+ finish.position.set(
+  exitPosition.x,
+  .03,
+  exitPosition.z
+ );
+
+ scene.add(finish);
+
 }
-function showRes(prize){
-  const w=players[winI];popw.textContent=w?w.name:"-";popp.textContent=prize;pop.classList.add("show");
-  if(prize==="JACKPOT")sfx(s4);else sfx(s3);
-  wl.textContent="🏆 "+w.name+" dapat: "+prize;
-  let li=-1,lv=99;players.forEach((x,i)=>{if(i===winI)return;if(x.choice<lv){lv=x.choice;li=i}});
-  if(li>=0){const bl=players.map((x,i)=>({x,i})).filter(o=>o.i!==winI&&o.x.choice===lv&&!o.x.isH);if(bl.length)li=bl[0].i;sendRot(players[li].name)}
-  setPh("result",Math.ceil(RSH/1000));
+
+
+/* =========================================================
+   MARBLES
+========================================================= */
+
+const marbleColors=[
+  0xd92828,
+  0x246bff,
+  0x28b84a,
+  0xf2c52e
+];
+
+const marbleNames=[
+ 'MERAH',
+ 'BIRU',
+ 'HIJAU',
+ 'KUNING'
+];
+
+const marbles=[];
+
+let marbleTemplate=null;
+
+const loader=new GLTFLoader();
+
+
+loader.load(
+
+ 'assets/roter_ball_glb.glb',
+
+ gltf=>{
+
+  marbleTemplate=gltf.scene;
+
+  marbleTemplate.traverse(
+   object=>{
+
+    if(object.isMesh){
+
+     object.castShadow=true;
+     object.receiveShadow=true;
+
+    }
+
+   }
+  );
+
+
+  for(
+   let i=0;
+   i<4;
+   i++
+  ){
+
+   const marble=
+    marbleTemplate.clone(true);
+
+   marble.scale.setScalar(
+    .52
+   );
+
+   marble.visible=true;
+
+   scene.add(marble);
+
+   marbles.push(marble);
+
+  }
+
+
+  resetMarbles();
+
+ },
+
+ undefined,
+
+ error=>{
+
+  console.error(
+   'Gagal memuat GLB:',
+   error
+  );
+
+  document.getElementById(
+   'status'
+  ).textContent=
+   'Gagal memuat marble GLB';
+
+ }
+
+);
+
+
+/* =========================================================
+   MARBLE RESET
+========================================================= */
+
+function resetMarbles(){
+
+ const starts=[
+
+  [-10,-10],
+  [-7.5,-10],
+  [-10,-7.5],
+  [-7.5,-7.5]
+
+ ];
+
+
+ marbles.forEach(
+  (marble,index)=>{
+
+   marble.position.set(
+    starts[index][0],
+    .58,
+    starts[index][1]
+   );
+
+
+   marble.userData={
+    vx:0,
+    vz:0,
+    finished:false
+   };
+
+  }
+ );
+
+
+ updatePlayers();
+
 }
-let lt=performance.now();
-function tick(now){
-  const dt=(now-lt)/1000;lt=now;
-  if(pt>0){pt-=dt;if(pt<=0){pt=0;tm.textContent="";adv()}else tm.textContent=Math.ceil(pt)+"s"}
-  if(phase==="choose"){let n=0;players.forEach(x=>{if(x.choice==null){x._sf=1+Math.floor(Math.random()*6);n=1;}if(!x.isH&&x.choice==null&&Math.random()<0.03){x.choice=1+Math.floor(Math.random()*6);n=1;}});if(n){rend();ubox();}}
-  requestAnimationFrame(tick);
+
+
+/* =========================================================
+   PLAYER UI
+========================================================= */
+
+function updatePlayers(){
+
+ const box=
+  document.getElementById(
+   'players'
+  );
+
+ box.innerHTML='';
+
+
+ marbleNames.forEach(
+  (name,index)=>{
+
+   const div=
+    document.createElement(
+     'div'
+    );
+
+   div.className='player';
+
+   div.innerHTML=`
+
+    <div
+      class="dot"
+      style="
+       background:#${marbleColors[index]
+        .toString(16)
+        .padStart(6,'0')}
+      ">
+    </div>
+
+    ${name}
+
+   `;
+
+   box.appendChild(div);
+
+  }
+ );
+
 }
-function adv(){
-  if(phase==="idle"||phase==="result"){rid++;rotSent=false;setPh("choose",CS)}
-  else if(phase==="choose")setPh("reveal",RS);
-  else if(phase==="reveal")setPh("spin",0);
+
+
+/* =========================================================
+   COLLISION
+========================================================= */
+
+function collideMarble(marble){
+
+ const radius=.46;
+
+
+ for(
+  const w of walls
+ ){
+
+  const insideX=
+   Math.abs(
+    marble.position.x-w.x
+   )
+   <
+   w.width/2+radius;
+
+
+  const insideZ=
+   Math.abs(
+    marble.position.z-w.z
+   )
+   <
+   w.depth/2+radius;
+
+
+  if(
+   insideX &&
+   insideZ
+  ){
+
+   if(
+    w.width>w.depth
+   ){
+
+    if(
+     marble.position.z>w.z
+    )
+     marble.position.z=
+      w.z+
+      w.depth/2+
+      radius;
+
+    else
+     marble.position.z=
+      w.z-
+      w.depth/2-
+      radius;
+
+
+    marble.userData.vz*=
+     -.55;
+
+   }else{
+
+    if(
+     marble.position.x>w.x
+    )
+     marble.position.x=
+      w.x+
+      w.width/2+
+      radius;
+
+    else
+     marble.position.x=
+      w.x-
+      w.width/2-
+      radius;
+
+
+    marble.userData.vx*=
+     -.55;
+
+   }
+
+  }
+
+ }
+
 }
-load();setInterval(load,2000);
-setTimeout(()=>setPh("choose",CS),2000);
-requestAnimationFrame(tick);
-if(!players.length)build();
+
+
+/* =========================================================
+   GAME
+========================================================= */
+
+let round=1;
+
+let elapsed=0;
+
+let winner=false;
+
+let lastTime=
+ performance.now();
+
+
+function startRound(){
+
+ winner=false;
+
+ elapsed=0;
+
+ document.getElementById(
+  'round'
+ ).textContent=
+  round;
+
+
+ document.getElementById(
+  'status'
+ ).textContent=
+  'Marble mulai menggelinding...';
+
+
+ generateMaze();
+
+ resetMarbles();
+
+
+ /*
+  Gerakan awal kecil.
+  Nantinya bagian ini akan diganti
+  dengan sistem kontrol/bot pemain.
+ */
+
+ marbles.forEach(
+  (marble,index)=>{
+
+   marble.userData.vx=
+    index===1 ? .045 :
+    index===3 ? .025 :
+    .015;
+
+
+   marble.userData.vz=
+    .045+
+    index*.004;
+
+  }
+ );
+
+
+ const audio=
+  document.getElementById(
+   'rollingSound'
+  );
+
+ audio.volume=.28;
+
+ audio.currentTime=0;
+
+ audio.play().catch(
+  ()=>{}
+ );
+
+}
+
+
+/* =========================================================
+   UPDATE
+========================================================= */
+
+function update(){
+
+ if(winner)
+  return;
+
+
+ for(
+  const marble of marbles
+ ){
+
+  if(
+   marble.userData.finished
+  )
+   continue;
+
+
+  /*
+   Gravitasi ringan agar terasa
+   seperti marble yang menggelinding.
+  */
+
+  marble.userData.vz+=
+   .0008;
+
+
+  marble.position.x+=
+   marble.userData.vx;
+
+  marble.position.z+=
+   marble.userData.vz;
+
+
+  /*
+   Gesekan
+  */
+
+  marble.userData.vx*=.992;
+
+  marble.userData.vz*=.992;
+
+
+  collideMarble(
+   marble
+  );
+
+
+  /*
+   Rotasi marble
+  */
+
+  marble.rotation.x+=
+   marble.userData.vz*2;
+
+  marble.rotation.z-=
+   marble.userData.vx*2;
+
+
+  /*
+   Finish
+  */
+
+  const dx=
+   marble.position.x-
+   exitPosition.x;
+
+  const dz=
+   marble.position.z-
+   exitPosition.z;
+
+
+  if(
+   Math.hypot(dx,dz)<.85
+  ){
+
+   marble.userData.finished=true;
+
+   winner=true;
+
+   document.getElementById(
+    'winner'
+   ).textContent=
+    marbleNames[
+     marbles.indexOf(marble)
+    ];
+
+
+   document.getElementById(
+    'status'
+   ).textContent=
+    marbleNames[
+     marbles.indexOf(marble)
+    ]+
+    ' MENANG!';
+
+
+   document.getElementById(
+    'message'
+   ).classList.add(
+    'show'
+   );
+
+
+   document.getElementById(
+    'rollingSound'
+   ).pause();
+
+
+   setTimeout(
+    ()=>{
+
+     document.getElementById(
+      'message'
+     ).classList.remove(
+      'show'
+     );
+
+     round++;
+
+     startRound();
+
+    },
+    3500
+   );
+
+  }
+
+ }
+
+}
+
+
+/* =========================================================
+   ANIMATION
+========================================================= */
+
+function animate(time){
+
+ requestAnimationFrame(
+  animate
+ );
+
+
+ if(
+  !winner
+ ){
+
+  elapsed+=
+   (time-lastTime)/1000;
+
+ }
+
+
+ lastTime=time;
+
+
+ update();
+
+
+ const total=
+  Math.floor(elapsed);
+
+
+ const minutes=
+  Math.floor(total/60)
+   .toString()
+   .padStart(2,'0');
+
+
+ const seconds=
+  (total%60)
+   .toString()
+   .padStart(2,'0');
+
+
+ document.getElementById(
+  'timer'
+ ).textContent=
+  minutes+':'+seconds;
+
+
+ renderer.render(
+  scene,
+  camera
+ );
+
+}
+
+
+requestAnimationFrame(
+ animate
+);
+
+
+/* =========================================================
+   RESIZE
+========================================================= */
+
+addEventListener(
+ 'resize',
+ ()=>{
+
+  camera.aspect=
+   innerWidth/innerHeight;
+
+  camera.updateProjectionMatrix();
+
+  renderer.setSize(
+   innerWidth,
+   innerHeight
+  );
+
+ }
+);
+
+
+/* =========================================================
+   START
+========================================================= */
+
+startRound();
+
 </script>
+
 </body>
 </html>
