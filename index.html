@@ -184,160 +184,146 @@ function separate(){
 function steer(m){
   if(m.userData.finished) return;
 
-  const id = m.userData.id;
-  const tx = exitPos.x - m.position.x;
-  const tz = exitPos.z - m.position.z;
-  const dist = Math.hypot(tx, tz) || 1;
+  const r = RADIUS;
+  const speed = 0.105 + m.userData.id * 0.012;
 
-  if(m.userData.lastX === undefined){
-    m.userData.lastX = m.position.x;
-    m.userData.lastZ = m.position.z;
-    m.userData.still = 0;
-    m.userData.stuck = 0;
-    m.userData.escapeUntil = 0;
+  /*
+   * WALL FOLLOWING
+   *
+   * Marble tidak lagi mencari exit secara acak.
+   *
+   * 1. Jika tidak ada dinding:
+   *    terus berjalan dengan arah terakhir.
+   *
+   * 2. Jika menemukan dinding:
+   *    bergerak sejajar mengikuti dinding.
+   *
+   * 3. Saat dinding berakhir:
+   *    tetap lanjut ke arah gerak terakhir.
+   */
+
+  let nearest = null;
+  let nearestDist = Infinity;
+
+  for(const w of walls){
+
+    const qx = Math.max(
+      w.x - w.hw,
+      Math.min(m.position.x,w.x + w.hw)
+    );
+
+    const qz = Math.max(
+      w.z - w.hd,
+      Math.min(m.position.z,w.z + w.hd)
+    );
+
+    const dx = m.position.x - qx;
+    const dz = m.position.z - qz;
+    const dist = Math.hypot(dx,dz);
+
+    if(dist < nearestDist){
+      nearestDist = dist;
+      nearest = w;
+    }
   }
 
-  const moved = Math.hypot(
-    m.position.x - m.userData.lastX,
-    m.position.z - m.userData.lastZ
-  );
+  /*
+   * MASIH JAUH DARI DINDING
+   *
+   * Jangan belok.
+   * Jangan mencari jalan.
+   */
+  if(!nearest || nearestDist > r + 0.45){
 
-  m.userData.lastX = m.position.x;
-  m.userData.lastZ = m.position.z;
+    let vx = m.userData.vx;
+    let vz = m.userData.vz;
 
-  if(moved < 0.035)
-    m.userData.still = (m.userData.still || 0) + 1;
-  else
-    m.userData.still = 0;
+    let sp = Math.hypot(vx,vz);
 
-  const now = performance.now();
-  const inEscape = now < (m.userData.escapeUntil || 0);
-  const sp = Math.hypot(m.userData.vx, m.userData.vz);
+    if(sp < 0.025){
 
-  if(!inEscape && (
-    m.userData.stuck > 4 ||
-    m.userData.still > 28 ||
-    sp < 0.008
-  )){
-    let bestAng = Math.random() * Math.PI * 2;
-    let bestScore = -1e9;
+      // Hanya fallback kalau marble benar-benar berhenti.
+      const angle =
+        (m.userData.id / 4) * Math.PI * 2 + 0.8;
 
-    for(let k = 0; k < 24; k++){
-      const ang =
-        (k / 24) * Math.PI * 2 +
-        id * 0.9 +
-        Math.random() * 0.3;
+      vx = Math.cos(angle);
+      vz = Math.sin(angle);
 
-      const lookDist = RADIUS + 1.6;
-
-      const tx2 =
-        m.position.x +
-        Math.cos(ang) * lookDist;
-
-      const tz2 =
-        m.position.z +
-        Math.sin(ang) * lookDist;
-
-      let clear = 2.2;
-
-      for(const w of walls){
-        const qx = Math.max(
-          w.x - w.hw,
-          Math.min(tx2, w.x + w.hw)
-        );
-
-        const qz = Math.max(
-          w.z - w.hd,
-          Math.min(tz2, w.z + w.hd)
-        );
-
-        const d = Math.hypot(
-          tx2 - qx,
-          tz2 - qz
-        );
-
-        if(d < clear)
-          clear = d;
-      }
-
-      const toExit = Math.hypot(
-        tx2 - exitPos.x,
-        tz2 - exitPos.z
-      );
-
-      const score =
-        clear * 4.5 -
-        toExit * 0.015 +
-        Math.random() * 0.4;
-
-      if(score > bestScore){
-        bestScore = score;
-        bestAng = ang;
-      }
+      sp = 1;
     }
 
-    const burst =
-      0.28 +
-      Math.random() * 0.12;
-
-    m.userData.vx =
-      Math.cos(bestAng) * burst;
-
-    m.userData.vz =
-      Math.sin(bestAng) * burst;
-
-    m.userData.stuck = 0;
-    m.userData.still = 0;
-
-    m.userData.escapeUntil =
-      now + 450 + Math.random() * 250;
+    m.userData.vx = vx / sp * speed;
+    m.userData.vz = vz / sp * speed;
 
     return;
   }
 
-  if(!inEscape){
-    const speed =
-      0.055 + id * 0.011;
+  /*
+   * ADA DINDING DI DEKAT MARBLE
+   *
+   * Jadikan dinding sebagai "rel".
+   */
+  const horizontal = nearest.w > nearest.d;
 
-    const t = now * 0.001;
+  let tx;
+  let tz;
 
-    const wander =
-      Math.sin(
-        t * 1.7 +
-        id * 2.4
-      ) * 0.55;
-
-    let ax =
-      (tx / dist) * speed +
-      (-tz / dist) *
-      wander * 0.035;
-
-    let az =
-      (tz / dist) * speed +
-      (tx / dist) *
-      wander * 0.035;
-
-    m.userData.vx += ax;
-    m.userData.vz += az;
+  if(horizontal){
+    tx = 1;
+    tz = 0;
+  }else{
+    tx = 0;
+    tz = 1;
   }
 
-  const sp2 =
-    Math.hypot(
-      m.userData.vx,
-      m.userData.vz
-    );
+  /*
+   * Jangan tiba-tiba berbalik.
+   * Pertahankan arah gerak sebelumnya.
+   */
+  const oldVx = m.userData.vx;
+  const oldVz = m.userData.vz;
 
-  const maxS =
-    0.19 + id * 0.022;
-
-  if(sp2 > maxS){
-    m.userData.vx *= maxS / sp2;
-    m.userData.vz *= maxS / sp2;
+  if(
+    oldVx * tx +
+    oldVz * tz < 0
+  ){
+    tx = -tx;
+    tz = -tz;
   }
+
+  /*
+   * Dorongan kecil menuju permukaan dinding.
+   * Ini membuat marble benar-benar menempel
+   * dan merambat sepanjang dinding.
+   */
+  let nx = 0;
+  let nz = 0;
+
+  if(horizontal){
+
+    nz =
+      m.position.z < nearest.z
+      ? 1
+      : -1;
+
+  }else{
+
+    nx =
+      m.position.x < nearest.x
+      ? 1
+      : -1;
+  }
+
+  const follow = 0.012;
+
+  m.userData.vx =
+    tx * speed +
+    nx * follow;
+
+  m.userData.vz =
+    tz * speed +
+    nz * follow;
 }
-
-
-let round=1,elapsed=0,winner=false,last=performance.now(),tick=0;
 
 function startRound(){
   if(marbles.length<4) createAllMarbles();
