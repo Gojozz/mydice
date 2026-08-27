@@ -83,6 +83,11 @@ function generateMaze(){
     }
   }
   carve(0,0);
+  for(const [x,z] of [[0,0],[1,0],[0,1],[1,1]]){
+    if(x+1<SIZE){cells[z][x].w[1]=false;cells[z][x+1].w[3]=false;}
+    if(z+1<SIZE){cells[z][x].w[2]=false;cells[z+1][x].w[0]=false;}
+  }
+
   for(let z=0;z<SIZE;z++) for(let x=0;x<SIZE;x++){
     const c=cells[z][x],px=(x-HALF)*CELL,pz=(z-HALF)*CELL;
     if(c.w[0]) addWall(px,pz-CELL/2,CELL+0.25,0.4);
@@ -124,12 +129,14 @@ function createAllMarbles(){
 }
 
 function resetMarbles(){
-  const starts=[[0,0],[SIZE-1,0],[0,SIZE-1],[SIZE-1,SIZE-2]];
+  const baseX=(0-HALF)*CELL, baseZ=(0-HALF)*CELL, gap=RADIUS*2.15;
+  const offsets=[[-gap*0.5,-gap*0.5],[gap*0.5,-gap*0.5],[-gap*0.5,gap*0.5],[gap*0.5,gap*0.5]];
   marbles.forEach((m,i)=>{
-    const [cx,cz]=starts[i];
-    m.position.set((cx-HALF)*CELL,RADIUS+0.05,(cz-HALF)*CELL);
-    m.rotation.set(0,0,0);m.visible=true;
-    m.userData.vx=0;m.userData.vz=0;m.userData.finished=false;m.userData.stuck=0;
+    const [ox,oz]=offsets[i];
+    m.position.set(baseX+ox, RADIUS+0.05, baseZ+oz);
+    m.rotation.set(0,0,0); m.visible=true;
+    m.userData.vx=0; m.userData.vz=0;
+    m.userData.finished=false; m.userData.stuck=0;
   });
   updateUI();
 }
