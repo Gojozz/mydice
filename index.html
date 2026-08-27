@@ -149,16 +149,16 @@ function generateMaze(){
   }
   openCells.sort(()=>Math.random()-0.5);
   
-  // Kurangi jebakan jadi max 8
-  const trapCount = Math.min(openCells.length, 8);
+  // Jebakan dikurangi drastis menjadi maksimal 4 buah saja
+  const trapCount = Math.min(openCells.length, 4);
   for(let i=0; i<trapCount; i++){
     const cell = openCells[i];
     const px = (cell.x - HALF)*CELL, pz = (cell.z - HALF)*CELL;
     createTrapMesh(px, pz, (i % 2 === 0) ? 'hole' : 'bomb');
   }
 
-  // Tambahkan bintang (4-6 buah)
-  const starCount = Math.min(openCells.length - trapCount, 5);
+  // Tambahkan 6 bintang agar lebih banyak bonus clone
+  const starCount = Math.min(openCells.length - trapCount, 6);
   for(let i=trapCount; i<trapCount+starCount; i++){
     const cell = openCells[i];
     const px = (cell.x - HALF)*CELL, pz = (cell.z - HALF)*CELL;
@@ -217,7 +217,7 @@ function respawnMarble(m, i){
 }
 
 function resetMarbles(){
-  marbles.length = 4; // Reset ke 4 marble dasar tiap ronde baru
+  marbles.length = 4;
   marbles.forEach((m,i)=>{
     m.visible = true; m.userData.finished = false; m.userData.eliminated = false;
     m.userData.cloneId = 0;
@@ -411,7 +411,6 @@ function update(){
     collide(m);
     m.rotation.x+=m.userData.vz*2;m.rotation.z-=m.userData.vx*2;
 
-    // CEK BINTANG (CLONE SYSTEM)
     for(const s of stars){
       if(!s.active) continue;
       const dist = Math.hypot(m.position.x - s.x, m.position.z - s.z);
@@ -420,7 +419,6 @@ function update(){
         starGroup.remove(s.mesh);
         createStarEffect(s.x, s.z);
 
-        // Hitung total klon saat ini untuk warna ini
         const colorId = m.userData.id;
         const currentClones = marbles.filter(item => item.userData.id === colorId && !item.userData.eliminated).length;
 
@@ -441,7 +439,6 @@ function update(){
       }
     }
 
-    // CEK JEBAKAN
     for(const t of traps){
       if(!t.active) continue;
       const dist = Math.hypot(m.position.x - t.x, m.position.z - t.z);
