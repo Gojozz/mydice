@@ -105,6 +105,30 @@ function createStarMesh(px, pz){
   stars.push({x: px, z: pz, mesh, active: true});
 }
 
+function findSolutionPath(){
+  const startX = 1, startZ = 1;
+  const endX = SIZE - 1, endZ = SIZE - 1;
+  const queue = [{x: startX, z: startZ, path: [{x: startX, z: startZ}]}];
+  const visited = Array.from({length: SIZE}, () => Array(SIZE).fill(false));
+  visited[startZ][startX] = true;
+  const dirs = [[0,-1],[1,0],[0,1],[-1,0]];
+  
+  while(queue.length > 0){
+    const curr = queue.shift();
+    if(curr.x === endX && curr.z === endZ) return curr.path;
+    for(let i = 0; i < 4; i++){
+      if(!cells[curr.z][curr.x].w[i]){
+        const nx = curr.x + dirs[i][0], nz = curr.z + dirs[i][1];
+        if(nx >= 0 && nx < SIZE && nz >= 0 && nz < SIZE && !visited[nz][nx]){
+          visited[nz][nx] = true;
+          queue.push({x: nx, z: nz, path: [...curr.path, {x: nx, z: nz}]});
+        }
+      }
+    }
+  }
+  return [{x: 1, z: 1}];
+}
+
 function generateMaze(){
   while(maze.children.length) maze.remove(maze.children[0]);
   while(trapGroup.children.length) trapGroup.remove(trapGroup.children[0]);
@@ -140,25 +164,52 @@ function generateMaze(){
     }
   }
 
-  const openCells = [];
+  const solutionPath = findSolutionPath();
+  const solutionSet = new Set(solutionPath.map(p => `${p.x},${p.z}`));
+
+  const deadEnds = [];
+  const otherSideCells = [];
+
   for(let z=1; z<SIZE-1; z++){
     for(let x=1; x<SIZE-1; x++){
       if((x<=2 && z<=2) || (x===SIZE-1 && z===SIZE-1)) continue;
-      openCells.push({x, z});
+      
+      // Hitung jumlah dinding terbuka untuk mengidentifikasi jalur buntu (dead-end)
+      let openWalls = 0;
+      for(let d=0; d<4; d++){ if(!cells[z][x].w[d]) openWalls++; }
+
+      // STREK: Lubang hitam & bom HANYA boleh di luar solutionSet
+      if(!solutionSet.has(`${x},${z}`)) {
+        if(openWalls === 1) {
+          deadEnds.push({x, z});
+        } else {
+          otherSideCells.push({x, z});
+        }
+      }
     }
   }
-  openCells.sort(()=>Math.random()-0.5);
-  
-  const trapCount = Math.min(openCells.length, 4);
+
+  // Prioritaskan penempatan jebakan di jalur buntu sejati
+  const validTrapCells = [...deadEnds.sort(()=>Math.random()-0.5), ...otherSideCells.sort(()=>Math.random()-0.5)];
+  const trapCount = Math.min(validTrapCells.length, 4);
   for(let i=0; i<trapCount; i++){
-    const cell = openCells[i];
+    const cell = validTrapCells[i];
     const px = (cell.x - HALF)*CELL, pz = (cell.z - HALF)*CELL;
     createTrapMesh(px, pz, (i % 2 === 0) ? 'hole' : 'bomb');
   }
 
-  const starCount = Math.min(openCells.length - trapCount, 6);
-  for(let i=trapCount; i<trapCount+starCount; i++){
-    const cell = openCells[i];
+  const starCandidates = [];
+  for(let z=1; z<SIZE-1; z++){
+    for(let x=1; x<SIZE-1; x++){
+      if((x<=2 && z<=2) || (x===SIZE-1 && z===SIZE-1)) continue;
+      const isTrap = traps.some(t => Math.round((t.x/CELL)+HALF) === x && Math.round((t.z/CELL)+HALF) === z);
+      if(!isTrap) starCandidates.push({x, z});
+    }
+  }
+  starCandidates.sort(()=>Math.random()-0.5);
+  const starCount = Math.min(starCandidates.length, 6);
+  for(let i=0; i<starCount; i++){
+    const cell = starCandidates[i];
     const px = (cell.x - HALF)*CELL, pz = (cell.z - HALF)*CELL;
     createStarMesh(px, pz);
   }
@@ -317,7 +368,18 @@ function steer(m){
         if(nx >= 0 && nx < SIZE && nz >= 0 && nz < SIZE){
           const visits = m.userData.visited[nz][nx];
           const distToExit = Math.hypot(nx - (SIZE - 1), nz - (SIZE - 1));
-          const score = visits * 100 + distToExit + (Math.random() * m.userData.randomFactor);
+          
+          let trapPenalty = 0;
+          for(const t of traps){
+            const tCellX = Math.round((t.x / CELL) + HALF);
+            const tCellZ = Math.round((t.z / CELL) + HALF);
+            if(tCellX === nx && tCellZ === nz && t.active){
+              trapPenalty = 6000;
+              break;
+            }
+          }
+
+          const score = visits * 100 + distToExit + trapPenalty + (Math.random() * m.userData.randomFactor);
           validMoves.push({x: nx, z: nz, score, visits});
         }
       }
@@ -433,8 +495,8 @@ function update(){
     for(const t of traps){
       if(!t.active) continue;
       const dist = Math.hypot(m.position.x - t.x, m.position.z - t.z);
-      if(dist < 2.15){
-        if(t.type === 'bomb' && dist < 1.95){
+      if(dist < 1.3){
+        if(t.type === 'bomb' && dist < 1.1){
           m.userData.finished = true; m.userData.eliminated = true; m.visible = false;
           t.active = false; trapGroup.remove(t.mesh);
           createExplosion(t.x, t.z);
