@@ -166,36 +166,28 @@ function generateMaze(){
     }
   }
 
-  const solutionPath = findSolutionPath();
-  const solutionSet = new Set(solutionPath.map(p => `${p.x},${p.z}`));
-
-  const sideCells = [];
   const allValidCells = [];
 
   for(let z=1; z<SIZE-1; z++){
     for(let x=1; x<SIZE-1; x++){
       if((x<=2 && z<=2) || (x===SIZE-1 && z===SIZE-1)) continue;
-      const cellObj = {x, z};
-      allValidCells.push(cellObj);
-      if(!solutionSet.has(`${x},${z}`)) {
-        sideCells.push(cellObj);
-      }
+      allValidCells.push({x, z});
     }
   }
 
   const occupiedKeys = new Set();
 
-  // 1. BLACKHOLE (Dilarang di jalur utama, 4 dasar x trapMultiplier)
-  sideCells.sort(() => Math.random() - 0.5);
-  const holeCount = Math.min(sideCells.length, 4 * trapMultiplier);
+  // 1. BLACKHOLE (Bebas di mana saja termasuk jalur utama)
+  allValidCells.sort(() => Math.random() - 0.5);
+  const holeCount = Math.min(allValidCells.length, 4 * trapMultiplier);
   for(let i = 0; i < holeCount; i++){
-    const cell = sideCells[i];
+    const cell = allValidCells[i];
     const px = (cell.x - HALF)*CELL, pz = (cell.z - HALF)*CELL;
     createTrapMesh(px, pz, 'hole');
     occupiedKeys.add(`${cell.x},${cell.z}`);
   }
 
-  // 2. BOM (Boleh di jalur manapun, 4 dasar x trapMultiplier)
+  // 2. BOM (Bebas di mana saja)
   const remainingForBombs = allValidCells.filter(c => !occupiedKeys.has(`${c.x},${c.z}`));
   remainingForBombs.sort(() => Math.random() - 0.5);
   const bombCount = Math.min(remainingForBombs.length, 4 * trapMultiplier);
@@ -561,7 +553,7 @@ addEventListener('resize',()=>{
   camera.aspect = asp;
   camera.fov = asp < 1 ? 64 : 44;
   camera.position.set(0, asp < 1 ? 95 : 68, asp < 1 ? 34 : 24);
-  camera.updateProjectionMatrix();
+  camera.updatePredictionMatrix?.();
   renderer.setSize(innerWidth,innerHeight);
 });
 </script></body></html>
