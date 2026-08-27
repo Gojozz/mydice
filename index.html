@@ -107,30 +107,6 @@ function createStarMesh(px, pz){
   stars.push({x: px, z: pz, mesh, active: true});
 }
 
-function findSolutionPath(){
-  const startX = 1, startZ = 1;
-  const endX = SIZE - 1, endZ = SIZE - 1;
-  const queue = [{x: startX, z: startZ, path: [{x: startX, z: startZ}]}];
-  const visited = Array.from({length: SIZE}, () => Array(SIZE).fill(false));
-  visited[startZ][startX] = true;
-  const dirs = [[0,-1],[1,0],[0,1],[-1,0]];
-  
-  while(queue.length > 0){
-    const curr = queue.shift();
-    if(curr.x === endX && curr.z === endZ) return curr.path;
-    for(let i = 0; i < 4; i++){
-      if(!cells[curr.z][curr.x].w[i]){
-        const nx = curr.x + dirs[i][0], nz = curr.z + dirs[i][1];
-        if(nx >= 0 && nx < SIZE && nz >= 0 && nz < SIZE && !visited[nz][nx]){
-          visited[nz][nx] = true;
-          queue.push({x: nx, z: nz, path: [...curr.path, {x: nx, z: nz}]});
-        }
-      }
-    }
-  }
-  return [{x: 1, z: 1}];
-}
-
 function generateMaze(){
   while(maze.children.length) maze.remove(maze.children[0]);
   while(trapGroup.children.length) trapGroup.remove(trapGroup.children[0]);
@@ -177,7 +153,7 @@ function generateMaze(){
 
   const occupiedKeys = new Set();
 
-  // 1. BLACKHOLE (Bebas di mana saja termasuk jalur utama)
+  // 1. BLACKHOLE
   allValidCells.sort(() => Math.random() - 0.5);
   const holeCount = Math.min(allValidCells.length, 4 * trapMultiplier);
   for(let i = 0; i < holeCount; i++){
@@ -187,7 +163,7 @@ function generateMaze(){
     occupiedKeys.add(`${cell.x},${cell.z}`);
   }
 
-  // 2. BOM (Bebas di mana saja)
+  // 2. BOM
   const remainingForBombs = allValidCells.filter(c => !occupiedKeys.has(`${c.x},${c.z}`));
   remainingForBombs.sort(() => Math.random() - 0.5);
   const bombCount = Math.min(remainingForBombs.length, 4 * trapMultiplier);
@@ -363,17 +339,8 @@ function steer(m){
           const visits = m.userData.visited[nz][nx];
           const distToExit = Math.hypot(nx - (SIZE - 1), nz - (SIZE - 1));
           
-          let trapPenalty = 0;
-          for(const t of traps){
-            const tCellX = Math.round((t.x / CELL) + HALF);
-            const tCellZ = Math.round((t.z / CELL) + HALF);
-            if(tCellX === nx && tCellZ === nz && t.active){
-              trapPenalty = 6000;
-              break;
-            }
-          }
-
-          const score = visits * 100 + distToExit + trapPenalty + (Math.random() * m.userData.randomFactor);
+          // Marble tidak peduli pada perangkap, hanya memilih jalur berdasarkan kunjungan & jarak
+          const score = visits * 100 + distToExit + (Math.random() * m.userData.randomFactor);
           validMoves.push({x: nx, z: nz, score, visits});
         }
       }
@@ -553,7 +520,7 @@ addEventListener('resize',()=>{
   camera.aspect = asp;
   camera.fov = asp < 1 ? 64 : 44;
   camera.position.set(0, asp < 1 ? 95 : 68, asp < 1 ? 34 : 24);
-  camera.updatePredictionMatrix?.();
+  camera.updateProjectionMatrix();
   renderer.setSize(innerWidth,innerHeight);
 });
 </script></body></html>
