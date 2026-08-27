@@ -28,7 +28,6 @@ h1{margin:0;font-size:clamp(24px,6vw,36px);font-weight:900;letter-spacing:3px;co
 <div id="players"></div>
 <div id="status">Menyiapkan Arena...</div>
 <div id="message"><div class="messageBox"><small>HASIL RONDE</small><h2 id="winner">—</h2></div></div>
-<audio id="rollingSound" src="assets/sound/marble-rolling.mp3" preload="auto" loop></audio>
 
 <script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js"}}</script>
 <script type="module">
@@ -76,19 +75,19 @@ function addWall(x,z,w,d){
 function createTrapMesh(px, pz, type){
   if(type === 'hole'){
     const holeGroup = new THREE.Group();
-    const ring = new THREE.Mesh(new THREE.RingGeometry(0.7, 1.1, 32), new THREE.MeshBasicMaterial({color: 0x44aaff, side: THREE.DoubleSide}));
-    ring.rotation.x = -Math.PI / 2; ring.position.y = 0.03;
-    const holeCore = new THREE.Mesh(new THREE.CylinderGeometry(0.9, 0.9, 0.1, 32), new THREE.MeshBasicMaterial({color: 0x000000}));
-    holeCore.position.y = 0.01;
+    const ring = new THREE.Mesh(new THREE.RingGeometry(0.6, 1.25, 32), new THREE.MeshBasicMaterial({color: 0x00ffff, side: THREE.DoubleSide}));
+    ring.rotation.x = -Math.PI / 2; ring.position.y = 0.04;
+    const holeCore = new THREE.Mesh(new THREE.CylinderGeometry(0.85, 0.85, 0.1, 32), new THREE.MeshBasicMaterial({color: 0x000000}));
+    holeCore.position.y = 0.02;
     holeGroup.add(ring, holeCore); holeGroup.position.set(px, 0, pz);
     trapGroup.add(holeGroup);
-    traps.push({x: px, z: pz, type: 'hole', mesh: holeGroup, active: true});
+    traps.push({x: px, z: pz, type: 'hole', mesh: holeGroup, active: true, ring});
   } else if(type === 'bomb'){
     const bGroup = new THREE.Group();
-    const bombBody = new THREE.Mesh(new THREE.SphereGeometry(0.75, 16, 16), new THREE.MeshStandardMaterial({color: 0x151515, emissive: 0xff1100, emissiveIntensity: 0.7, roughness:0.3}));
-    bombBody.position.y = 0.75;
-    const cap = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.12, 0.4, 8), new THREE.MeshStandardMaterial({color: 0xddaa44}));
-    cap.position.set(0, 1.4, 0);
+    const bombBody = new THREE.Mesh(new THREE.SphereGeometry(0.8, 16, 16), new THREE.MeshStandardMaterial({color: 0x111111, emissive: 0xff2200, emissiveIntensity: 0.8, roughness:0.2}));
+    bombBody.position.y = 0.8;
+    const cap = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.12, 0.4, 8), new THREE.MeshStandardMaterial({color: 0xffaa00}));
+    cap.position.set(0, 1.5, 0);
     bGroup.add(bombBody, cap); bGroup.position.set(px, 0, pz);
     trapGroup.add(bGroup);
     traps.push({x: px, z: pz, type: 'bomb', mesh: bGroup, active: true, body: bombBody});
@@ -113,7 +112,6 @@ function generateMaze(){
   }
   carve(0,0);
 
-  // Ruang Start Luas (3x3 Sel)
   for(let z=0; z<=2; z++){
     for(let x=0; x<=2; x++){
       if(x+1 <= 2){ cells[z][x].w[1] = false; cells[z][x+1].w[3] = false; }
@@ -130,19 +128,19 @@ function generateMaze(){
     }
   }
 
-  const deadEnds=[];
-  for(let z=0;z<SIZE;z++) for(let x=0;x<SIZE;x++){
-    if((x<=2 && z<=2) || (x===SIZE-1 && z===SIZE-1)) continue;
-    let wallCount=0;
-    for(let i=0;i<4;i++) if(cells[z][x].w[i]) wallCount++;
-    if(wallCount>=3) deadEnds.push({x,z});
+  const openCells = [];
+  for(let z=1; z<SIZE-1; z++){
+    for(let x=1; x<SIZE-1; x++){
+      if((x<=2 && z<=2) || (x===SIZE-1 && z===SIZE-1)) continue;
+      openCells.push({x, z});
+    }
   }
-  deadEnds.sort(()=>Math.random()-0.5);
-  const trapCount=Math.min(deadEnds.length, 14);
-  for(let i=0;i<trapCount;i++){
-    const de=deadEnds[i];
-    const px=(de.x-HALF)*CELL, pz=(de.z-HALF)*CELL;
-    createTrapMesh(px, pz, (i%2===0)?'hole':'bomb');
+  openCells.sort(()=>Math.random()-0.5);
+  const trapCount = Math.min(openCells.length, 16);
+  for(let i=0; i<trapCount; i++){
+    const cell = openCells[i];
+    const px = (cell.x - HALF)*CELL, pz = (cell.z - HALF)*CELL;
+    createTrapMesh(px, pz, (i % 2 === 0) ? 'hole' : 'bomb');
   }
 
   for(let z=0;z<SIZE;z++) for(let x=0;x<SIZE;x++){
@@ -167,7 +165,7 @@ function makeMarble(color,id){
   const outline=new THREE.Mesh(new THREE.SphereGeometry(RADIUS*1.06,20,14), new THREE.MeshBasicMaterial({color:0x000000,side:THREE.BackSide}));
   const root=new THREE.Group();
   root.add(outline);root.add(mesh);
-  root.userData={id,vx:0,vz:0,finished:false,eliminated:false};
+  root.userData={id,vx:0,vz:0,finished:false,eliminated:false,isTeleporting:false};
   return root;
 }
 
@@ -182,9 +180,11 @@ function respawnMarble(m, i){
   const gap = 1.3, offsets = [[-gap, -gap], [gap, -gap], [-gap, gap], [gap, gap]];
   const [ox, oz] = offsets[i];
 
+  m.scale.set(1, 1, 1);
+  m.userData.isTeleporting = false;
   m.position.set(baseX + ox, RADIUS + 0.05, baseZ + oz);
   m.userData.vx = 0; m.userData.vz = 0;
-  m.userData.stuckTime = 0; m.userData.yieldTimer = 0;
+  m.userData.stuckTime = 0;
   m.userData.targetCell = {x: startCellX, z: startCellZ};
   m.userData.currentCell = {x: startCellX, z: startCellZ};
   m.userData.visited = Array.from({length: SIZE}, () => Array(SIZE).fill(0));
@@ -217,13 +217,23 @@ function updateUI(){
 }
 
 function createExplosion(x,z){
-  const exp=new THREE.Mesh(new THREE.SphereGeometry(0.4,16,16),new THREE.MeshBasicMaterial({color:0xffaa00,wireframe:true}));
+  const exp=new THREE.Mesh(new THREE.SphereGeometry(0.5,16,16),new THREE.MeshBasicMaterial({color:0xff3300,wireframe:true}));
   exp.position.set(x,1,z);scene.add(exp);
   let s=1;
   const timer=setInterval(()=>{
-    s+=0.8;exp.scale.set(s,s,s);
-    if(s>6){scene.remove(exp);clearInterval(timer);}
-  },30);
+    s+=0.9;exp.scale.set(s,s,s);
+    if(s>7){scene.remove(exp);clearInterval(timer);}
+  },25);
+}
+
+function createHolePulse(x,z){
+  const pulse=new THREE.Mesh(new THREE.RingGeometry(0.2,1.8,32),new THREE.MeshBasicMaterial({color:0x00ffff,side:THREE.DoubleSide}));
+  pulse.rotation.x=-Math.PI/2;pulse.position.set(x,0.06,z);scene.add(pulse);
+  let s=1;
+  const timer=setInterval(()=>{
+    s-=0.07;pulse.scale.set(s,s,s);
+    if(s<=0.1){scene.remove(pulse);clearInterval(timer);}
+  },25);
 }
 
 function collide(m){
@@ -245,7 +255,7 @@ function collide(m){
 function separate(){
   for(let i=0;i<4;i++) for(let j=i+1;j<4;j++){
     const a=marbles[i],b=marbles[j];
-    if(a.userData.finished || b.userData.finished || a.userData.eliminated || b.userData.eliminated) continue;
+    if(a.userData.finished || b.userData.finished || a.userData.eliminated || b.userData.eliminated || a.userData.isTeleporting || b.userData.isTeleporting) continue;
     let dx=b.position.x-a.position.x,dz=b.position.z-a.position.z,d=Math.hypot(dx,dz);
     const minD=RADIUS*2.1;
     if(d<minD&&d>1e-6){
@@ -260,7 +270,7 @@ function separate(){
 }
 
 function steer(m){
-  if(m.userData.finished || m.userData.eliminated) return;
+  if(m.userData.finished || m.userData.eliminated || m.userData.isTeleporting) return;
   const gx = Math.max(0, Math.min(SIZE - 1, Math.round(m.position.x / CELL + HALF)));
   const gz = Math.max(0, Math.min(SIZE - 1, Math.round(m.position.z / CELL + HALF)));
 
@@ -307,7 +317,6 @@ function startRound(){
   document.getElementById('message').classList.remove('show');
   generateMaze();resetMarbles();
   document.getElementById('status').textContent='MARBLE RACE DIMULAI!';
-  const au=document.getElementById('rollingSound');if(au){au.volume=0.2;au.currentTime=0;au.play().catch(()=>{});}
 }
 
 function update(){
@@ -316,11 +325,28 @@ function update(){
   traps.forEach(t => {
     if(t.type === 'bomb' && t.active && t.body){
       t.body.material.emissiveIntensity = 0.5 + Math.sin(performance.now() * 0.008) * 0.4;
+    } else if(t.type === 'hole' && t.active && t.ring){
+      t.ring.rotation.z += 0.05;
     }
   });
 
   for(const m of marbles){
     if(m.userData.finished || m.userData.eliminated) continue;
+
+    // KELERENG TERSEDOT LUBANG HITAM
+    if(m.userData.isTeleporting){
+      m.userData.teleportProgress = (m.userData.teleportProgress || 0) + 0.08;
+      const p = m.userData.teleportProgress;
+      m.position.x = THREE.MathUtils.lerp(m.position.x, m.userData.targetHole.x, 0.25);
+      m.position.z = THREE.MathUtils.lerp(m.position.z, m.userData.targetHole.z, 0.25);
+      const s = Math.max(0.01, 1 - p);
+      m.scale.set(s, s, s);
+
+      if(p >= 1.0){
+        respawnMarble(m, m.userData.id);
+      }
+      continue;
+    }
 
     const moved = Math.hypot(m.position.x - m.userData.lastX, m.position.z - m.userData.lastZ);
     m.userData.lastX = m.position.x; m.userData.lastZ = m.position.z;
@@ -341,19 +367,23 @@ function update(){
     collide(m);
     m.rotation.x+=m.userData.vz*2;m.rotation.z-=m.userData.vx*2;
 
+    // DETEKSI BENTURAN JEBAKAN DENGAN THRESHOLD PRESISI (2.15)
     for(const t of traps){
       if(!t.active) continue;
       const dist = Math.hypot(m.position.x - t.x, m.position.z - t.z);
-      if(dist < 1.05){
-        if(t.type === 'bomb'){
+      if(dist < 2.15){
+        if(t.type === 'bomb' && dist < 1.95){
           m.userData.finished = true; m.userData.eliminated = true; m.visible = false;
           t.active = false; trapGroup.remove(t.mesh);
           createExplosion(t.x, t.z);
           document.getElementById('status').textContent = `BOM! ${NAMES[m.userData.id]} MELEDAK & GUGUR!`;
           updateUI();
         } else if(t.type === 'hole'){
-          respawnMarble(m, m.userData.id);
-          document.getElementById('status').textContent = `${NAMES[m.userData.id]} MASUK LUBANG -> KEMBALI KE START!`;
+          m.userData.isTeleporting = true;
+          m.userData.teleportProgress = 0;
+          m.userData.targetHole = {x: t.x, z: t.z};
+          createHolePulse(t.x, t.z);
+          document.getElementById('status').textContent = `${NAMES[m.userData.id]} TERSEDOT LUBANG HITAM -> KEMBALI KE START!`;
         }
         break;
       }
