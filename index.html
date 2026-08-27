@@ -185,9 +185,9 @@ function generateMaze(){
 
   const occupiedKeys = new Set();
 
-  // 1. BLACKHOLE (Dilarang di jalur utama, jumlah disesuaikan trapMultiplier)
+  // 1. BLACKHOLE (Dilarang di jalur utama, 4 dasar x trapMultiplier)
   sideCells.sort(() => Math.random() - 0.5);
-  const holeCount = Math.min(sideCells.length, 2 * trapMultiplier);
+  const holeCount = Math.min(sideCells.length, 4 * trapMultiplier);
   for(let i = 0; i < holeCount; i++){
     const cell = sideCells[i];
     const px = (cell.x - HALF)*CELL, pz = (cell.z - HALF)*CELL;
@@ -195,10 +195,10 @@ function generateMaze(){
     occupiedKeys.add(`${cell.x},${cell.z}`);
   }
 
-  // 2. BOM (Boleh di jalur manapun, jumlah disesuaikan trapMultiplier)
+  // 2. BOM (Boleh di jalur manapun, 4 dasar x trapMultiplier)
   const remainingForBombs = allValidCells.filter(c => !occupiedKeys.has(`${c.x},${c.z}`));
   remainingForBombs.sort(() => Math.random() - 0.5);
-  const bombCount = Math.min(remainingForBombs.length, 2 * trapMultiplier);
+  const bombCount = Math.min(remainingForBombs.length, 4 * trapMultiplier);
   for(let i = 0; i < bombCount; i++){
     const cell = remainingForBombs[i];
     const px = (cell.x - HALF)*CELL, pz = (cell.z - HALF)*CELL;
@@ -535,7 +535,6 @@ function update(){
     setTimeout(()=>{ round++; startRound(); }, 3500);
   }
 
-  // Cek timeout 3 menit (180 detik)
   if(elapsed >= 180 && !winner){
     winner = true;
     trapMultiplier *= 2;
