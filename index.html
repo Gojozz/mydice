@@ -167,49 +167,49 @@ function generateMaze(){
   const solutionPath = findSolutionPath();
   const solutionSet = new Set(solutionPath.map(p => `${p.x},${p.z}`));
 
-  const deadEnds = [];
-  const otherSideCells = [];
+  const sideCells = [];
+  const allValidCells = [];
 
   for(let z=1; z<SIZE-1; z++){
     for(let x=1; x<SIZE-1; x++){
       if((x<=2 && z<=2) || (x===SIZE-1 && z===SIZE-1)) continue;
-      
-      // Hitung jumlah dinding terbuka untuk mengidentifikasi jalur buntu (dead-end)
-      let openWalls = 0;
-      for(let d=0; d<4; d++){ if(!cells[z][x].w[d]) openWalls++; }
-
-      // STREK: Lubang hitam & bom HANYA boleh di luar solutionSet
+      const cellObj = {x, z};
+      allValidCells.push(cellObj);
       if(!solutionSet.has(`${x},${z}`)) {
-        if(openWalls === 1) {
-          deadEnds.push({x, z});
-        } else {
-          otherSideCells.push({x, z});
-        }
+        sideCells.push(cellObj);
       }
     }
   }
 
-  // Prioritaskan penempatan jebakan di jalur buntu sejati
-  const validTrapCells = [...deadEnds.sort(()=>Math.random()-0.5), ...otherSideCells.sort(()=>Math.random()-0.5)];
-  const trapCount = Math.min(validTrapCells.length, 4);
-  for(let i=0; i<trapCount; i++){
-    const cell = validTrapCells[i];
+  const occupiedKeys = new Set();
+
+  // 1. BLACKHOLE (Hole): Dilarang keras di jalur utama, hanya di sideCells
+  sideCells.sort(() => Math.random() - 0.5);
+  const holeCount = Math.min(sideCells.length, 2);
+  for(let i = 0; i < holeCount; i++){
+    const cell = sideCells[i];
     const px = (cell.x - HALF)*CELL, pz = (cell.z - HALF)*CELL;
-    createTrapMesh(px, pz, (i % 2 === 0) ? 'hole' : 'bomb');
+    createTrapMesh(px, pz, 'hole');
+    occupiedKeys.add(`${cell.x},${cell.z}`);
   }
 
-  const starCandidates = [];
-  for(let z=1; z<SIZE-1; z++){
-    for(let x=1; x<SIZE-1; x++){
-      if((x<=2 && z<=2) || (x===SIZE-1 && z===SIZE-1)) continue;
-      const isTrap = traps.some(t => Math.round((t.x/CELL)+HALF) === x && Math.round((t.z/CELL)+HALF) === z);
-      if(!isTrap) starCandidates.push({x, z});
-    }
+  // 2. BOM: Boleh ditaruh di jalur MANAPUN (termasuk jalur utama)
+  const remainingForBombs = allValidCells.filter(c => !occupiedKeys.has(`${c.x},${c.z}`));
+  remainingForBombs.sort(() => Math.random() - 0.5);
+  const bombCount = Math.min(remainingForBombs.length, 2);
+  for(let i = 0; i < bombCount; i++){
+    const cell = remainingForBombs[i];
+    const px = (cell.x - HALF)*CELL, pz = (cell.z - HALF)*CELL;
+    createTrapMesh(px, pz, 'bomb');
+    occupiedKeys.add(`${cell.x},${cell.z}`);
   }
-  starCandidates.sort(()=>Math.random()-0.5);
-  const starCount = Math.min(starCandidates.length, 6);
-  for(let i=0; i<starCount; i++){
-    const cell = starCandidates[i];
+
+  // 3. BINTANG (Star): Boleh ditaruh di jalur MANAPUN yang tersisa
+  const remainingForStars = allValidCells.filter(c => !occupiedKeys.has(`${c.x},${c.z}`));
+  remainingForStars.sort(() => Math.random() - 0.5);
+  const starCount = Math.min(remainingForStars.length, 6);
+  for(let i = 0; i < starCount; i++){
+    const cell = remainingForStars[i];
     const px = (cell.x - HALF)*CELL, pz = (cell.z - HALF)*CELL;
     createStarMesh(px, pz);
   }
