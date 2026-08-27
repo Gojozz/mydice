@@ -2,44 +2,49 @@
 <html lang="id"><head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>Marble Maze</title>
+<title>Marble Maze - YouTube Shorts Live</title>
 <style>
-*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#120a06;font-family:Arial,sans-serif;color:#fff}
+*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#0d0704;font-family:Arial,sans-serif;color:#fff}
 #game{position:fixed;inset:0}canvas{display:block;width:100%;height:100%}
-#hud{position:fixed;z-index:5;top:10px;left:50%;transform:translateX(-50%);width:100%;text-align:center;pointer-events:none;text-shadow:0 2px 6px #000}
-h1{margin:0;font-size:clamp(22px,5vw,38px);font-weight:900;letter-spacing:3px;color:#ffd166}
-.sub{font-size:10px;letter-spacing:2px;color:#f5d7a0}
-.badge{display:inline-block;margin-top:6px;padding:5px 14px;background:#24140ae8;border:2px solid #b9782e;border-radius:20px;font-size:12px;font-weight:bold}
+#hud{position:fixed;z-index:5;top:12px;left:50%;transform:translateX(-50%);width:100%;text-align:center;pointer-events:none;text-shadow:0 2px 8px #000}
+h1{margin:0;font-size:clamp(24px,6vw,36px);font-weight:900;letter-spacing:3px;color:#ffd166}
+.sub{font-size:11px;letter-spacing:2px;color:#f5d7a0}
+.badge{display:inline-block;margin-top:6px;padding:6px 16px;background:#24140ae8;border:2px solid #b9782e;border-radius:20px;font-size:13px;font-weight:bold}
 #timer{color:#ffe45c;margin-left:8px}
-#players{position:fixed;z-index:6;top:10px;right:8px;display:flex;flex-direction:column;gap:5px}
-.player{min-width:72px;padding:6px;background:#21130be8;border:2px solid #6d4525;border-radius:9px;text-align:center;font-size:10px;font-weight:700}
+#players{position:fixed;z-index:6;top:15px;right:10px;display:flex;flex-direction:column;gap:6px}
+.player{min-width:78px;padding:6px;background:#21130be8;border:2px solid #6d4525;border-radius:9px;text-align:center;font-size:11px;font-weight:700}
 .player.lead{border-color:#ffd166}
-.dot{width:16px;height:16px;border-radius:50%;margin:0 auto 3px}
-#status{position:fixed;z-index:6;bottom:12px;left:50%;transform:translateX(-50%);padding:7px 14px;background:#21130be8;border:1px solid #87582d;border-radius:20px;font-size:11px}
-#message{position:fixed;z-index:10;inset:0;display:none;align-items:center;justify-content:center;background:#0009}
+.player.dead{opacity:0.35;border-color:#772222;background:#140808e8;text-decoration:line-through}
+.dot{width:14px;height:14px;border-radius:50%;margin:0 auto 3px}
+#status{position:fixed;z-index:6;bottom:20px;left:50%;transform:translateX(-50%);padding:8px 16px;background:#21130be8;border:1px solid #87582d;border-radius:20px;font-size:12px;font-weight:bold}
+#message{position:fixed;z-index:10;inset:0;display:none;align-items:center;justify-content:center;background:#000b}
 #message.show{display:flex}
 .messageBox{padding:25px 35px;text-align:center;background:linear-gradient(145deg,#3b210d,#160d07);border:3px solid #e9ae45;border-radius:18px}
 .messageBox h2{margin:5px 0;color:#ffd166;font-size:28px}
 </style></head><body>
 <div id="game"></div>
-<div id="hud"><h1>MARBLE MAZE</h1><div class="sub">4 MARBLE BERWARNA</div>
+<div id="hud"><h1>MARBLE MAZE</h1><div class="sub">RACE LIVE SHORTS (9:16)</div>
 <div class="badge">RONDE <span id="round">1</span> <span id="timer">00:00</span></div></div>
 <div id="players"></div>
-<div id="status">Menyiapkan...</div>
-<div id="message"><div class="messageBox"><small>PEMENANG</small><h2 id="winner">—</h2></div></div>
+<div id="status">Menyiapkan Arena...</div>
+<div id="message"><div class="messageBox"><small>HASIL RONDE</small><h2 id="winner">—</h2></div></div>
 <audio id="rollingSound" src="assets/sound/marble-rolling.mp3" preload="auto" loop></audio>
+
 <script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js"}}</script>
 <script type="module">
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js';
 
-const COLORS=[0xff2244,0x2288ff,0x22dd66,0xffdd00];
-const NAMES=['MERAH','BIRU','HIJAU','KUNING'];
-const RADIUS=0.95;
+let round = 1, winner = false, elapsed = 0, last = performance.now(), tick = 0;
+const COLORS=[0xff2244,0x2288ff,0x22dd66,0xffdd00], NAMES=['MERAH','BIRU','HIJAU','KUNING'], RADIUS=0.95;
 
 const scene=new THREE.Scene();
-scene.background=new THREE.Color(0x1a1008);
-const camera=new THREE.PerspectiveCamera(42,innerWidth/innerHeight,0.1,150);
-camera.position.set(0,48,20);camera.lookAt(0,0,0);
+scene.background=new THREE.Color(0x120a05);
+
+const aspect = innerWidth / innerHeight;
+const camera = new THREE.PerspectiveCamera(aspect < 1 ? 64 : 44, aspect, 0.1, 200);
+camera.position.set(0, aspect < 1 ? 95 : 68, aspect < 1 ? 34 : 24);
+camera.lookAt(0, 0, 0);
+
 const renderer=new THREE.WebGLRenderer({antialias:true});
 renderer.setPixelRatio(Math.min(devicePixelRatio,2));
 renderer.setSize(innerWidth,innerHeight);
@@ -47,17 +52,20 @@ renderer.shadowMap.enabled=true;
 document.getElementById('game').appendChild(renderer.domElement);
 
 scene.add(new THREE.HemisphereLight(0xffe6c0,0x3a2010,1.8));
-const sun=new THREE.DirectionalLight(0xffffff,2.4);
-sun.position.set(-14,30,12);sun.castShadow=true;scene.add(sun);
+const sun=new THREE.DirectionalLight(0xffffff,2.5);
+sun.position.set(-18,45,18);sun.castShadow=true;scene.add(sun);
 scene.add(new THREE.AmbientLight(0xffffff,0.4));
 
-const board=new THREE.Mesh(new THREE.BoxGeometry(36,0.5,36),new THREE.MeshStandardMaterial({color:0xd2a679,roughness:0.85}));
+const CELL=2.6, SIZE=15, HALF=(SIZE-1)/2;
+const board=new THREE.Mesh(new THREE.BoxGeometry(SIZE*CELL+1,0.5,SIZE*CELL+1),new THREE.MeshStandardMaterial({color:0xc49563,roughness:0.85}));
 board.position.y=-0.3;board.receiveShadow=true;scene.add(board);
 
 const maze=new THREE.Group();scene.add(maze);
-const walls=[];
-const CELL=2.6,SIZE=11,HALF=(SIZE-1)/2;
+const trapGroup=new THREE.Group();scene.add(trapGroup);
+
+const walls=[], traps=[];
 const wallMat=new THREE.MeshStandardMaterial({color:0x1a0e06,roughness:0.4});
+let cells = [], exitPos={x:HALF*CELL, z:HALF*CELL};
 
 function addWall(x,z,w,d){
   const m=new THREE.Mesh(new THREE.BoxGeometry(w,2.8,d),wallMat);
@@ -65,12 +73,33 @@ function addWall(x,z,w,d){
   walls.push({x,z,w,d,hw:w/2,hd:d/2});
 }
 
-let exitPos={x:0,z:0},finishMesh=null;
+function createTrapMesh(px, pz, type){
+  if(type === 'hole'){
+    const holeGroup = new THREE.Group();
+    const ring = new THREE.Mesh(new THREE.RingGeometry(0.7, 1.1, 32), new THREE.MeshBasicMaterial({color: 0x44aaff, side: THREE.DoubleSide}));
+    ring.rotation.x = -Math.PI / 2; ring.position.y = 0.03;
+    const holeCore = new THREE.Mesh(new THREE.CylinderGeometry(0.9, 0.9, 0.1, 32), new THREE.MeshBasicMaterial({color: 0x000000}));
+    holeCore.position.y = 0.01;
+    holeGroup.add(ring, holeCore); holeGroup.position.set(px, 0, pz);
+    trapGroup.add(holeGroup);
+    traps.push({x: px, z: pz, type: 'hole', mesh: holeGroup, active: true});
+  } else if(type === 'bomb'){
+    const bGroup = new THREE.Group();
+    const bombBody = new THREE.Mesh(new THREE.SphereGeometry(0.75, 16, 16), new THREE.MeshStandardMaterial({color: 0x151515, emissive: 0xff1100, emissiveIntensity: 0.7, roughness:0.3}));
+    bombBody.position.y = 0.75;
+    const cap = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.12, 0.4, 8), new THREE.MeshStandardMaterial({color: 0xddaa44}));
+    cap.position.set(0, 1.4, 0);
+    bGroup.add(bombBody, cap); bGroup.position.set(px, 0, pz);
+    trapGroup.add(bGroup);
+    traps.push({x: px, z: pz, type: 'bomb', mesh: bGroup, active: true, body: bombBody});
+  }
+}
 
 function generateMaze(){
   while(maze.children.length) maze.remove(maze.children[0]);
-  walls.length=0;
-  const cells=[];
+  while(trapGroup.children.length) trapGroup.remove(trapGroup.children[0]);
+  walls.length=0; traps.length=0; cells=[];
+
   for(let z=0;z<SIZE;z++){cells[z]=[];for(let x=0;x<SIZE;x++) cells[z][x]={v:false,w:[true,true,true,true]};}
   const dirs=[[0,-1,0,2],[1,0,1,3],[0,1,2,0],[-1,0,3,1]];
   function carve(x,z){
@@ -83,9 +112,37 @@ function generateMaze(){
     }
   }
   carve(0,0);
-  for(const [x,z] of [[0,0],[1,0],[0,1],[1,1]]){
-    if(x+1<SIZE){cells[z][x].w[1]=false;cells[z][x+1].w[3]=false;}
-    if(z+1<SIZE){cells[z][x].w[2]=false;cells[z+1][x].w[0]=false;}
+
+  // Ruang Start Luas (3x3 Sel)
+  for(let z=0; z<=2; z++){
+    for(let x=0; x<=2; x++){
+      if(x+1 <= 2){ cells[z][x].w[1] = false; cells[z][x+1].w[3] = false; }
+      if(z+1 <= 2){ cells[z][x].w[2] = false; cells[z+1][x].w[0] = false; }
+    }
+  }
+
+  for(let z=1;z<SIZE-1;z++) for(let x=1;x<SIZE-1;x++){
+    if(Math.random()<0.12){
+      const d=Math.floor(Math.random()*4);
+      cells[z][x].w[d]=false;
+      const nx=x+dirs[d][0], nz=z+dirs[d][1];
+      if(nx>=0&&nx<SIZE&&nz>=0&&nz<SIZE) cells[nz][nx].w[dirs[d][3]]=false;
+    }
+  }
+
+  const deadEnds=[];
+  for(let z=0;z<SIZE;z++) for(let x=0;x<SIZE;x++){
+    if((x<=2 && z<=2) || (x===SIZE-1 && z===SIZE-1)) continue;
+    let wallCount=0;
+    for(let i=0;i<4;i++) if(cells[z][x].w[i]) wallCount++;
+    if(wallCount>=3) deadEnds.push({x,z});
+  }
+  deadEnds.sort(()=>Math.random()-0.5);
+  const trapCount=Math.min(deadEnds.length, 14);
+  for(let i=0;i<trapCount;i++){
+    const de=deadEnds[i];
+    const px=(de.x-HALF)*CELL, pz=(de.z-HALF)*CELL;
+    createTrapMesh(px, pz, (i%2===0)?'hole':'bomb');
   }
 
   for(let z=0;z<SIZE;z++) for(let x=0;x<SIZE;x++){
@@ -99,27 +156,18 @@ function generateMaze(){
   addWall(0,-edge,span,0.5);addWall(-edge,0,0.5,span);addWall(edge,0,0.5,span);
   addWall(-CELL*1.2,edge,span-CELL*2,0.5);
   exitPos={x:HALF*CELL,z:HALF*CELL};
-  if(!finishMesh){
-    finishMesh=new THREE.Mesh(new THREE.CylinderGeometry(1.1,1.1,0.12,32),
-      new THREE.MeshStandardMaterial({color:0xffd43b,emissive:0x8a5a00,emissiveIntensity:1.4}));
-    scene.add(finishMesh);
-  }
-  finishMesh.position.set(exitPos.x,0.08,exitPos.z);
 }
 
 const marbles=[];
-
 function makeMarble(color,id){
-  const mesh=new THREE.Mesh(
-    new THREE.SphereGeometry(RADIUS,32,24),
+  const mesh=new THREE.Mesh(new THREE.SphereGeometry(RADIUS,32,24),
     new THREE.MeshStandardMaterial({color,roughness:0.2,metalness:0.25,emissive:color,emissiveIntensity:0.18})
   );
   mesh.castShadow=true;
-  const outline=new THREE.Mesh(new THREE.SphereGeometry(RADIUS*1.06,20,14),
-    new THREE.MeshBasicMaterial({color:0x000000,side:THREE.BackSide}));
+  const outline=new THREE.Mesh(new THREE.SphereGeometry(RADIUS*1.06,20,14), new THREE.MeshBasicMaterial({color:0x000000,side:THREE.BackSide}));
   const root=new THREE.Group();
   root.add(outline);root.add(mesh);
-  root.userData={id,vx:0,vz:0,finished:false,stuck:0};
+  root.userData={id,vx:0,vz:0,finished:false,eliminated:false};
   return root;
 }
 
@@ -128,28 +176,54 @@ function createAllMarbles(){
   for(let i=0;i<4;i++){const m=makeMarble(COLORS[i],i);scene.add(m);marbles.push(m);}
 }
 
+function respawnMarble(m, i){
+  const startCellX = 1, startCellZ = 1;
+  const baseX = (startCellX - HALF) * CELL, baseZ = (startCellZ - HALF) * CELL;
+  const gap = 1.3, offsets = [[-gap, -gap], [gap, -gap], [-gap, gap], [gap, gap]];
+  const [ox, oz] = offsets[i];
+
+  m.position.set(baseX + ox, RADIUS + 0.05, baseZ + oz);
+  m.userData.vx = 0; m.userData.vz = 0;
+  m.userData.stuckTime = 0; m.userData.yieldTimer = 0;
+  m.userData.targetCell = {x: startCellX, z: startCellZ};
+  m.userData.currentCell = {x: startCellX, z: startCellZ};
+  m.userData.visited = Array.from({length: SIZE}, () => Array(SIZE).fill(0));
+  m.userData.visited[startCellZ][startCellX] = 1;
+}
+
 function resetMarbles(){
-  const baseX=(0-HALF)*CELL, baseZ=(0-HALF)*CELL, gap=RADIUS*2.15;
-  const offsets=[[-gap*0.5,-gap*0.5],[gap*0.5,-gap*0.5],[-gap*0.5,gap*0.5],[gap*0.5,gap*0.5]];
   marbles.forEach((m,i)=>{
-    const [ox,oz]=offsets[i];
-    m.position.set(baseX+ox, RADIUS+0.05, baseZ+oz);
-    m.rotation.set(0,0,0); m.visible=true;
-    m.userData.vx=0; m.userData.vz=0;
-    m.userData.finished=false; m.userData.stuck=0;
+    m.visible = true; m.userData.finished = false; m.userData.eliminated = false;
+    m.userData.speed = 0.088 + Math.random() * 0.025;
+    m.userData.randomFactor = Math.random() * 6;
+    respawnMarble(m, i);
+    m.userData.lastX = m.position.x; m.userData.lastZ = m.position.z;
   });
   updateUI();
 }
 
 function updateUI(){
   const box=document.getElementById('players');box.innerHTML='';
-  [...marbles].map((m,i)=>({i,d:Math.hypot(m.position.x-exitPos.x,m.position.z-exitPos.z)}))
-    .sort((a,b)=>a.d-b.d).forEach((r,place)=>{
+  [...marbles].map((m,i)=>({i,d:Math.hypot(m.position.x-exitPos.x,m.position.z-exitPos.z),eliminated:m.userData.eliminated}))
+    .sort((a,b)=>{
+      if(a.eliminated !== b.eliminated) return a.eliminated ? 1 : -1;
+      return a.d-b.d;
+    }).forEach((r,place)=>{
       const div=document.createElement('div');
-      div.className='player'+(place===0?' lead':'');
-      div.innerHTML=`<div class="dot" style="background:#\( {COLORS[r.i].toString(16).padStart(6,'0')}"></div> \){NAMES[r.i]}`;
+      div.className='player'+(r.eliminated?' dead':(place===0?' lead':''));
+      div.innerHTML=`<div class="dot" style="background:#${COLORS[r.i].toString(16).padStart(6,'0')}"></div> ${NAMES[r.i]}`;
       box.appendChild(div);
     });
+}
+
+function createExplosion(x,z){
+  const exp=new THREE.Mesh(new THREE.SphereGeometry(0.4,16,16),new THREE.MeshBasicMaterial({color:0xffaa00,wireframe:true}));
+  exp.position.set(x,1,z);scene.add(exp);
+  let s=1;
+  const timer=setInterval(()=>{
+    s+=0.8;exp.scale.set(s,s,s);
+    if(s>6){scene.remove(exp);clearInterval(timer);}
+  },30);
 }
 
 function collide(m){
@@ -163,7 +237,7 @@ function collide(m){
       m.position.x+=nxx*pen;m.position.z+=nzz*pen;
       const dot=m.userData.vx*nxx+m.userData.vz*nzz;
       if(dot<0){m.userData.vx-=1.9*dot*nxx;m.userData.vz-=1.9*dot*nzz;}
-      m.userData.vx*=0.82;m.userData.vz*=0.82;m.userData.stuck++;
+      m.userData.vx*=0.82;m.userData.vz*=0.82;
     }
   }
 }
@@ -171,158 +245,59 @@ function collide(m){
 function separate(){
   for(let i=0;i<4;i++) for(let j=i+1;j<4;j++){
     const a=marbles[i],b=marbles[j];
-    if(a.userData.finished||b.userData.finished) continue;
+    if(a.userData.finished || b.userData.finished || a.userData.eliminated || b.userData.eliminated) continue;
     let dx=b.position.x-a.position.x,dz=b.position.z-a.position.z,d=Math.hypot(dx,dz);
-    const minD=RADIUS*2.15;
+    const minD=RADIUS*2.1;
     if(d<minD&&d>1e-6){
-      const nx=dx/d,nz=dz/d,p=(minD-d)/2;
-      a.position.x-=nx*p;a.position.z-=nz*p;b.position.x+=nx*p;b.position.z+=nz*p;
+      const nx=dx/d,nz=dz/d,p=(minD-d)*0.5;
+      a.position.x-=nx*p;a.position.z-=nz*p;
+      b.position.x+=nx*p;b.position.z+=nz*p;
+      const pushForce = 0.045;
+      a.userData.vx -= nx * pushForce; a.userData.vz -= nz * pushForce;
+      b.userData.vx += nx * pushForce; b.userData.vz += nz * pushForce;
     }
   }
 }
 
 function steer(m){
-  if(m.userData.finished) return;
+  if(m.userData.finished || m.userData.eliminated) return;
+  const gx = Math.max(0, Math.min(SIZE - 1, Math.round(m.position.x / CELL + HALF)));
+  const gz = Math.max(0, Math.min(SIZE - 1, Math.round(m.position.z / CELL + HALF)));
 
-  const r = RADIUS;
-  const speed = 0.105 + m.userData.id * 0.012;
+  const targetWorldX = (m.userData.targetCell.x - HALF) * CELL;
+  const targetWorldZ = (m.userData.targetCell.z - HALF) * CELL;
+  const distToTarget = Math.hypot(m.position.x - targetWorldX, m.position.z - targetWorldZ);
 
-  /*
-   * WALL FOLLOWING
-   *
-   * Marble tidak lagi mencari exit secara acak.
-   *
-   * 1. Jika tidak ada dinding:
-   *    terus berjalan dengan arah terakhir.
-   *
-   * 2. Jika menemukan dinding:
-   *    bergerak sejajar mengikuti dinding.
-   *
-   * 3. Saat dinding berakhir:
-   *    tetap lanjut ke arah gerak terakhir.
-   */
+  if(distToTarget < 0.75 || (gx !== m.userData.currentCell.x || gz !== m.userData.currentCell.z)){
+    m.userData.currentCell = {x: gx, z: gz};
+    const dirs = [[0,-1],[1,0],[0,1],[-1,0]], validMoves = [];
 
-  let nearest = null;
-  let nearestDist = Infinity;
+    for(let i = 0; i < 4; i++){
+      if(!cells[gz][gx].w[i]){
+        const nx = gx + dirs[i][0], nz = gz + dirs[i][1];
+        if(nx >= 0 && nx < SIZE && nz >= 0 && nz < SIZE){
+          const visits = m.userData.visited[nz][nx];
+          const distToExit = Math.hypot(nx - (SIZE - 1), nz - (SIZE - 1));
+          const score = visits * 100 + distToExit + (Math.random() * m.userData.randomFactor);
+          validMoves.push({x: nx, z: nz, score, visits});
+        }
+      }
+    }
 
-  for(const w of walls){
-
-    const qx = Math.max(
-      w.x - w.hw,
-      Math.min(m.position.x,w.x + w.hw)
-    );
-
-    const qz = Math.max(
-      w.z - w.hd,
-      Math.min(m.position.z,w.z + w.hd)
-    );
-
-    const dx = m.position.x - qx;
-    const dz = m.position.z - qz;
-    const dist = Math.hypot(dx,dz);
-
-    if(dist < nearestDist){
-      nearestDist = dist;
-      nearest = w;
+    if(validMoves.length > 0){
+      validMoves.sort((a, b) => a.score - b.score);
+      const chosen = validMoves[0];
+      m.userData.targetCell = {x: chosen.x, z: chosen.z};
+      m.userData.visited[chosen.z][chosen.x] += 1;
     }
   }
 
-  /*
-   * MASIH JAUH DARI DINDING
-   *
-   * Jangan belok.
-   * Jangan mencari jalan.
-   */
-  if(!nearest || nearestDist > r + 0.45){
+  const tx = (m.userData.targetCell.x - HALF) * CELL, tz = (m.userData.targetCell.z - HALF) * CELL;
+  const dx = tx - m.position.x, dz = tz - m.position.z;
+  const len = Math.hypot(dx, dz) || 1;
 
-    let vx = m.userData.vx;
-    let vz = m.userData.vz;
-
-    let sp = Math.hypot(vx,vz);
-
-    if(sp < 0.025){
-
-      // Hanya fallback kalau marble benar-benar berhenti.
-      const angle =
-        (m.userData.id / 4) * Math.PI * 2 + 0.8;
-
-      vx = Math.cos(angle);
-      vz = Math.sin(angle);
-
-      sp = 1;
-    }
-
-    m.userData.vx = vx / sp * speed;
-    m.userData.vz = vz / sp * speed;
-
-    return;
-  }
-
-  /*
-   * ADA DINDING DI DEKAT MARBLE
-   *
-   * Jadikan dinding sebagai "rel".
-   */
-  const horizontal = nearest.w > nearest.d;
-
-  let tx;
-  let tz;
-
-  if(horizontal){
-    tx = 1;
-    tz = 0;
-  }else{
-    tx = 0;
-    tz = 1;
-  }
-
-  /*
-   * Jangan tiba-tiba berbalik.
-   * Pertahankan arah gerak sebelumnya.
-   */
-  const oldVx = m.userData.vx;
-  const oldVz = m.userData.vz;
-
-  if(
-    oldVx * tx +
-    oldVz * tz < 0
-  ){
-    tx = -tx;
-    tz = -tz;
-  }
-
-  /*
-   * Dorongan kecil menuju permukaan dinding.
-   * Ini membuat marble benar-benar menempel
-   * dan merambat sepanjang dinding.
-   */
-  let nx = 0;
-  let nz = 0;
-
-  if(horizontal){
-
-    nz =
-      m.position.z < nearest.z
-      ? 1
-      : -1;
-
-  }else{
-
-    nx =
-      m.position.x < nearest.x
-      ? 1
-      : -1;
-  }
-
-  const follow = 0.012;
-
-  m.userData.vx =
-    tx * speed +
-    nx * follow;
-
-  m.userData.vz =
-    tz * speed +
-    nz * follow;
+  m.userData.vx = THREE.MathUtils.lerp(m.userData.vx, (dx / len) * m.userData.speed, 0.16);
+  m.userData.vz = THREE.MathUtils.lerp(m.userData.vz, (dz / len) * m.userData.speed, 0.16);
 }
 
 function startRound(){
@@ -331,28 +306,77 @@ function startRound(){
   document.getElementById('round').textContent=round;
   document.getElementById('message').classList.remove('show');
   generateMaze();resetMarbles();
-  marbles.forEach((m,i)=>{const a=(i/4)*Math.PI*2+0.8;m.userData.vx=Math.cos(a)*0.09;m.userData.vz=Math.sin(a)*0.09;});
-  document.getElementById('status').textContent='4 marble: MERAH · BIRU · HIJAU · KUNING';
+  document.getElementById('status').textContent='MARBLE RACE DIMULAI!';
   const au=document.getElementById('rollingSound');if(au){au.volume=0.2;au.currentTime=0;au.play().catch(()=>{});}
 }
 
 function update(){
   if(winner) return;
+
+  traps.forEach(t => {
+    if(t.type === 'bomb' && t.active && t.body){
+      t.body.material.emissiveIntensity = 0.5 + Math.sin(performance.now() * 0.008) * 0.4;
+    }
+  });
+
   for(const m of marbles){
-    if(m.userData.finished) continue;
+    if(m.userData.finished || m.userData.eliminated) continue;
+
+    const moved = Math.hypot(m.position.x - m.userData.lastX, m.position.z - m.userData.lastZ);
+    m.userData.lastX = m.position.x; m.userData.lastZ = m.position.z;
+
+    if(moved < 0.015){
+      m.userData.stuckTime = (m.userData.stuckTime || 0) + 1;
+      if(m.userData.stuckTime > 12){
+        m.userData.vx += (Math.random() - 0.5) * 0.22;
+        m.userData.vz += (Math.random() - 0.5) * 0.22;
+      }
+    } else {
+      m.userData.stuckTime = Math.max(0, (m.userData.stuckTime || 0) - 1);
+    }
+
     steer(m);
     m.position.x+=m.userData.vx;m.position.z+=m.userData.vz;
     m.userData.vx*=0.988;m.userData.vz*=0.988;
     collide(m);
     m.rotation.x+=m.userData.vz*2;m.rotation.z-=m.userData.vx*2;
-    if(Math.hypot(m.position.x-exitPos.x,m.position.z-exitPos.z)<RADIUS+0.55){
+
+    for(const t of traps){
+      if(!t.active) continue;
+      const dist = Math.hypot(m.position.x - t.x, m.position.z - t.z);
+      if(dist < 1.05){
+        if(t.type === 'bomb'){
+          m.userData.finished = true; m.userData.eliminated = true; m.visible = false;
+          t.active = false; trapGroup.remove(t.mesh);
+          createExplosion(t.x, t.z);
+          document.getElementById('status').textContent = `BOM! ${NAMES[m.userData.id]} MELEDAK & GUGUR!`;
+          updateUI();
+        } else if(t.type === 'hole'){
+          respawnMarble(m, m.userData.id);
+          document.getElementById('status').textContent = `${NAMES[m.userData.id]} MASUK LUBANG -> KEMBALI KE START!`;
+        }
+        break;
+      }
+    }
+
+    if(!m.userData.finished && !m.userData.eliminated && Math.hypot(m.position.x-exitPos.x, m.position.z-exitPos.z) < RADIUS + 0.45){
       m.userData.finished=true;winner=true;
-      document.getElementById('winner').textContent=NAMES[m.userData.id];
-      document.getElementById('status').textContent=NAMES[m.userData.id]+' MENANG!';
+      document.getElementById('winner').textContent=NAMES[m.userData.id] + ' MENANG!';
+      document.getElementById('status').textContent=NAMES[m.userData.id]+' BERHASIL KELUAR!';
       document.getElementById('message').classList.add('show');
-      setTimeout(()=>{round++;startRound();},3000);break;
+      setTimeout(()=>{round++;startRound();},3500);break;
     }
   }
+
+  const allEliminated = marbles.every(m => m.userData.eliminated);
+  if(allEliminated && !winner){
+    winner = true;
+    document.getElementById('winner').textContent = 'SEMUA MELEDAK!';
+    document.getElementById('status').textContent = 'Semua marble gugur terkena bom! Ulang ronde...';
+    document.getElementById('message').classList.add('show');
+    setTimeout(()=>{ round++; startRound(); }, 3500);
+  }
+
   separate();
   if(++tick%12===0) updateUI();
 }
@@ -360,14 +384,17 @@ function update(){
 function animate(t){
   requestAnimationFrame(animate);
   if(!winner) elapsed+=(t-last)/1000;last=t;
-  const s=Math.floor(elapsed);
-  document.getElementById('timer').textContent=String(Math.floor(s/60)).padStart(2,'0')+':'+String(s%60).padStart(2,'0');
+  document.getElementById('timer').textContent=String(Math.floor(elapsed/60)).padStart(2,'0')+':'+String(Math.floor(elapsed%60)).padStart(2,'0');
   update();renderer.render(scene,camera);
 }
-requestAnimationFrame(animate);
-addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight);});
 
-createAllMarbles();
-generateMaze();
-startRound();
+createAllMarbles(); generateMaze(); startRound(); requestAnimationFrame(animate);
+addEventListener('resize',()=>{
+  const asp = innerWidth / innerHeight;
+  camera.aspect = asp;
+  camera.fov = asp < 1 ? 64 : 44;
+  camera.position.set(0, asp < 1 ? 95 : 68, asp < 1 ? 34 : 24);
+  camera.updateProjectionMatrix();
+  renderer.setSize(innerWidth,innerHeight);
+});
 </script></body></html>
