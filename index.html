@@ -34,12 +34,12 @@ import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.m
 
 const COLORS=[0xff2244,0x2288ff,0x22dd66,0xffdd00];
 const NAMES=['MERAH','BIRU','HIJAU','KUNING'];
-const RADIUS=1.26;
+const RADIUS=0.95;
 
 const scene=new THREE.Scene();
 scene.background=new THREE.Color(0x1a1008);
 const camera=new THREE.PerspectiveCamera(42,innerWidth/innerHeight,0.1,150);
-camera.position.set(0,42,18);camera.lookAt(0,0,0);
+camera.position.set(0,48,20);camera.lookAt(0,0,0);
 const renderer=new THREE.WebGLRenderer({antialias:true});
 renderer.setPixelRatio(Math.min(devicePixelRatio,2));
 renderer.setSize(innerWidth,innerHeight);
@@ -51,12 +51,12 @@ const sun=new THREE.DirectionalLight(0xffffff,2.4);
 sun.position.set(-14,30,12);sun.castShadow=true;scene.add(sun);
 scene.add(new THREE.AmbientLight(0xffffff,0.4));
 
-const board=new THREE.Mesh(new THREE.BoxGeometry(30,0.5,30),new THREE.MeshStandardMaterial({color:0xd2a679,roughness:0.85}));
+const board=new THREE.Mesh(new THREE.BoxGeometry(36,0.5,36),new THREE.MeshStandardMaterial({color:0xd2a679,roughness:0.85}));
 board.position.y=-0.3;board.receiveShadow=true;scene.add(board);
 
 const maze=new THREE.Group();scene.add(maze);
 const walls=[];
-const CELL=3.4,SIZE=7,HALF=(SIZE-1)/2;
+const CELL=2.6,SIZE=11,HALF=(SIZE-1)/2;
 const wallMat=new THREE.MeshStandardMaterial({color:0x1a0e06,roughness:0.4});
 
 function addWall(x,z,w,d){
@@ -182,20 +182,43 @@ function separate(){
 }
 
 function steer(m){
-  if(m.userData.finished) return;
+  if(m.userData.finished)return;
   const id=m.userData.id;
   const tx=exitPos.x-m.position.x,tz=exitPos.z-m.position.z,dist=Math.hypot(tx,tz)||1;
-  const speed=0.055+id*0.014;
-  const w=Math.sin(performance.now()*0.0017+id*2.3)*0.5;
-  m.userData.vx+=(tx/dist)*speed+(-tz/dist)*w*0.035;
-  m.userData.vz+=(tz/dist)*speed+(tx/dist)*w*0.035;
-  if(m.userData.stuck>6){
-    const a=Math.random()*Math.PI*2;
-    m.userData.vx+=Math.cos(a)*0.14;m.userData.vz+=Math.sin(a)*0.14;m.userData.stuck=0;
-  }
-  const sp=Math.hypot(m.userData.vx,m.userData.vz),maxS=0.18+id*0.025;
-  if(sp>maxS){m.userData.vx*=maxS/sp;m.userData.vz*=maxS/sp;}
+  const speed=0.06+id*0.012;
+  const t=performance.now()*0.001;
+  const wander=Math.sin(t*1.9+id*2.7)*0.65;
+  let ax=(tx/dist)*speed+(-tz/dist)*wander*0.04;
+  let az=(tz/dist)*speed+(tx/dist)*wander*0.04;
+  const sp=Math.hypot(m.userData.vx,m.userData.vz);
+  if(m.userData.lastX===undefined){m.userData.lastX=m.position.x;m.userData.lastZ=m.position.z;m.userData.still=0;}
+  const moved=Math.hypot(m.position.x-m.userData.lastX,m.position.z-m.userData.lastZ);
+  if(moved<0.02)m.userData.still=(m.userData.still||0)+1;else m.userData.still=0;
+  m.userData.lastX=m.position.x;m.userData.lastZ=m.position.z;
+  if(m.userData.stuck>3||m.userData.still>18||sp<0.012){
+    let bestAng=Math.random()*Math.PI*2,bestScore=-1e9;
+    for(let k=0;k<16;k++){
+      const ang=(k/16)*Math.PI*2+id*0.7;
+      const tx2=m.position.x+Math.cos(ang)*(RADIUS+0.9);
+      const tz2=m.position.z+Math.sin(ang)*(RADIUS+0.9);
+      let clear=1.6;
+      for(const w of walls){
+        const qx=Math.max(w.x-w.hw,Math.min(tx2,w.x+w.hw));
+        const qz=Math.max(w.z-w.hd,Math.min(tz2,w.z+w.hd));
+        const d=Math.hypot(tx2-qx,tz2-qz);if(d<clear)clear=d;
+      }
+      const score=clear*3-Math.hypot(tx2-exitPos.x,tz2-exitPos.z)*0.02+Math.random()*0.35;
+      if(score>bestScore){bestScore=score;bestAng=ang;}
+    }
+    const burst=0.15+Math.random()*0.09;
+    m.userData.vx=Math.cos(bestAng)*burst;
+    m.userData.vz=Math.sin(bestAng)*burst;
+    m.userData.stuck=0;m.userData.still=0;
+  }else{m.userData.vx+=ax;m.userData.vz+=az;}
+  const sp2=Math.hypot(m.userData.vx,m.userData.vz),maxS=0.2+id*0.025;
+  if(sp2>maxS){m.userData.vx*=maxS/sp2;m.userData.vz*=maxS/sp2;}
 }
+
 
 let round=1,elapsed=0,winner=false,last=performance.now(),tick=0;
 
