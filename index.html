@@ -547,6 +547,25 @@ let marbleTemplate=null;
 
 const loader=new GLTFLoader();
 
+function resetMarbles(){
+  if(!marbles.length) return;
+  const startX = -HALF * CELL + 0.15;
+  const startZ = -HALF * CELL + 0.15;
+  const y = 0.48;
+  const offsets = [[0,0],[0.55,0.1],[0.1,0.55],[0.55,0.55]];
+  marbles.forEach((marble, i) => {
+    const [ox, oz] = offsets[i] || [0, 0];
+    marble.position.set(startX + ox, y, startZ + oz);
+    marble.rotation.set(0, 0, 0);
+    marble.visible = true;
+    marble.userData.vx = 0;
+    marble.userData.vz = 0;
+    marble.userData.finished = false;
+  });
+}
+
+
+
 
 /* =========================================================
    LOAD DAN NORMALISASI GLB MARBLE
@@ -699,7 +718,13 @@ loader.load(
   document.getElementById(
    'status'
   ).textContent=
-   'Marble siap menggelinding...';
+   'GLB berhasil dimuat: ' + marbles.length + ' marble';
+
+  console.log('MARBLE GLB BERHASIL DIMUAT');
+  console.log('GLB object:', model);
+  console.log('GLB bounding box:', box);
+  console.log('GLB size:', size);
+  console.log('Marbles:', marbles);
 
  },
 
@@ -765,6 +790,7 @@ loader.load(
    'status'
   ).textContent=
    'Marble aktif (fallback 3D)';
+  startRound();
 
  }
 
@@ -918,7 +944,10 @@ let lastTime=
 
 
 function startRound(){
-
+ if(!marbles.length){
+  document.getElementById('status').textContent='Memuat marble 3D...';
+  return;
+ }
  winner=false;
 
  elapsed=0;
