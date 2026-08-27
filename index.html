@@ -1,233 +1,175 @@
 <!DOCTYPE html>
-<html lang="id">
-<head>
+<html lang="id"><head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
 <title>Marble Maze</title>
 <style>
-*{box-sizing:border-box}
-html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#120a06;font-family:Arial,sans-serif;color:#fff}
-#game{position:fixed;inset:0}
-canvas{display:block;width:100%;height:100%}
+*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#120a06;font-family:Arial,sans-serif;color:#fff}
+#game{position:fixed;inset:0}canvas{display:block;width:100%;height:100%}
 #hud{position:fixed;z-index:5;top:10px;left:50%;transform:translateX(-50%);width:100%;text-align:center;pointer-events:none;text-shadow:0 2px 6px #000}
 h1{margin:0;font-size:clamp(22px,5vw,38px);font-weight:900;letter-spacing:3px;color:#ffd166}
 .sub{font-size:10px;letter-spacing:2px;color:#f5d7a0}
 .badge{display:inline-block;margin-top:6px;padding:5px 14px;background:#24140ae8;border:2px solid #b9782e;border-radius:20px;font-size:12px;font-weight:bold}
 #timer{color:#ffe45c;margin-left:8px}
 #players{position:fixed;z-index:6;top:10px;right:8px;display:flex;flex-direction:column;gap:5px}
-.player{min-width:70px;padding:6px;background:#21130be8;border:2px solid #6d4525;border-radius:9px;text-align:center;font-size:10px;font-weight:700}
-.player.lead{border-color:#ffd166;box-shadow:0 0 12px #ffd16666}
-.dot{width:14px;height:14px;border-radius:50%;margin:0 auto 3px;box-shadow:0 2px 5px #000}
-#status{position:fixed;z-index:6;bottom:12px;left:50%;transform:translateX(-50%);padding:7px 14px;background:#21130be8;border:1px solid #87582d;border-radius:20px;font-size:11px;white-space:nowrap}
+.player{min-width:72px;padding:6px;background:#21130be8;border:2px solid #6d4525;border-radius:9px;text-align:center;font-size:10px;font-weight:700}
+.player.lead{border-color:#ffd166}
+.dot{width:16px;height:16px;border-radius:50%;margin:0 auto 3px}
+#status{position:fixed;z-index:6;bottom:12px;left:50%;transform:translateX(-50%);padding:7px 14px;background:#21130be8;border:1px solid #87582d;border-radius:20px;font-size:11px}
 #message{position:fixed;z-index:10;inset:0;display:none;align-items:center;justify-content:center;background:#0009}
 #message.show{display:flex}
-.messageBox{padding:25px 35px;text-align:center;background:linear-gradient(145deg,#3b210d,#160d07);border:3px solid #e9ae45;border-radius:18px;box-shadow:0 0 40px #000}
-.messageBox small{color:#e9c88f}
+.messageBox{padding:25px 35px;text-align:center;background:linear-gradient(145deg,#3b210d,#160d07);border:3px solid #e9ae45;border-radius:18px}
 .messageBox h2{margin:5px 0;color:#ffd166;font-size:28px}
-</style>
-</head>
-<body>
+</style></head><body>
 <div id="game"></div>
-<div id="hud">
- <h1>MARBLE MAZE</h1>
- <div class="sub">WOODEN LABYRINTH</div>
- <div class="badge">RONDE <span id="round">1</span> <span id="timer">00:00</span></div>
-</div>
+<div id="hud"><h1>MARBLE MAZE</h1><div class="sub">4 MARBLE BERWARNA</div>
+<div class="badge">RONDE <span id="round">1</span> <span id="timer">00:00</span></div></div>
 <div id="players"></div>
-<div id="status">Menyiapkan labirin...</div>
-<div id="message"><div class="messageBox"><small>PEMENANG</small><h2 id="winner">—</h2><small>Marble keluar pertama!</small></div></div>
+<div id="status">Menyiapkan...</div>
+<div id="message"><div class="messageBox"><small>PEMENANG</small><h2 id="winner">—</h2></div></div>
 <audio id="rollingSound" src="assets/sound/marble-rolling.mp3" preload="auto" loop></audio>
-<script type="importmap">
-{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js"}}
-</script>
+<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js"}}</script>
 <script type="module">
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js';
-import {GLTFLoader} from 'https://cdn.jsdelivr.net/npm/three@0.180.0/examples/jsm/loaders/GLTFLoader.js';
 
-const game=document.getElementById('game');
+const COLORS=[0xff2244,0x2288ff,0x22dd66,0xffdd00];
+const NAMES=['MERAH','BIRU','HIJAU','KUNING'];
+const RADIUS=1.26;
+
 const scene=new THREE.Scene();
 scene.background=new THREE.Color(0x1a1008);
-scene.fog=new THREE.Fog(0x1a1008,40,90);
-
-const camera=new THREE.PerspectiveCamera(42,innerWidth/innerHeight,0.1,120);
-camera.position.set(0,36,14);
-camera.lookAt(0,0,0);
-
+const camera=new THREE.PerspectiveCamera(42,innerWidth/innerHeight,0.1,150);
+camera.position.set(0,42,18);camera.lookAt(0,0,0);
 const renderer=new THREE.WebGLRenderer({antialias:true});
 renderer.setPixelRatio(Math.min(devicePixelRatio,2));
 renderer.setSize(innerWidth,innerHeight);
 renderer.shadowMap.enabled=true;
-renderer.shadowMap.type=THREE.PCFSoftShadowMap;
-game.appendChild(renderer.domElement);
+document.getElementById('game').appendChild(renderer.domElement);
 
-scene.add(new THREE.HemisphereLight(0xffe6c0,0x3a2010,1.6));
-const sun=new THREE.DirectionalLight(0xfff0d0,2.2);
-sun.position.set(-12,28,10);
-sun.castShadow=true;
-sun.shadow.mapSize.set(2048,2048);
-scene.add(sun);
+scene.add(new THREE.HemisphereLight(0xffe6c0,0x3a2010,1.8));
+const sun=new THREE.DirectionalLight(0xffffff,2.4);
+sun.position.set(-14,30,12);sun.castShadow=true;scene.add(sun);
+scene.add(new THREE.AmbientLight(0xffffff,0.4));
 
-const BOARD=26;
-const board=new THREE.Mesh(
-  new THREE.BoxGeometry(BOARD,0.45,BOARD),
-  new THREE.MeshStandardMaterial({color:0xd2a679,roughness:0.8})
-);
-board.position.y=-0.28;
-board.receiveShadow=true;
-scene.add(board);
+const board=new THREE.Mesh(new THREE.BoxGeometry(30,0.5,30),new THREE.MeshStandardMaterial({color:0xd2a679,roughness:0.85}));
+board.position.y=-0.3;board.receiveShadow=true;scene.add(board);
 
-const maze=new THREE.Group();
-scene.add(maze);
+const maze=new THREE.Group();scene.add(maze);
 const walls=[];
-const CELL=2.5,SIZE=9,HALF=(SIZE-1)/2;
-const wallMat=new THREE.MeshStandardMaterial({color:0x1f1208,roughness:0.45,metalness:0.05});
+const CELL=3.4,SIZE=7,HALF=(SIZE-1)/2;
+const wallMat=new THREE.MeshStandardMaterial({color:0x1a0e06,roughness:0.4});
 
 function addWall(x,z,w,d){
-  const mesh=new THREE.Mesh(new THREE.BoxGeometry(w,2.4,d),wallMat);
-  mesh.position.set(x,1.0,z);
-  mesh.castShadow=true;
-  mesh.receiveShadow=true;
-  maze.add(mesh);
+  const m=new THREE.Mesh(new THREE.BoxGeometry(w,2.8,d),wallMat);
+  m.position.set(x,1.2,z);m.castShadow=true;maze.add(m);
   walls.push({x,z,w,d,hw:w/2,hd:d/2});
 }
 
-let exitPos={x:0,z:0};
-let finishMesh=null;
+let exitPos={x:0,z:0},finishMesh=null;
 
 function generateMaze(){
   while(maze.children.length) maze.remove(maze.children[0]);
   walls.length=0;
   const cells=[];
-  for(let z=0;z<SIZE;z++){
-    cells[z]=[];
-    for(let x=0;x<SIZE;x++) cells[z][x]={v:false,w:[true,true,true,true]};
-  }
+  for(let z=0;z<SIZE;z++){cells[z]=[];for(let x=0;x<SIZE;x++) cells[z][x]={v:false,w:[true,true,true,true]};}
   const dirs=[[0,-1,0,2],[1,0,1,3],[0,1,2,0],[-1,0,3,1]];
   function carve(x,z){
     cells[z][x].v=true;
-    const order=[0,1,2,3].sort(()=>Math.random()-0.5);
-    for(const di of order){
+    for(const di of [0,1,2,3].sort(()=>Math.random()-0.5)){
       const nx=x+dirs[di][0],nz=z+dirs[di][1];
       if(nx>=0&&nx<SIZE&&nz>=0&&nz<SIZE&&!cells[nz][nx].v){
-        cells[z][x].w[dirs[di][2]]=false;
-        cells[nz][nx].w[dirs[di][3]]=false;
-        carve(nx,nz);
+        cells[z][x].w[dirs[di][2]]=false;cells[nz][nx].w[dirs[di][3]]=false;carve(nx,nz);
       }
     }
   }
   carve(0,0);
-  for(let z=0;z<SIZE;z++){
-    for(let x=0;x<SIZE;x++){
-      const c=cells[z][x];
-      const px=(x-HALF)*CELL,pz=(z-HALF)*CELL;
-      if(c.w[0]) addWall(px,pz-CELL/2,CELL+0.2,0.32);
-      if(c.w[1]) addWall(px+CELL/2,pz,0.32,CELL+0.2);
-      if(c.w[2]){ if(!(x===SIZE-1&&z===SIZE-1)) addWall(px,pz+CELL/2,CELL+0.2,0.32); }
-      if(c.w[3]) addWall(px-CELL/2,pz,0.32,CELL+0.2);
-    }
+  for(let z=0;z<SIZE;z++) for(let x=0;x<SIZE;x++){
+    const c=cells[z][x],px=(x-HALF)*CELL,pz=(z-HALF)*CELL;
+    if(c.w[0]) addWall(px,pz-CELL/2,CELL+0.25,0.4);
+    if(c.w[1]) addWall(px+CELL/2,pz,0.4,CELL+0.25);
+    if(c.w[2]&&!(x===SIZE-1&&z===SIZE-1)) addWall(px,pz+CELL/2,CELL+0.25,0.4);
+    if(c.w[3]) addWall(px-CELL/2,pz,0.4,CELL+0.25);
   }
-  const edge=HALF*CELL+CELL/2+0.15;
-  const span=SIZE*CELL+0.5;
-  addWall(0,-edge,span,0.4);
-  addWall(-edge,0,0.4,span);
-  addWall(edge,0,0.4,span);
-  addWall(-CELL*1.5,edge,span-CELL*2.2,0.4);
+  const edge=HALF*CELL+CELL/2+0.2,span=SIZE*CELL+0.6;
+  addWall(0,-edge,span,0.5);addWall(-edge,0,0.5,span);addWall(edge,0,0.5,span);
+  addWall(-CELL*1.2,edge,span-CELL*2,0.5);
   exitPos={x:HALF*CELL,z:HALF*CELL};
   if(!finishMesh){
-    finishMesh=new THREE.Mesh(
-      new THREE.CylinderGeometry(0.7,0.7,0.1,32),
-      new THREE.MeshStandardMaterial({color:0xffd43b,emissive:0x8a5a00,emissiveIntensity:1.3})
-    );
+    finishMesh=new THREE.Mesh(new THREE.CylinderGeometry(1.1,1.1,0.12,32),
+      new THREE.MeshStandardMaterial({color:0xffd43b,emissive:0x8a5a00,emissiveIntensity:1.4}));
     scene.add(finishMesh);
   }
-  finishMesh.position.set(exitPos.x,0.06,exitPos.z);
-  document.getElementById('status').textContent='Labirin siap ('+walls.length+' dinding)';
+  finishMesh.position.set(exitPos.x,0.08,exitPos.z);
 }
 
-const COLORS=[0xe6392b,0x2f6bff,0x2ecc71,0xf1c40f];
-const NAMES=['MERAH','BIRU','HIJAU','KUNING'];
 const marbles=[];
-const RADIUS=0.42;
 
-function makeSphereMarble(color){
-  const m=new THREE.Mesh(
-    new THREE.SphereGeometry(RADIUS,28,20),
-    new THREE.MeshStandardMaterial({color,roughness:0.25,metalness:0.15})
+function makeMarble(color,id){
+  const mesh=new THREE.Mesh(
+    new THREE.SphereGeometry(RADIUS,32,24),
+    new THREE.MeshStandardMaterial({color,roughness:0.2,metalness:0.25,emissive:color,emissiveIntensity:0.18})
   );
-  m.castShadow=true;m.receiveShadow=true;
-  return m;
+  mesh.castShadow=true;
+  const outline=new THREE.Mesh(new THREE.SphereGeometry(RADIUS*1.06,20,14),
+    new THREE.MeshBasicMaterial({color:0x000000,side:THREE.BackSide}));
+  const root=new THREE.Group();
+  root.add(outline);root.add(mesh);
+  root.userData={id,vx:0,vz:0,finished:false,stuck:0};
+  return root;
+}
+
+function createAllMarbles(){
+  while(marbles.length){scene.remove(marbles.pop());}
+  for(let i=0;i<4;i++){const m=makeMarble(COLORS[i],i);scene.add(m);marbles.push(m);}
 }
 
 function resetMarbles(){
-  const starts=[[0,0],[SIZE-1,0],[0,SIZE-1],[2,2]];
+  const starts=[[0,0],[SIZE-1,0],[0,SIZE-1],[SIZE-1,SIZE-2]];
   marbles.forEach((m,i)=>{
     const [cx,cz]=starts[i];
-    m.position.set((cx-HALF)*CELL,RADIUS+0.02,(cz-HALF)*CELL);
-    m.rotation.set(0,0,0);
-    m.visible=true;
-    m.userData.vx=0;m.userData.vz=0;
-    m.userData.finished=false;m.userData.stuck=0;m.userData.id=i;
+    m.position.set((cx-HALF)*CELL,RADIUS+0.05,(cz-HALF)*CELL);
+    m.rotation.set(0,0,0);m.visible=true;
+    m.userData.vx=0;m.userData.vz=0;m.userData.finished=false;m.userData.stuck=0;
   });
-  updatePlayersUI();
+  updateUI();
 }
 
-function updatePlayersUI(){
-  const box=document.getElementById('players');
-  box.innerHTML='';
-  const ranked=marbles.map((m,i)=>({
-    i,name:NAMES[i],
-    dist:Math.hypot(m.position.x-exitPos.x,m.position.z-exitPos.z)
-  })).sort((a,b)=>a.dist-b.dist);
-  ranked.forEach((r,place)=>{
-    const div=document.createElement('div');
-    div.className='player'+(place===0?' lead':'');
-    div.innerHTML='<div class="dot" style="background:#'+COLORS[r.i].toString(16).padStart(6,'0')+'"></div>'+r.name;
-    box.appendChild(div);
-  });
+function updateUI(){
+  const box=document.getElementById('players');box.innerHTML='';
+  [...marbles].map((m,i)=>({i,d:Math.hypot(m.position.x-exitPos.x,m.position.z-exitPos.z)}))
+    .sort((a,b)=>a.d-b.d).forEach((r,place)=>{
+      const div=document.createElement('div');
+      div.className='player'+(place===0?' lead':'');
+      div.innerHTML=`<div class="dot" style="background:#\( {COLORS[r.i].toString(16).padStart(6,'0')}"></div> \){NAMES[r.i]}`;
+      box.appendChild(div);
+    });
 }
 
 function collide(m){
   const r=RADIUS;
   for(const w of walls){
-    const nearestX=Math.max(w.x-w.hw,Math.min(m.position.x,w.x+w.hw));
-    const nearestZ=Math.max(w.z-w.hd,Math.min(m.position.z,w.z+w.hd));
-    let dx=m.position.x-nearestX,dz=m.position.z-nearestZ;
-    const dist=Math.hypot(dx,dz);
+    const nx=Math.max(w.x-w.hw,Math.min(m.position.x,w.x+w.hw));
+    const nz=Math.max(w.z-w.hd,Math.min(m.position.z,w.z+w.hd));
+    let dx=m.position.x-nx,dz=m.position.z-nz,dist=Math.hypot(dx,dz);
     if(dist<r&&dist>1e-6){
-      const nx=dx/dist,nz=dz/dist,pen=r-dist;
-      m.position.x+=nx*pen;m.position.z+=nz*pen;
-      const dot=m.userData.vx*nx+m.userData.vz*nz;
-      if(dot<0){m.userData.vx-=1.8*dot*nx;m.userData.vz-=1.8*dot*nz;}
-      m.userData.vx*=0.85;m.userData.vz*=0.85;m.userData.stuck++;
-    }else if(dist<=1e-6){
-      const ox=(w.hw+r)-Math.abs(m.position.x-w.x);
-      const oz=(w.hd+r)-Math.abs(m.position.z-w.z);
-      if(ox<oz){m.position.x+=(m.position.x>w.x?ox:-ox);m.userData.vx*=-0.5;}
-      else{m.position.z+=(m.position.z>w.z?oz:-oz);m.userData.vz*=-0.5;}
-      m.userData.stuck++;
+      const nxx=dx/dist,nzz=dz/dist,pen=r-dist;
+      m.position.x+=nxx*pen;m.position.z+=nzz*pen;
+      const dot=m.userData.vx*nxx+m.userData.vz*nzz;
+      if(dot<0){m.userData.vx-=1.9*dot*nxx;m.userData.vz-=1.9*dot*nzz;}
+      m.userData.vx*=0.82;m.userData.vz*=0.82;m.userData.stuck++;
     }
   }
 }
 
-function separateMarbles(){
-  for(let i=0;i<marbles.length;i++){
-    for(let j=i+1;j<marbles.length;j++){
-      const a=marbles[i],b=marbles[j];
-      if(a.userData.finished||b.userData.finished) continue;
-      let dx=b.position.x-a.position.x,dz=b.position.z-a.position.z;
-      let d=Math.hypot(dx,dz);
-      const minD=RADIUS*2.05;
-      if(d<minD&&d>1e-6){
-        const nx=dx/d,nz=dz/d,push=(minD-d)/2;
-        a.position.x-=nx*push;a.position.z-=nz*push;
-        b.position.x+=nx*push;b.position.z+=nz*push;
-        const dvx=b.userData.vx-a.userData.vx,dvz=b.userData.vz-a.userData.vz;
-        const dot=dvx*nx+dvz*nz;
-        if(dot<0){
-          a.userData.vx+=dot*nx*0.5;a.userData.vz+=dot*nz*0.5;
-          b.userData.vx-=dot*nx*0.5;b.userData.vz-=dot*nz*0.5;
-        }
-      }
+function separate(){
+  for(let i=0;i<4;i++) for(let j=i+1;j<4;j++){
+    const a=marbles[i],b=marbles[j];
+    if(a.userData.finished||b.userData.finished) continue;
+    let dx=b.position.x-a.position.x,dz=b.position.z-a.position.z,d=Math.hypot(dx,dz);
+    const minD=RADIUS*2.15;
+    if(d<minD&&d>1e-6){
+      const nx=dx/d,nz=dz/d,p=(minD-d)/2;
+      a.position.x-=nx*p;a.position.z-=nz*p;b.position.x+=nx*p;b.position.z+=nz*p;
     }
   }
 }
@@ -235,43 +177,30 @@ function separateMarbles(){
 function steer(m){
   if(m.userData.finished) return;
   const id=m.userData.id;
-  const tx=exitPos.x-m.position.x,tz=exitPos.z-m.position.z;
-  const dist=Math.hypot(tx,tz)||1;
-  const speed=0.035+id*0.008;
-  const wander=Math.sin(performance.now()*0.002+id*2.1)*(0.4+id*0.1);
-  m.userData.vx+=(tx/dist)*speed+(-tz/dist)*wander*0.02;
-  m.userData.vz+=(tz/dist)*speed+(tx/dist)*wander*0.02;
-  if(m.userData.stuck>8){
-    const ang=Math.random()*Math.PI*2;
-    m.userData.vx+=Math.cos(ang)*0.08;
-    m.userData.vz+=Math.sin(ang)*0.08;
-    m.userData.stuck=0;
+  const tx=exitPos.x-m.position.x,tz=exitPos.z-m.position.z,dist=Math.hypot(tx,tz)||1;
+  const speed=0.055+id*0.014;
+  const w=Math.sin(performance.now()*0.0017+id*2.3)*0.5;
+  m.userData.vx+=(tx/dist)*speed+(-tz/dist)*w*0.035;
+  m.userData.vz+=(tz/dist)*speed+(tx/dist)*w*0.035;
+  if(m.userData.stuck>6){
+    const a=Math.random()*Math.PI*2;
+    m.userData.vx+=Math.cos(a)*0.14;m.userData.vz+=Math.sin(a)*0.14;m.userData.stuck=0;
   }
-  const sp=Math.hypot(m.userData.vx,m.userData.vz);
-  const maxS=0.12+id*0.015;
+  const sp=Math.hypot(m.userData.vx,m.userData.vz),maxS=0.18+id*0.025;
   if(sp>maxS){m.userData.vx*=maxS/sp;m.userData.vz*=maxS/sp;}
 }
 
-let round=1,elapsed=0,winner=false,lastTime=performance.now(),playersUITick=0;
+let round=1,elapsed=0,winner=false,last=performance.now(),tick=0;
 
 function startRound(){
-  if(!marbles.length){
-    document.getElementById('status').textContent='Memuat marble...';
-    return;
-  }
+  if(marbles.length<4) createAllMarbles();
   winner=false;elapsed=0;
   document.getElementById('round').textContent=round;
   document.getElementById('message').classList.remove('show');
-  generateMaze();
-  resetMarbles();
-  marbles.forEach((m,i)=>{
-    const ang=(i/4)*Math.PI*2+0.4;
-    m.userData.vx=Math.cos(ang)*0.05;
-    m.userData.vz=Math.sin(ang)*0.05;
-  });
-  document.getElementById('status').textContent='Marble menggelinding!';
-  const audio=document.getElementById('rollingSound');
-  if(audio){audio.volume=0.25;audio.currentTime=0;audio.play().catch(()=>{});}
+  generateMaze();resetMarbles();
+  marbles.forEach((m,i)=>{const a=(i/4)*Math.PI*2+0.8;m.userData.vx=Math.cos(a)*0.09;m.userData.vz=Math.sin(a)*0.09;});
+  document.getElementById('status').textContent='4 marble: MERAH · BIRU · HIJAU · KUNING';
+  const au=document.getElementById('rollingSound');if(au){au.volume=0.2;au.currentTime=0;au.play().catch(()=>{});}
 }
 
 function update(){
@@ -279,92 +208,33 @@ function update(){
   for(const m of marbles){
     if(m.userData.finished) continue;
     steer(m);
-    m.position.x+=m.userData.vx;
-    m.position.z+=m.userData.vz;
-    m.userData.vx*=0.985;m.userData.vz*=0.985;
+    m.position.x+=m.userData.vx;m.position.z+=m.userData.vz;
+    m.userData.vx*=0.988;m.userData.vz*=0.988;
     collide(m);
-    m.rotation.x+=m.userData.vz*3;
-    m.rotation.z-=m.userData.vx*3;
-    const d=Math.hypot(m.position.x-exitPos.x,m.position.z-exitPos.z);
-    if(d<0.9){
+    m.rotation.x+=m.userData.vz*2;m.rotation.z-=m.userData.vx*2;
+    if(Math.hypot(m.position.x-exitPos.x,m.position.z-exitPos.z)<RADIUS+0.55){
       m.userData.finished=true;winner=true;
       document.getElementById('winner').textContent=NAMES[m.userData.id];
       document.getElementById('status').textContent=NAMES[m.userData.id]+' MENANG!';
       document.getElementById('message').classList.add('show');
-      const audio=document.getElementById('rollingSound');
-      if(audio) audio.pause();
-      setTimeout(()=>{round++;startRound();},3200);
-      break;
+      setTimeout(()=>{round++;startRound();},3000);break;
     }
   }
-  separateMarbles();
-  playersUITick++;
-  if(playersUITick%15===0) updatePlayersUI();
+  separate();
+  if(++tick%12===0) updateUI();
 }
 
 function animate(t){
   requestAnimationFrame(animate);
-  const dt=Math.min(0.05,(t-lastTime)/1000);
-  lastTime=t;
-  if(!winner) elapsed+=dt;
-  const total=Math.floor(elapsed);
-  document.getElementById('timer').textContent=
-    String(Math.floor(total/60)).padStart(2,'0')+':'+String(total%60).padStart(2,'0');
-  update();
-  renderer.render(scene,camera);
+  if(!winner) elapsed+=(t-last)/1000;last=t;
+  const s=Math.floor(elapsed);
+  document.getElementById('timer').textContent=String(Math.floor(s/60)).padStart(2,'0')+':'+String(s%60).padStart(2,'0');
+  update();renderer.render(scene,camera);
 }
 requestAnimationFrame(animate);
+addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight);});
 
-addEventListener('resize',()=>{
-  camera.aspect=innerWidth/innerHeight;
-  camera.updateProjectionMatrix();
-  renderer.setSize(innerWidth,innerHeight);
-});
-
-const loader=new GLTFLoader();
-loader.load('assets/roter_ball_glb.glb',(gltf)=>{
-  const model=gltf.scene;
-  const box=new THREE.Box3().setFromObject(model);
-  const center=new THREE.Vector3(),size=new THREE.Vector3();
-  box.getCenter(center);box.getSize(size);
-  model.position.sub(center);
-  const maxS=Math.max(size.x,size.y,size.z)||1;
-  model.scale.setScalar((RADIUS*2)/maxS);
-  model.traverse(o=>{
-    if(o.isMesh){
-      o.castShadow=true;o.receiveShadow=true;
-      if(o.material) o.material=o.material.clone();
-    }
-  });
-  for(let i=0;i<4;i++){
-    const root=new THREE.Group();
-    const clone=model.clone(true);
-    clone.traverse(o=>{
-      if(o.isMesh&&o.material){
-        o.material=o.material.clone();
-        if(o.material.color) o.material.color.setHex(COLORS[i]);
-        o.material.roughness=0.28;o.material.metalness=0.12;
-      }
-    });
-    root.add(clone);
-    root.userData.id=i;
-    scene.add(root);
-    marbles.push(root);
-  }
-  document.getElementById('status').textContent='GLB OK — mulai!';
-  startRound();
-},undefined,(err)=>{
-  console.warn('GLB gagal, pakai bola',err);
-  for(let i=0;i<4;i++){
-    const m=makeSphereMarble(COLORS[i]);
-    m.userData.id=i;
-    scene.add(m);
-    marbles.push(m);
-  }
-  startRound();
-});
-
+createAllMarbles();
 generateMaze();
-</script>
-</body>
-</html>
+startRound();
+</script></body></html>
