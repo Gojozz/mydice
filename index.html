@@ -149,7 +149,6 @@ function generateMaze(){
   }
   openCells.sort(()=>Math.random()-0.5);
   
-  // Jebakan dikurangi drastis menjadi maksimal 4 buah saja
   const trapCount = Math.min(openCells.length, 4);
   for(let i=0; i<trapCount; i++){
     const cell = openCells[i];
@@ -157,7 +156,6 @@ function generateMaze(){
     createTrapMesh(px, pz, (i % 2 === 0) ? 'hole' : 'bomb');
   }
 
-  // Tambahkan 6 bintang agar lebih banyak bonus clone
   const starCount = Math.min(openCells.length - trapCount, 6);
   for(let i=trapCount; i<trapCount+starCount; i++){
     const cell = openCells[i];
@@ -191,14 +189,6 @@ function makeMarble(color, id, cloneId = 0){
   return root;
 }
 
-function createAllMarbles(){
-  while(marbles.length){scene.remove(marbles.pop());}
-  for(let i=0;i<4;i++){
-    const m=makeMarble(COLORS[i], i, 0);
-    scene.add(m);marbles.push(m);
-  }
-}
-
 function respawnMarble(m, i){
   const startCellX = 1, startCellZ = 1;
   const baseX = (startCellX - HALF) * CELL, baseZ = (startCellZ - HALF) * CELL;
@@ -217,15 +207,16 @@ function respawnMarble(m, i){
 }
 
 function resetMarbles(){
-  marbles.length = 4;
-  marbles.forEach((m,i)=>{
-    m.visible = true; m.userData.finished = false; m.userData.eliminated = false;
-    m.userData.cloneId = 0;
+  while(marbles.length){scene.remove(marbles.pop());}
+  for(let i=0; i<4; i++){
+    const m = makeMarble(COLORS[i], i, 0);
     m.userData.speed = 0.088 + Math.random() * 0.025;
     m.userData.randomFactor = Math.random() * 6;
+    scene.add(m);
+    marbles.push(m);
     respawnMarble(m, i);
     m.userData.lastX = m.position.x; m.userData.lastZ = m.position.z;
-  });
+  }
   updateUI();
 }
 
@@ -349,11 +340,11 @@ function steer(m){
 }
 
 function startRound(){
-  if(marbles.length<4) createAllMarbles();
   winner=false;elapsed=0;
   document.getElementById('round').textContent=round;
   document.getElementById('message').classList.remove('show');
-  generateMaze();resetMarbles();
+  generateMaze();
+  resetMarbles();
   document.getElementById('status').textContent='MARBLE RACE DIMULAI!';
 }
 
@@ -489,7 +480,7 @@ function animate(t){
   update();renderer.render(scene,camera);
 }
 
-createAllMarbles(); generateMaze(); startRound(); requestAnimationFrame(animate);
+startRound(); requestAnimationFrame(animate);
 addEventListener('resize',()=>{
   const asp = innerWidth / innerHeight;
   camera.aspect = asp;
