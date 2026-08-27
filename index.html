@@ -34,6 +34,8 @@ h1{margin:0;font-size:clamp(24px,6vw,36px);font-weight:900;letter-spacing:3px;co
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js';
 
 let round = 1, winner = false, elapsed = 0, last = performance.now(), tick = 0;
+let trapMultiplier = 1;
+
 const COLORS=[0xff2244,0x2288ff,0x22dd66,0xffdd00], NAMES=['MERAH','BIRU','HIJAU','KUNING'], RADIUS=0.95;
 
 const scene=new THREE.Scene();
@@ -183,9 +185,9 @@ function generateMaze(){
 
   const occupiedKeys = new Set();
 
-  // 1. BLACKHOLE (Hole): Dilarang keras di jalur utama, hanya di sideCells
+  // 1. BLACKHOLE (Dilarang di jalur utama, jumlah disesuaikan trapMultiplier)
   sideCells.sort(() => Math.random() - 0.5);
-  const holeCount = Math.min(sideCells.length, 2);
+  const holeCount = Math.min(sideCells.length, 2 * trapMultiplier);
   for(let i = 0; i < holeCount; i++){
     const cell = sideCells[i];
     const px = (cell.x - HALF)*CELL, pz = (cell.z - HALF)*CELL;
@@ -193,10 +195,10 @@ function generateMaze(){
     occupiedKeys.add(`${cell.x},${cell.z}`);
   }
 
-  // 2. BOM: Boleh ditaruh di jalur MANAPUN (termasuk jalur utama)
+  // 2. BOM (Boleh di jalur manapun, jumlah disesuaikan trapMultiplier)
   const remainingForBombs = allValidCells.filter(c => !occupiedKeys.has(`${c.x},${c.z}`));
   remainingForBombs.sort(() => Math.random() - 0.5);
-  const bombCount = Math.min(remainingForBombs.length, 2);
+  const bombCount = Math.min(remainingForBombs.length, 2 * trapMultiplier);
   for(let i = 0; i < bombCount; i++){
     const cell = remainingForBombs[i];
     const px = (cell.x - HALF)*CELL, pz = (cell.z - HALF)*CELL;
@@ -204,7 +206,7 @@ function generateMaze(){
     occupiedKeys.add(`${cell.x},${cell.z}`);
   }
 
-  // 3. BINTANG (Star): Boleh ditaruh di jalur MANAPUN yang tersisa
+  // 3. BINTANG
   const remainingForStars = allValidCells.filter(c => !occupiedKeys.has(`${c.x},${c.z}`));
   remainingForStars.sort(() => Math.random() - 0.5);
   const starCount = Math.min(remainingForStars.length, 6);
@@ -407,7 +409,7 @@ function startRound(){
   document.getElementById('message').classList.remove('show');
   generateMaze();
   resetMarbles();
-  document.getElementById('status').textContent='MARBLE RACE DIMULAI!';
+  document.getElementById('status').textContent=trapMultiplier > 1 ? `MARBLE RACE DIMULAI! (Perangkap ${trapMultiplier}x)` : 'MARBLE RACE DIMULAI!';
 }
 
 function update(){
@@ -515,6 +517,7 @@ function update(){
 
     if(!m.userData.finished && !m.userData.eliminated && Math.hypot(m.position.x-exitPos.x, m.position.z-exitPos.z) < RADIUS + 0.45){
       m.userData.finished=true;winner=true;
+      trapMultiplier = 1;
       document.getElementById('winner').textContent=NAMES[m.userData.id] + (m.userData.cloneId > 0 ? ` (Klon ${m.userData.cloneId})` : '') + ' MENANG!';
       document.getElementById('status').textContent=NAMES[m.userData.id]+' BERHASIL KELUAR!';
       document.getElementById('message').classList.add('show');
@@ -525,8 +528,19 @@ function update(){
   const allEliminated = marbles.every(m => m.userData.eliminated);
   if(allEliminated && !winner){
     winner = true;
+    trapMultiplier = 1;
     document.getElementById('winner').textContent = 'SEMUA MELEDAK!';
     document.getElementById('status').textContent = 'Semua marble gugur terkena bom! Ulang ronde...';
+    document.getElementById('message').classList.add('show');
+    setTimeout(()=>{ round++; startRound(); }, 3500);
+  }
+
+  // Cek timeout 3 menit (180 detik)
+  if(elapsed >= 180 && !winner){
+    winner = true;
+    trapMultiplier *= 2;
+    document.getElementById('winner').textContent = 'WAKTU HABIS!';
+    document.getElementById('status').textContent = `Waktu 3 menit habis! Perangkap dilipatgandakan (${trapMultiplier}x)...`;
     document.getElementById('message').classList.add('show');
     setTimeout(()=>{ round++; startRound(); }, 3500);
   }
