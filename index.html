@@ -147,8 +147,8 @@ const camera=new THREE.PerspectiveCamera(
 
 camera.position.set(
  0,
- 29,
- 24
+ 34,
+ 16
 );
 
 camera.lookAt(
@@ -227,7 +227,7 @@ const board=new THREE.Mesh(
  ),
 
  new THREE.MeshStandardMaterial({
-  color:0x8b5528,
+  color:0xc49a6c,
   roughness:.72
  })
 
@@ -266,20 +266,21 @@ function wall(
 
   new THREE.BoxGeometry(
    width,
-   1.7,
+   2.2,
    depth
   ),
 
   new THREE.MeshStandardMaterial({
-   color:0x6f3f19,
-   roughness:.68
+   color:0x2a1608,
+   roughness:.5,
+   metalness:0.08
   })
 
  );
 
  mesh.position.set(
   x,
-  .55,
+  0.9,
   z
  );
 
@@ -409,69 +410,13 @@ function generateMaze(){
     (z-HALF)*CELL;
 
 
-   /* TOP */
-
-   if(c.walls[0]){
-
-    wall(
-     px,
-     pz-CELL/2,
-     CELL+.12,
-     .25
-    );
-
+   if(c.walls[0]) wall(px, pz-CELL/2, CELL+0.15, 0.28);
+   if(c.walls[1]) wall(px+CELL/2, pz, 0.28, CELL+0.15);
+   if(c.walls[2]){
+    if(!(z===SIZE-1 && x===SIZE-1))
+     wall(px, pz+CELL/2, CELL+0.15, 0.28);
    }
-
-
-   /* LEFT */
-
-   if(c.walls[3]){
-
-    wall(
-     px-CELL/2,
-     pz,
-     .25,
-     CELL+.12
-    );
-
-   }
-
-
-   /* RIGHT EDGE */
-
-   if(x===SIZE-1){
-
-    wall(
-     px+CELL/2,
-     pz,
-     .25,
-     CELL+.12
-    );
-
-   }
-
-
-   /* BOTTOM EDGE */
-
-   if(z===SIZE-1){
-
-    /*
-      Buka sedikit dinding di posisi finish
-      agar marble bisa keluar.
-    */
-
-    if(x!==SIZE-1){
-
-     wall(
-      px,
-      pz+CELL/2,
-      CELL+.12,
-      .25
-     );
-
-    }
-
-   }
+   if(c.walls[3]) wall(px-CELL/2, pz, 0.28, CELL+0.15);
 
   }
 
@@ -549,14 +494,12 @@ const loader=new GLTFLoader();
 
 function resetMarbles(){
   if(!marbles.length) return;
-  const startX = -HALF * CELL + 0.15;
-  const startZ = -HALF * CELL + 0.15;
-  const y = 0.48;
-  const offsets = [[0,0],[0.55,0.1],[0.1,0.55],[0.55,0.55]];
+  const starts = [[0,0],[1,0],[0,1],[1,1]];
+  const y = 0.55;
   marbles.forEach((marble, i) => {
-    const [ox, oz] = offsets[i] || [0, 0];
-    marble.position.set(startX + ox, y, startZ + oz);
-    marble.rotation.set(0, 0, 0);
+    const [cx, cz] = starts[i] || [0, 0];
+    marble.position.set((cx-HALF)*CELL, y, (cz-HALF)*CELL);
+    marble.rotation.set(0,0,0);
     marble.visible = true;
     marble.userData.vx = 0;
     marble.userData.vz = 0;
