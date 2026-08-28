@@ -42,8 +42,8 @@ const scene=new THREE.Scene();
 scene.background=new THREE.Color(0x120a05);
 
 const aspect = innerWidth / innerHeight;
-const camera = new THREE.PerspectiveCamera(aspect < 1 ? 64 : 44, aspect, 0.1, 200);
-camera.position.set(0, aspect < 1 ? 95 : 68, aspect < 1 ? 34 : 24);
+const camera = new THREE.PerspectiveCamera(aspect < 1 ? 64 : 44, aspect, 0.1, 250);
+camera.position.set(0, aspect < 1 ? 110 : 78, aspect < 1 ? 40 : 28);
 camera.lookAt(0, 0, 0);
 
 const renderer=new THREE.WebGLRenderer({antialias:true});
@@ -60,8 +60,8 @@ sun.castShadow=true;
 sun.shadow.mapSize.width = 2048;
 sun.shadow.mapSize.height = 2048;
 sun.shadow.camera.near = 0.5;
-sun.shadow.camera.far = 150;
-const d = 30;
+sun.shadow.camera.far = 160;
+const d = 35;
 sun.shadow.camera.left = -d;
 sun.shadow.camera.right = d;
 sun.shadow.camera.top = d;
@@ -71,8 +71,8 @@ scene.add(sun);
 
 scene.add(new THREE.AmbientLight(0xffffff,0.3));
 
-const CELL=2.6, SIZE=15, HALF=(SIZE-1)/2;
-const board=new THREE.Mesh(new THREE.BoxGeometry(SIZE*CELL+1,0.5,SIZE*CELL+1),new THREE.MeshStandardMaterial({color:0xc49563,roughness:0.85}));
+const CELL=2.6, SIZE_X=11, SIZE_Z=19, HALF_X=(SIZE_X-1)/2, HALF_Z=(SIZE_Z-1)/2;
+const board=new THREE.Mesh(new THREE.BoxGeometry(SIZE_X*CELL+1,0.5,SIZE_Z*CELL+1),new THREE.MeshStandardMaterial({color:0xc49563,roughness:0.85}));
 board.position.y=-0.3;
 board.receiveShadow=true;
 scene.add(board);
@@ -83,7 +83,7 @@ const starGroup=new THREE.Group();scene.add(starGroup);
 
 const walls=[], traps=[], stars=[];
 const wallMat=new THREE.MeshStandardMaterial({color:0x1a0e06,roughness:0.4});
-let cells = [], exitPos={x:HALF*CELL, z:HALF*CELL};
+let cells = [], exitPos={x:HALF_X*CELL, z:HALF_Z*CELL};
 
 function addWall(x,z,w,d){
   const m=new THREE.Mesh(new THREE.BoxGeometry(w,2.8,d),wallMat);
@@ -138,13 +138,13 @@ function generateMaze(){
   while(starGroup.children.length) starGroup.remove(starGroup.children[0]);
   walls.length=0; traps.length=0; stars.length=0; cells=[];
 
-  for(let z=0;z<SIZE;z++){cells[z]=[];for(let x=0;x<SIZE;x++) cells[z][x]={v:false,w:[true,true,true,true]};}
+  for(let z=0;z<SIZE_Z;z++){cells[z]=[];for(let x=0;x<SIZE_X;x++) cells[z][x]={v:false,w:[true,true,true,true]};}
   const dirs=[[0,-1,0,2],[1,0,1,3],[0,1,2,0],[-1,0,3,1]];
   function carve(x,z){
     cells[z][x].v=true;
     for(const di of [0,1,2,3].sort(()=>Math.random()-0.5)){
       const nx=x+dirs[di][0],nz=z+dirs[di][1];
-      if(nx>=0&&nx<SIZE&&nz>=0&&nz<SIZE&&!cells[nz][nx].v){
+      if(nx>=0&&nx<SIZE_X&&nz>=0&&nz<SIZE_Z&&!cells[nz][nx].v){
         cells[z][x].w[dirs[di][2]]=false;cells[nz][nx].w[dirs[di][3]]=false;carve(nx,nz);
       }
     }
@@ -158,19 +158,19 @@ function generateMaze(){
     }
   }
 
-  for(let z=1;z<SIZE-1;z++) for(let x=1;x<SIZE-1;x++){
+  for(let z=1;z<SIZE_Z-1;z++) for(let x=1;x<SIZE_X-1;x++){
     if(Math.random()<0.12){
       const d=Math.floor(Math.random()*4);
       cells[z][x].w[d]=false;
       const nx=x+dirs[d][0], nz=z+dirs[d][1];
-      if(nx>=0&&nx<SIZE&&nz>=0&&nz<SIZE) cells[nz][nx].w[dirs[d][3]]=false;
+      if(nx>=0&&nx<SIZE_X&&nz>=0&&nz<SIZE_Z) cells[nz][nx].w[dirs[d][3]]=false;
     }
   }
 
   const allValidCells = [];
-  for(let z=1; z<SIZE-1; z++){
-    for(let x=1; x<SIZE-1; x++){
-      if((x<=2 && z<=2) || (x===SIZE-1 && z===SIZE-1)) continue;
+  for(let z=1; z<SIZE_Z-1; z++){
+    for(let x=1; x<SIZE_X-1; x++){
+      if((x<=2 && z<=2) || (x===SIZE_X-1 && z===SIZE_Z-1)) continue;
       allValidCells.push({x, z});
     }
   }
@@ -178,58 +178,55 @@ function generateMaze(){
   const occupiedKeys = new Set();
   allValidCells.sort(() => Math.random() - 0.5);
 
-  // 1. BLACKHOLE BIRU
   const blueCount = Math.min(Math.floor(allValidCells.length * 0.4), 3 * trapMultiplier);
   for(let i = 0; i < blueCount; i++){
     const cell = allValidCells[i];
-    const px = (cell.x - HALF)*CELL, pz = (cell.z - HALF)*CELL;
+    const px = (cell.x - HALF_X)*CELL, pz = (cell.z - HALF_Z)*CELL;
     createTrapMesh(px, pz, 'hole_blue');
     occupiedKeys.add(`${cell.x},${cell.z}`);
   }
 
-  // 2. BLACKHOLE HIJAU (Tujuan Keluar Portal)
   const remainingForGreen = allValidCells.filter(c => !occupiedKeys.has(`${c.x},${c.z}`));
   remainingForGreen.sort(() => Math.random() - 0.5);
   const greenCount = Math.max(1, Math.min(remainingForGreen.length, 3 * trapMultiplier));
   for(let i = 0; i < greenCount; i++){
     const cell = remainingForGreen[i];
-    const px = (cell.x - HALF)*CELL, pz = (cell.z - HALF)*CELL;
+    const px = (cell.x - HALF_X)*CELL, pz = (cell.z - HALF_Z)*CELL;
     createTrapMesh(px, pz, 'hole_green');
     occupiedKeys.add(`${cell.x},${cell.z}`);
   }
 
-  // 3. BOM
   const remainingForBombs = allValidCells.filter(c => !occupiedKeys.has(`${c.x},${c.z}`));
   remainingForBombs.sort(() => Math.random() - 0.5);
   const bombCount = Math.min(remainingForBombs.length, 4 * trapMultiplier);
   for(let i = 0; i < bombCount; i++){
     const cell = remainingForBombs[i];
-    const px = (cell.x - HALF)*CELL, pz = (cell.z - HALF)*CELL;
+    const px = (cell.x - HALF_X)*CELL, pz = (cell.z - HALF_Z)*CELL;
     createTrapMesh(px, pz, 'bomb');
     occupiedKeys.add(`${cell.x},${cell.z}`);
   }
 
-  // 4. BINTANG
   const remainingForStars = allValidCells.filter(c => !occupiedKeys.has(`${c.x},${c.z}`));
   remainingForStars.sort(() => Math.random() - 0.5);
   const starCount = Math.min(remainingForStars.length, 5);
   for(let i = 0; i < starCount; i++){
     const cell = remainingForStars[i];
-    const px = (cell.x - HALF)*CELL, pz = (cell.z - HALF)*CELL;
+    const px = (cell.x - HALF_X)*CELL, pz = (cell.z - HALF_Z)*CELL;
     createStarMesh(px, pz);
   }
 
-  for(let z=0;z<SIZE;z++) for(let x=0;x<SIZE;x++){
-    const c=cells[z][x],px=(x-HALF)*CELL,pz=(z-HALF)*CELL;
+  for(let z=0;z<SIZE_Z;z++) for(let x=0;x<SIZE_X;x++){
+    const c=cells[z][x],px=(x-HALF_X)*CELL,pz=(z-HALF_Z)*CELL;
     if(c.w[0]) addWall(px,pz-CELL/2,CELL+0.25,0.4);
     if(c.w[1]) addWall(px+CELL/2,pz,0.4,CELL+0.25);
-    if(c.w[2]&&!(x===SIZE-1&&z===SIZE-1)) addWall(px,pz+CELL/2,CELL+0.25,0.4);
+    if(c.w[2]&&!(x===SIZE_X-1&&z===SIZE_Z-1)) addWall(px,pz+CELL/2,CELL+0.25,0.4);
     if(c.w[3]) addWall(px-CELL/2,pz,0.4,CELL+0.25);
   }
-  const edge=HALF*CELL+CELL/2+0.2,span=SIZE*CELL+0.6;
-  addWall(0,-edge,span,0.5);addWall(-edge,0,0.5,span);addWall(edge,0,0.5,span);
-  addWall(-CELL*1.2,edge,span-CELL*2,0.5);
-  exitPos={x:HALF*CELL,z:HALF*CELL};
+  const edgeX=HALF_X*CELL+CELL/2+0.2, edgeZ=HALF_Z*CELL+CELL/2+0.2;
+  const spanX=SIZE_X*CELL+0.6, spanZ=SIZE_Z*CELL+0.6;
+  addWall(0,-edgeZ,spanX,0.5);addWall(-edgeX,0,0.5,spanZ);addWall(edgeX,0,0.5,spanZ);
+  addWall(-CELL*1.2,edgeZ,spanX-CELL*2,0.5);
+  exitPos={x:HALF_X*CELL,z:HALF_Z*CELL};
 }
 
 const marbles=[];
@@ -248,7 +245,7 @@ function makeMarble(color, id, cloneId = 0){
 
 function respawnMarble(m, i){
   const startCellX = 1, startCellZ = 1;
-  const baseX = (startCellX - HALF) * CELL, baseZ = (startCellZ - HALF) * CELL;
+  const baseX = (startCellX - HALF_X) * CELL, baseZ = (startCellZ - HALF_Z) * CELL;
   const gap = 1.3, offsets = [[-gap, -gap], [gap, -gap], [-gap, gap], [gap, gap]];
   const [ox, oz] = offsets[i % 4];
 
@@ -260,7 +257,7 @@ function respawnMarble(m, i){
   m.userData.stuckTime = 0;
   m.userData.targetCell = {x: startCellX, z: startCellZ};
   m.userData.currentCell = {x: startCellX, z: startCellZ};
-  m.userData.visited = Array.from({length: SIZE}, () => Array(SIZE).fill(0));
+  m.userData.visited = Array.from({length: SIZE_Z}, () => Array(SIZE_X).fill(0));
   m.userData.visited[startCellZ][startCellX] = 1;
 }
 
@@ -268,8 +265,8 @@ function resetMarbles(){
   while(marbles.length){scene.remove(marbles.pop());}
   for(let i=0; i<4; i++){
     const m = makeMarble(COLORS[i], i, 0);
-    m.userData.speed = 0.088 + Math.random() * 0.025;
-    m.userData.randomFactor = Math.random() * 6;
+    m.userData.speed = 0.45 + Math.random() * 0.08;
+    m.userData.randomFactor = Math.random() * 5;
     scene.add(m);
     marbles.push(m);
     respawnMarble(m, i);
@@ -333,8 +330,8 @@ function collide(m){
       const nxx=dx/dist,nzz=dz/dist,pen=r-dist;
       m.position.x+=nxx*pen;m.position.z+=nzz*pen;
       const dot=m.userData.vx*nxx+m.userData.vz*nzz;
-      if(dot<0){m.userData.vx-=1.9*dot*nxx;m.userData.vz-=1.9*dot*nzz;}
-      m.userData.vx*=0.82;m.userData.vz*=0.82;
+      if(dot<0){m.userData.vx-=1.95*dot*nxx;m.userData.vz-=1.95*dot*nzz;}
+      m.userData.vx*=0.88;m.userData.vz*=0.88;
     }
   }
 }
@@ -349,7 +346,7 @@ function separate(){
       const nx=dx/d,nz=dz/d,p=(minD-d)*0.5;
       a.position.x-=nx*p;a.position.z-=nz*p;
       b.position.x+=nx*p;b.position.z+=nz*p;
-      const pushForce = 0.045;
+      const pushForce = 0.18;
       a.userData.vx -= nx * pushForce; a.userData.vz -= nz * pushForce;
       b.userData.vx += nx * pushForce; b.userData.vz += nz * pushForce;
     }
@@ -358,11 +355,11 @@ function separate(){
 
 function steer(m){
   if(m.userData.finished || m.userData.eliminated || m.userData.isTeleporting) return;
-  const gx = Math.max(0, Math.min(SIZE - 1, Math.round(m.position.x / CELL + HALF)));
-  const gz = Math.max(0, Math.min(SIZE - 1, Math.round(m.position.z / CELL + HALF)));
+  const gx = Math.max(0, Math.min(SIZE_X - 1, Math.round(m.position.x / CELL + HALF_X)));
+  const gz = Math.max(0, Math.min(SIZE_Z - 1, Math.round(m.position.z / CELL + HALF_Z)));
 
-  const targetWorldX = (m.userData.targetCell.x - HALF) * CELL;
-  const targetWorldZ = (m.userData.targetCell.z - HALF) * CELL;
+  const targetWorldX = (m.userData.targetCell.x - HALF_X) * CELL;
+  const targetWorldZ = (m.userData.targetCell.z - HALF_Z) * CELL;
   const distToTarget = Math.hypot(m.position.x - targetWorldX, m.position.z - targetWorldZ);
 
   if(distToTarget < 0.75 || (gx !== m.userData.currentCell.x || gz !== m.userData.currentCell.z)){
@@ -372,9 +369,9 @@ function steer(m){
     for(let i = 0; i < 4; i++){
       if(!cells[gz][gx].w[i]){
         const nx = gx + dirs[i][0], nz = gz + dirs[i][1];
-        if(nx >= 0 && nx < SIZE && nz >= 0 && nz < SIZE){
+        if(nx >= 0 && nx < SIZE_X && nz >= 0 && nz < SIZE_Z){
           const visits = m.userData.visited[nz][nx];
-          const distToExit = Math.hypot(nx - (SIZE - 1), nz - (SIZE - 1));
+          const distToExit = Math.hypot(nx - (SIZE_X - 1), nz - (SIZE_Z - 1));
           const score = visits * 100 + distToExit + (Math.random() * m.userData.randomFactor);
           validMoves.push({x: nx, z: nz, score, visits});
         }
@@ -389,12 +386,12 @@ function steer(m){
     }
   }
 
-  const tx = (m.userData.targetCell.x - HALF) * CELL, tz = (m.userData.targetCell.z - HALF) * CELL;
+  const tx = (m.userData.targetCell.x - HALF_X) * CELL, tz = (m.userData.targetCell.z - HALF_Z) * CELL;
   const dx = tx - m.position.x, dz = tz - m.position.z;
   const len = Math.hypot(dx, dz) || 1;
 
-  m.userData.vx = THREE.MathUtils.lerp(m.userData.vx, (dx / len) * m.userData.speed, 0.16);
-  m.userData.vz = THREE.MathUtils.lerp(m.userData.vz, (dz / len) * m.userData.speed, 0.16);
+  m.userData.vx = THREE.MathUtils.lerp(m.userData.vx, (dx / len) * m.userData.speed, 0.48);
+  m.userData.vz = THREE.MathUtils.lerp(m.userData.vz, (dz / len) * m.userData.speed, 0.48);
 }
 
 function startRound(){
@@ -413,32 +410,30 @@ function update(){
     if(t.type === 'bomb' && t.active && t.body){
       t.body.material.emissiveIntensity = 0.5 + Math.sin(performance.now() * 0.008) * 0.4;
     } else if((t.type === 'hole_blue' || t.type === 'hole_green') && t.active && t.ring){
-      t.ring.rotation.z += (t.type === 'hole_blue' ? 0.05 : -0.05);
+      t.ring.rotation.z += (t.type === 'hole_blue' ? 0.08 : -0.08);
     }
   });
 
   stars.forEach(s => {
     if(s.active && s.mesh){
-      s.mesh.rotation.y += 0.04;
-      s.mesh.position.y = 0.8 + Math.sin(performance.now() * 0.005) * 0.2;
+      s.mesh.rotation.y += 0.05;
+      s.mesh.position.y = 0.8 + Math.sin(performance.now() * 0.006) * 0.2;
     }
   });
 
   for(const m of [...marbles]){
     if(m.userData.finished || m.userData.eliminated) continue;
 
-    // ANIMASI PORTAL TELEPORT (BIRU -> HIJAU)
     if(m.userData.isTeleporting){
       if(m.userData.teleportPhase === 'in'){
-        m.userData.teleportProgress = (m.userData.teleportProgress || 0) + 0.1;
+        m.userData.teleportProgress = (m.userData.teleportProgress || 0) + 0.20;
         const p = m.userData.teleportProgress;
-        m.position.x = THREE.MathUtils.lerp(m.position.x, m.userData.targetHole.x, 0.3);
-        m.position.z = THREE.MathUtils.lerp(m.position.z, m.userData.targetHole.z, 0.3);
+        m.position.x = THREE.MathUtils.lerp(m.position.x, m.userData.targetHole.x, 0.45);
+        m.position.z = THREE.MathUtils.lerp(m.position.z, m.userData.targetHole.z, 0.45);
         const s = Math.max(0.01, 1 - p);
         m.scale.set(s, s, s);
 
         if(p >= 1.0){
-          // Cari Blackhole Hijau secara acak untuk tempat keluar
           const greenHoles = traps.filter(t => t.type === 'hole_green' && t.active);
           if(greenHoles.length > 0){
             const dest = greenHoles[Math.floor(Math.random() * greenHoles.length)];
@@ -446,8 +441,8 @@ function update(){
             createHolePulse(dest.x, dest.z, 0x00ff55);
             m.userData.teleportPhase = 'out';
             m.userData.teleportProgress = 0;
-            const gx = Math.max(0, Math.min(SIZE - 1, Math.round(dest.x / CELL + HALF)));
-            const gz = Math.max(0, Math.min(SIZE - 1, Math.round(dest.z / CELL + HALF)));
+            const gx = Math.max(0, Math.min(SIZE_X - 1, Math.round(dest.x / CELL + HALF_X)));
+            const gz = Math.max(0, Math.min(SIZE_Z - 1, Math.round(dest.z / CELL + HALF_Z)));
             m.userData.currentCell = {x: gx, z: gz};
             m.userData.targetCell = {x: gx, z: gz};
           } else {
@@ -455,7 +450,7 @@ function update(){
           }
         }
       } else if(m.userData.teleportPhase === 'out'){
-        m.userData.teleportProgress = (m.userData.teleportProgress || 0) + 0.1;
+        m.userData.teleportProgress = (m.userData.teleportProgress || 0) + 0.20;
         const p = m.userData.teleportProgress;
         const s = Math.min(1.0, p);
         m.scale.set(s, s, s);
@@ -464,8 +459,8 @@ function update(){
           m.scale.set(1, 1, 1);
           m.userData.isTeleporting = false;
           m.userData.teleportPhase = 'none';
-          m.userData.vx = (Math.random() - 0.5) * 0.1;
-          m.userData.vz = (Math.random() - 0.5) * 0.1;
+          m.userData.vx = (Math.random() - 0.5) * 0.4;
+          m.userData.vz = (Math.random() - 0.5) * 0.4;
         }
       }
       continue;
@@ -474,11 +469,11 @@ function update(){
     const moved = Math.hypot(m.position.x - m.userData.lastX, m.position.z - m.userData.lastZ);
     m.userData.lastX = m.position.x; m.userData.lastZ = m.position.z;
 
-    if(moved < 0.015){
+    if(moved < 0.02){
       m.userData.stuckTime = (m.userData.stuckTime || 0) + 1;
-      if(m.userData.stuckTime > 12){
-        m.userData.vx += (Math.random() - 0.5) * 0.22;
-        m.userData.vz += (Math.random() - 0.5) * 0.22;
+      if(m.userData.stuckTime > 8){
+        m.userData.vx += (Math.random() - 0.5) * 0.5;
+        m.userData.vz += (Math.random() - 0.5) * 0.5;
       }
     } else {
       m.userData.stuckTime = Math.max(0, (m.userData.stuckTime || 0) - 1);
@@ -486,9 +481,9 @@ function update(){
 
     steer(m);
     m.position.x+=m.userData.vx;m.position.z+=m.userData.vz;
-    m.userData.vx*=0.988;m.userData.vz*=0.988;
+    m.userData.vx*=0.985;m.userData.vz*=0.985;
     collide(m);
-    m.rotation.x+=m.userData.vz*2;m.rotation.z-=m.userData.vx*2;
+    m.rotation.x+=m.userData.vz*4.8;m.rotation.z-=m.userData.vx*4.8;
 
     for(const s of stars){
       if(!s.active) continue;
@@ -585,7 +580,7 @@ addEventListener('resize',()=>{
   const asp = innerWidth / innerHeight;
   camera.aspect = asp;
   camera.fov = asp < 1 ? 64 : 44;
-  camera.position.set(0, asp < 1 ? 95 : 68, asp < 1 ? 34 : 24);
+  camera.position.set(0, asp < 1 ? 110 : 78, asp < 1 ? 40 : 28);
   camera.updatePolyMatrix ? camera.updatePolyMatrix() : camera.updateProjectionMatrix();
   renderer.setSize(innerWidth,innerHeight);
 });
