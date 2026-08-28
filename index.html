@@ -95,12 +95,11 @@ function addWall(x,z,w,d){
 }
 
 function createTrapMesh(px, pz, type){
-  if(type === 'hole_blue' || type === 'hole_green'){
+  if(type === 'hole_blue'){
     const holeGroup = new THREE.Group();
-    const ringColor = type === 'hole_blue' ? 0x00c8ff : 0x00ff55;
     const ring = new THREE.Mesh(
       new THREE.RingGeometry(0.6, 1.25, 32), 
-      new THREE.MeshBasicMaterial({color: ringColor, side: THREE.DoubleSide})
+      new THREE.MeshBasicMaterial({color: 0x00c8ff, side: THREE.DoubleSide})
     );
     ring.rotation.x = -Math.PI / 2; ring.position.y = 0.04;
     const holeCore = new THREE.Mesh(new THREE.CylinderGeometry(0.85, 0.85, 0.1, 32), new THREE.MeshBasicMaterial({color: 0x000000}));
@@ -178,21 +177,11 @@ function generateMaze(){
   const occupiedKeys = new Set();
   allValidCells.sort(() => Math.random() - 0.5);
 
-  const blueCount = Math.min(Math.floor(allValidCells.length * 0.4), 3 * trapMultiplier);
+  const blueCount = Math.min(Math.floor(allValidCells.length * 0.4), 4 * trapMultiplier);
   for(let i = 0; i < blueCount; i++){
     const cell = allValidCells[i];
     const px = (cell.x - HALF_X)*CELL, pz = (cell.z - HALF_Z)*CELL;
     createTrapMesh(px, pz, 'hole_blue');
-    occupiedKeys.add(`${cell.x},${cell.z}`);
-  }
-
-  const remainingForGreen = allValidCells.filter(c => !occupiedKeys.has(`${c.x},${c.z}`));
-  remainingForGreen.sort(() => Math.random() - 0.5);
-  const greenCount = Math.max(1, Math.min(remainingForGreen.length, 3 * trapMultiplier));
-  for(let i = 0; i < greenCount; i++){
-    const cell = remainingForGreen[i];
-    const px = (cell.x - HALF_X)*CELL, pz = (cell.z - HALF_Z)*CELL;
-    createTrapMesh(px, pz, 'hole_green');
     occupiedKeys.add(`${cell.x},${cell.z}`);
   }
 
@@ -265,7 +254,7 @@ function resetMarbles(){
   while(marbles.length){scene.remove(marbles.pop());}
   for(let i=0; i<4; i++){
     const m = makeMarble(COLORS[i], i, 0);
-    m.userData.speed = 0.13 + Math.random() * 0.04;
+    m.userData.speed = 0.10 + Math.random() * 0.02;
     m.userData.randomFactor = Math.random() * 5;
     scene.add(m);
     marbles.push(m);
@@ -390,8 +379,8 @@ function steer(m){
   const dx = tx - m.position.x, dz = tz - m.position.z;
   const len = Math.hypot(dx, dz) || 1;
 
-  m.userData.vx = THREE.MathUtils.lerp(m.userData.vx, (dx / len) * m.userData.speed, 0.18);
-  m.userData.vz = THREE.MathUtils.lerp(m.userData.vz, (dz / len) * m.userData.speed, 0.18);
+  m.userData.vx = THREE.MathUtils.lerp(m.userData.vx, (dx / len) * m.userData.speed, 0.48);
+  m.userData.vz = THREE.MathUtils.lerp(m.userData.vz, (dz / len) * m.userData.speed, 0.48);
 }
 
 function startRound(){
@@ -403,14 +392,14 @@ function startRound(){
   document.getElementById('status').textContent=trapMultiplier > 1 ? `MARBLE RACE DIMULAI! (Perangkap ${trapMultiplier}x)` : 'MARBLE RACE DIMULAI!';
 }
 
-function update(dt){
+function update(){
   if(winner) return;
 
   traps.forEach(t => {
     if(t.type === 'bomb' && t.active && t.body){
       t.body.material.emissiveIntensity = 0.5 + Math.sin(performance.now() * 0.008) * 0.4;
-    } else if((t.type === 'hole_blue' || t.type === 'hole_green') && t.active && t.ring){
-      t.ring.rotation.z += (t.type === 'hole_blue' ? 0.08 : -0.08);
+    } else if(t.type === 'hole_blue' && t.active && t.ring){
+      t.ring.rotation.z += 0.08;
     }
   });
 
@@ -434,20 +423,17 @@ function update(dt){
         m.scale.set(s, s, s);
 
         if(p >= 1.0){
-          const greenHoles = traps.filter(t => t.type === 'hole_green' && t.active);
-          if(greenHoles.length > 0){
-            const dest = greenHoles[Math.floor(Math.random() * greenHoles.length)];
-            m.position.set(dest.x, RADIUS + 0.05, dest.z);
-            createHolePulse(dest.x, dest.z, 0x00ff55);
-            m.userData.teleportPhase = 'out';
-            m.userData.teleportProgress = 0;
-            const gx = Math.max(0, Math.min(SIZE_X - 1, Math.round(dest.x / CELL + HALF_X)));
-            const gz = Math.max(0, Math.min(SIZE_Z - 1, Math.round(dest.z / CELL + HALF_Z)));
-            m.userData.currentCell = {x: gx, z: gz};
-            m.userData.targetCell = {x: gx, z: gz};
-          } else {
-            respawnMarble(m, m.userData.id);
-          }
+          const rx = Math.floor(Math.random() * SIZE_X);
+          const rz = Math.floor(Math.random() * SIZE_Z);
+          const destX = (rx - HALF_X) * CELL;
+          const destZ = (rz - HALF_Z) * CELL;
+
+          m.position.set(destX, RADIUS + 0.05, destZ);
+          createHolePulse(destX, destZ, 0x00c8ff);
+          m.userData.teleportPhase = 'out';
+          m.userData.teleportProgress = 0;
+          m.userData.currentCell = {x: rx, z: rz};
+          m.userData.targetCell = {x: rx, z: rz};
         }
       } else if(m.userData.teleportPhase === 'out'){
         m.userData.teleportProgress = (m.userData.teleportProgress || 0) + 0.20;
@@ -480,8 +466,8 @@ function update(dt){
     }
 
     steer(m);
-    m.position.x += m.userData.vx * dt * 42; m.position.z += m.userData.vz * dt * 42;
-    const fric = Math.pow(0.985, dt * 42); m.userData.vx *= fric; m.userData.vz *= fric;
+    m.position.x+=m.userData.vx;m.position.z+=m.userData.vz;
+    m.userData.vx*=0.985;m.userData.vz*=0.985;
     collide(m);
     m.rotation.x+=m.userData.vz*4.8;m.rotation.z-=m.userData.vx*4.8;
 
@@ -529,7 +515,7 @@ function update(dt){
           m.userData.teleportProgress = 0;
           m.userData.targetHole = {x: t.x, z: t.z};
           createHolePulse(t.x, t.z, 0x00c8ff);
-          document.getElementById('status').textContent = `PORTAL! ${NAMES[m.userData.id]} MASUK BLACKHOLE BIRU -> KELUAR DI BLACKHOLE HIJAU!`;
+          document.getElementById('status').textContent = `PORTAL! ${NAMES[m.userData.id]} TERTELEPORTASI KE AREA ACAK!`;
         }
         break;
       }
@@ -570,12 +556,9 @@ function update(dt){
 
 function animate(t){
   requestAnimationFrame(animate);
-  const dt = Math.min((t - last) / 1000, 0.05);
-  if(!winner) elapsed += dt;
-  last = t;
+  if(!winner) elapsed+=(t-last)/1000;last=t;
   document.getElementById('timer').textContent=String(Math.floor(elapsed/60)).padStart(2,'0')+':'+String(Math.floor(elapsed%60)).padStart(2,'0');
-  update(dt);
-  renderer.render(scene,camera);
+  update();renderer.render(scene,camera);
 }
 
 startRound(); requestAnimationFrame(animate);
