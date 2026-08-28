@@ -265,7 +265,7 @@ function resetMarbles(){
   while(marbles.length){scene.remove(marbles.pop());}
   for(let i=0; i<4; i++){
     const m = makeMarble(COLORS[i], i, 0);
-    m.userData.speed = 0.405 + Math.random() * 0.07;
+    m.userData.speed = 0.13 + Math.random() * 0.04;
     m.userData.randomFactor = Math.random() * 5;
     scene.add(m);
     marbles.push(m);
@@ -390,8 +390,8 @@ function steer(m){
   const dx = tx - m.position.x, dz = tz - m.position.z;
   const len = Math.hypot(dx, dz) || 1;
 
-  m.userData.vx = THREE.MathUtils.lerp(m.userData.vx, (dx / len) * m.userData.speed, 0.48);
-  m.userData.vz = THREE.MathUtils.lerp(m.userData.vz, (dz / len) * m.userData.speed, 0.48);
+  m.userData.vx = THREE.MathUtils.lerp(m.userData.vx, (dx / len) * m.userData.speed, 0.18);
+  m.userData.vz = THREE.MathUtils.lerp(m.userData.vz, (dz / len) * m.userData.speed, 0.18);
 }
 
 function startRound(){
@@ -403,7 +403,7 @@ function startRound(){
   document.getElementById('status').textContent=trapMultiplier > 1 ? `MARBLE RACE DIMULAI! (Perangkap ${trapMultiplier}x)` : 'MARBLE RACE DIMULAI!';
 }
 
-function update(){
+function update(dt){
   if(winner) return;
 
   traps.forEach(t => {
@@ -480,8 +480,8 @@ function update(){
     }
 
     steer(m);
-    m.position.x+=m.userData.vx;m.position.z+=m.userData.vz;
-    m.userData.vx*=0.985;m.userData.vz*=0.985;
+    m.position.x += m.userData.vx * dt * 42; m.position.z += m.userData.vz * dt * 42;
+    const fric = Math.pow(0.985, dt * 42); m.userData.vx *= fric; m.userData.vz *= fric;
     collide(m);
     m.rotation.x+=m.userData.vz*4.8;m.rotation.z-=m.userData.vx*4.8;
 
@@ -570,9 +570,12 @@ function update(){
 
 function animate(t){
   requestAnimationFrame(animate);
-  if(!winner) elapsed+=(t-last)/1000;last=t;
+  const dt = Math.min((t - last) / 1000, 0.05);
+  if(!winner) elapsed += dt;
+  last = t;
   document.getElementById('timer').textContent=String(Math.floor(elapsed/60)).padStart(2,'0')+':'+String(Math.floor(elapsed%60)).padStart(2,'0');
-  update();renderer.render(scene,camera);
+  update(dt);
+  renderer.render(scene,camera);
 }
 
 startRound(); requestAnimationFrame(animate);
