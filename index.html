@@ -265,7 +265,7 @@ function resetMarbles(){
   while(marbles.length){scene.remove(marbles.pop());}
   for(let i=0; i<4; i++){
     const m = makeMarble(COLORS[i], i, 0);
-    m.userData.speed = 0.45 + Math.random() * 0.08;
+    m.userData.speed = 0.405 + Math.random() * 0.07;
     m.userData.randomFactor = Math.random() * 5;
     scene.add(m);
     marbles.push(m);
