@@ -659,7 +659,9 @@ def add_player(state, user):
         "joinedAt": time.time(),
         "control": None,
         "controlAt": 0,
-        "controlId": 0
+        "controlId": 0,
+        "flag": random.choice(DEFAULT_FLAGS),
+        "country": "random"
     }
 
     if len(state["active"]) < MAX_PLAYERS:
@@ -795,7 +797,7 @@ class RaceResultHandler(
 
         self.send_header(
             "Access-Control-Allow-Methods",
-            "POST, OPTIONS"
+            "GET, POST, OPTIONS"
         )
 
         self.send_header(
@@ -809,6 +811,28 @@ class RaceResultHandler(
 
         self.send_cors_headers()
 
+        self.end_headers()
+
+    def do_GET(self):
+        if self.path.startswith("/state"):
+            try:
+                state = load_state()
+                body = json.dumps(state, ensure_ascii=False).encode("utf-8")
+                self.send_response(200)
+                self.send_header("Content-Type", "application/json; charset=utf-8")
+                self.send_header("Content-Length", str(len(body)))
+                self.send_cors_headers()
+                self.end_headers()
+                self.wfile.write(body)
+            except Exception as e:
+                err = json.dumps({"error": str(e)}).encode("utf-8")
+                self.send_response(500)
+                self.send_cors_headers()
+                self.end_headers()
+                self.wfile.write(err)
+            return
+        self.send_response(404)
+        self.send_cors_headers()
         self.end_headers()
 
     def do_POST(self):

@@ -358,6 +358,535 @@ function generateMaze(){
   exitPos={x:HALF_X*CELL,z:HALF_Z*CELL};
 }
 
+
+// ===== 3D RANDOM COUNTRY FLAGS =====
+const COUNTRY_FLAGS = [
+  ["ID","Indonesia"],["JP","Japan"],["US","United States"],
+  ["BR","Brazil"],["GB","United Kingdom"],["FR","France"],
+  ["DE","Germany"],["IT","Italy"],["ES","Spain"],
+  ["PT","Portugal"],["NL","Netherlands"],["BE","Belgium"],
+  ["CH","Switzerland"],["SE","Sweden"],["NO","Norway"],
+  ["DK","Denmark"],["FI","Finland"],["PL","Poland"],
+  ["GR","Greece"],["TR","Turkey"],["RU","Russia"],
+  ["UA","Ukraine"],["IN","India"],["CN","China"],
+  ["KR","South Korea"],["TH","Thailand"],["VN","Vietnam"],
+  ["PH","Philippines"],["MY","Malaysia"],["SG","Singapore"],
+  ["AU","Australia"],["NZ","New Zealand"],["CA","Canada"],
+  ["MX","Mexico"],["AR","Argentina"],["CL","Chile"],
+  ["CO","Colombia"],["PE","Peru"],["ZA","South Africa"],
+  ["EG","Egypt"],["NG","Nigeria"],["KE","Kenya"],
+  ["MA","Morocco"],["SA","Saudi Arabia"],
+  ["AE","United Arab Emirates"],["IL","Israel"],
+  ["PK","Pakistan"],["BD","Bangladesh"],["LK","Sri Lanka"]
+];
+
+const FLAG_COLORS = {
+  ID:["#e31b23","#ffffff"],
+  JP:["#ffffff","#bc002d"],
+  US:["#b22234","#3c3b6e"],
+  BR:["#009c3b","#ffdf00"],
+  GB:["#012169","#c8102e"],
+  FR:["#0055a4","#ef4135"],
+  DE:["#000000","#dd0000"],
+  IT:["#009246","#ce2b37"],
+  ES:["#aa151b","#f1bf00"],
+  PT:["#046a38","#da291c"],
+  NL:["#ae1c28","#21468b"],
+  BE:["#000000","#ed2939"],
+  CH:["#d52b1e","#ffffff"],
+  SE:["#006aa7","#fecc00"],
+  NO:["#ba0c2f","#00205b"],
+  DK:["#c8102e","#ffffff"],
+  FI:["#ffffff","#003580"],
+  PL:["#ffffff","#dc143c"],
+  GR:["#0d5eaf","#ffffff"],
+  TR:["#e30a17","#ffffff"],
+  RU:["#ffffff","#0039a6"],
+  UA:["#0057b7","#ffd700"],
+  IN:["#ff9933","#138808"],
+  CN:["#de2910","#ffde00"],
+  KR:["#ffffff","#cd2e3a"],
+  TH:["#a51931","#2d2a4a"],
+  VN:["#da251d","#ffde00"],
+  PH:["#0038a8","#ce1126"],
+  MY:["#010066","#cc0001"],
+  SG:["#ed2939","#ffffff"],
+  AU:["#002868","#ffffff"],
+  NZ:["#00247d","#cc142b"],
+  CA:["#d80621","#ffffff"],
+  MX:["#006847","#ce1126"],
+  AR:["#74acdf","#f6b40e"],
+  CL:["#0039a6","#d52b1e"],
+  CO:["#fcd116","#ce1126"],
+  PE:["#d91023","#ffffff"],
+  ZA:["#007749","#ffb81c"],
+  EG:["#ce1126","#000000"],
+  NG:["#008751","#ffffff"],
+  KE:["#006600","#bb1e10"],
+  MA:["#c1272d","#006233"],
+  SA:["#006c35","#ffffff"],
+  AE:["#00732f","#000000"],
+  IL:["#ffffff","#0038b8"],
+  PK:["#01411c","#ffffff"],
+  BD:["#006a4e","#f42a41"],
+  LK:["#8d153a","#ffb81c"]
+};
+
+function createCountryFlag(code,name){
+  const canvas=document.createElement("canvas");
+  canvas.width=320;
+  canvas.height=200;
+
+  const ctx=canvas.getContext("2d");
+
+  // Helper
+  const rect=(x,y,w,h,c)=>{
+    ctx.fillStyle=c;
+    ctx.fillRect(x,y,w,h);
+  };
+
+  const circle=(x,y,r,c)=>{
+    ctx.fillStyle=c;
+    ctx.beginPath();
+    ctx.arc(x,y,r,0,Math.PI*2);
+    ctx.fill();
+  };
+
+  // ==========================================================
+  // BENDERA NEGARA - setiap kode mempunyai desain sendiri
+  // ==========================================================
+
+  if(code==="ID"){
+    rect(0,0,320,100,"#e31b23");
+    rect(0,100,320,100,"#ffffff");
+
+  }else if(code==="JP"){
+    rect(0,0,320,200,"#ffffff");
+    circle(160,100,55,"#bc002d");
+
+  }else if(code==="US"){
+    rect(0,0,320,200,"#ffffff");
+    for(let y=0;y<200;y+=30) rect(0,y,320,15,"#b22234");
+    rect(0,0,145,108,"#3c3b6e");
+
+  }else if(code==="BR"){
+    rect(0,0,320,200,"#009c3b");
+    ctx.fillStyle="#ffdf00";
+    ctx.beginPath();
+    ctx.moveTo(160,18);ctx.lineTo(302,100);
+    ctx.lineTo(160,182);ctx.lineTo(18,100);
+    ctx.closePath();ctx.fill();
+    circle(160,100,52,"#002776");
+
+  }else if(code==="GB"){
+    rect(0,0,320,200,"#012169");
+    ctx.strokeStyle="#ffffff";ctx.lineWidth=45;
+    ctx.beginPath();
+    ctx.moveTo(0,0);ctx.lineTo(320,200);
+    ctx.moveTo(320,0);ctx.lineTo(0,200);
+    ctx.stroke();
+
+    ctx.strokeStyle="#c8102e";ctx.lineWidth=20;
+    ctx.beginPath();
+    ctx.moveTo(0,0);ctx.lineTo(320,200);
+    ctx.moveTo(320,0);ctx.lineTo(0,200);
+    ctx.stroke();
+
+    rect(145,0,30,200,"#ffffff");
+    rect(0,85,320,30,"#ffffff");
+    rect(151,0,18,200,"#c8102e");
+    rect(0,91,320,18,"#c8102e");
+
+  }else if(code==="FR"){
+    rect(0,0,106.7,200,"#0055a4");
+    rect(106.7,0,106.6,200,"#ffffff");
+    rect(213.3,0,106.7,200,"#ef4135");
+
+  }else if(code==="DE"){
+    rect(0,0,320,66.7,"#000000");
+    rect(0,66.7,320,66.6,"#dd0000");
+    rect(0,133.3,320,66.7,"#ffce00");
+
+  }else if(code==="IT"){
+    rect(0,0,106.7,200,"#009246");
+    rect(106.7,0,106.6,200,"#ffffff");
+    rect(213.3,0,106.7,200,"#ce2b37");
+
+  }else if(code==="ES"){
+    rect(0,0,320,50,"#aa151b");
+    rect(0,50,320,100,"#f1bf00");
+    rect(0,150,320,50,"#aa151b");
+
+  }else if(code==="PT"){
+    rect(0,0,128,200,"#046a38");
+    rect(128,0,192,200,"#da291c");
+    circle(128,100,42,"#f4c300");
+
+  }else if(code==="NL"){
+    rect(0,0,320,66.7,"#ae1c28");
+    rect(0,66.7,320,66.6,"#ffffff");
+    rect(0,133.3,320,66.7,"#21468b");
+
+  }else if(code==="BE"){
+    rect(0,0,106.7,200,"#000000");
+    rect(106.7,0,106.6,200,"#ffd90c");
+    rect(213.3,0,106.7,200,"#ed2939");
+
+  }else if(code==="CH"){
+    rect(0,0,320,200,"#d52b1e");
+    rect(130,45,60,110,"#ffffff");
+    rect(95,80,130,40,"#ffffff");
+
+  }else if(code==="SE"){
+    rect(0,0,320,200,"#006aa7");
+    rect(90,0,36,200,"#fecc00");
+    rect(0,82,320,36,"#fecc00");
+
+  }else if(code==="NO"){
+    rect(0,0,320,200,"#ba0c2f");
+    rect(92,0,50,200,"#ffffff");
+    rect(0,75,320,50,"#ffffff");
+    rect(103,0,28,200,"#00205b");
+    rect(0,86,320,28,"#00205b");
+
+  }else if(code==="DK"){
+    rect(0,0,320,200,"#c8102e");
+    rect(90,0,32,200,"#ffffff");
+    rect(0,84,320,32,"#ffffff");
+
+  }else if(code==="FI"){
+    rect(0,0,320,200,"#ffffff");
+    rect(90,0,36,200,"#003580");
+    rect(0,82,320,36,"#003580");
+
+  }else if(code==="PL"){
+    rect(0,0,320,100,"#ffffff");
+    rect(0,100,320,100,"#dc143c");
+
+  }else if(code==="GR"){
+    rect(0,0,320,200,"#0d5eaf");
+    for(let y=0;y<200;y+=40) rect(0,y,320,20,"#ffffff");
+    rect(0,0,135,100,"#0d5eaf");
+    rect(50,0,20,100,"#ffffff");
+    rect(0,40,135,20,"#ffffff");
+
+  }else if(code==="TR"){
+    rect(0,0,320,200,"#e30a17");
+    circle(130,100,55,"#ffffff");
+    circle(150,100,44,"#e30a17");
+
+  }else if(code==="RU"){
+    rect(0,0,320,66.7,"#ffffff");
+    rect(0,66.7,320,66.6,"#0039a6");
+    rect(0,133.3,320,66.7,"#d52b1e");
+
+  }else if(code==="UA"){
+    rect(0,0,320,100,"#0057b7");
+    rect(0,100,320,100,"#ffd700");
+
+  }else if(code==="IN"){
+    rect(0,0,320,66.7,"#ff9933");
+    rect(0,66.7,320,66.6,"#ffffff");
+    rect(0,133.3,320,66.7,"#138808");
+    circle(160,100,25,"#000080");
+    circle(160,100,19,"#ffffff");
+    circle(160,100,4,"#000080");
+
+  }else if(code==="CN"){
+    rect(0,0,320,200,"#de2910");
+    ctx.fillStyle="#ffde00";
+    ctx.font="90px sans-serif";
+    ctx.textAlign="center";
+    ctx.textBaseline="middle";
+    ctx.fillText("★",65,65);
+
+  }else if(code==="KR"){
+    rect(0,0,320,200,"#ffffff");
+    circle(160,100,52,"#cd2e3a");
+    ctx.fillStyle="#0047a0";
+    ctx.beginPath();
+    ctx.arc(160,100,52,0,Math.PI);
+    ctx.fill();
+
+  }else if(code==="TH"){
+    rect(0,0,320,30,"#a51931");
+    rect(0,30,320,35,"#ffffff");
+    rect(0,65,320,70,"#2d2a4a");
+    rect(0,135,320,35,"#ffffff");
+    rect(0,170,320,30,"#a51931");
+
+  }else if(code==="VN"){
+    rect(0,0,320,200,"#da251d");
+    ctx.fillStyle="#ffde00";
+    ctx.font="100px sans-serif";
+    ctx.textAlign="center";
+    ctx.textBaseline="middle";
+    ctx.fillText("★",160,105);
+
+  }else if(code==="PH"){
+    rect(0,0,320,100,"#0038a8");
+    rect(0,100,320,100,"#ce1126");
+    ctx.fillStyle="#ffffff";
+    ctx.beginPath();
+    ctx.moveTo(0,0);ctx.lineTo(155,100);ctx.lineTo(0,200);
+    ctx.closePath();ctx.fill();
+    ctx.fillStyle="#fcd116";
+    ctx.font="55px sans-serif";
+    ctx.fillText("★",35,105);
+
+  }else if(code==="MY"){
+    rect(0,0,320,200,"#ffffff");
+    for(let y=0;y<200;y+=28) rect(0,y,320,14,"#cc0001");
+    rect(0,0,145,108,"#010066");
+    ctx.fillStyle="#ffcc00";
+    ctx.font="60px sans-serif";
+    ctx.fillText("☾",42,75);
+
+  }else if(code==="SG"){
+    rect(0,0,320,100,"#ed2939");
+    rect(0,100,320,100,"#ffffff");
+    circle(65,50,34,"#ffffff");
+    circle(78,50,29,"#ed2939");
+
+  }else if(code==="AU"){
+    rect(0,0,320,200,"#002868");
+    ctx.fillStyle="#ffffff";
+    ctx.font="55px sans-serif";
+    ctx.fillText("★",245,60);
+    ctx.fillText("★",210,145);
+
+  }else if(code==="NZ"){
+    rect(0,0,320,200,"#00247d");
+    ctx.fillStyle="#cc142b";
+    ctx.font="55px sans-serif";
+    ctx.fillText("★",245,65);
+    ctx.fillText("★",210,145);
+
+  }else if(code==="CA"){
+    rect(0,0,80,200,"#d80621");
+    rect(80,0,160,200,"#ffffff");
+    rect(240,0,80,200,"#d80621");
+    ctx.fillStyle="#d80621";
+    ctx.font="90px sans-serif";
+    ctx.fillText("♠",160,130);
+
+  }else if(code==="MX"){
+    rect(0,0,106.7,200,"#006847");
+    rect(106.7,0,106.6,200,"#ffffff");
+    rect(213.3,0,106.7,200,"#ce1126");
+
+  }else if(code==="AR"){
+    rect(0,0,320,66.7,"#74acdf");
+    rect(0,66.7,320,66.6,"#ffffff");
+    rect(0,133.3,320,66.7,"#74acdf");
+    circle(160,100,20,"#f6b40e");
+
+  }else if(code==="CL"){
+    rect(0,0,320,100,"#ffffff");
+    rect(0,100,320,100,"#d52b1e");
+    rect(0,0,110,100,"#0039a6");
+    ctx.fillStyle="#ffffff";
+    ctx.font="55px sans-serif";
+    ctx.fillText("★",55,72);
+
+  }else if(code==="CO"){
+    rect(0,0,320,100,"#fcd116");
+    rect(0,100,320,50,"#003893");
+    rect(0,150,320,50,"#ce1126");
+
+  }else if(code==="PE"){
+    rect(0,0,106.7,200,"#d91023");
+    rect(106.7,0,106.6,200,"#ffffff");
+    rect(213.3,0,106.7,200,"#d91023");
+
+  }else if(code==="ZA"){
+    rect(0,0,320,200,"#007749");
+    ctx.fillStyle="#ffb81c";
+    ctx.beginPath();
+    ctx.moveTo(0,25);ctx.lineTo(150,100);ctx.lineTo(0,175);
+    ctx.closePath();ctx.fill();
+    ctx.fillStyle="#d21034";
+    ctx.beginPath();
+    ctx.moveTo(0,45);ctx.lineTo(110,100);ctx.lineTo(0,155);
+    ctx.closePath();ctx.fill();
+
+  }else if(code==="EG"){
+    rect(0,0,320,66.7,"#ce1126");
+    rect(0,66.7,320,66.6,"#ffffff");
+    rect(0,133.3,320,66.7,"#000000");
+    circle(160,100,22,"#c09300");
+
+  }else if(code==="NG"){
+    rect(0,0,106.7,200,"#008751");
+    rect(106.7,0,106.6,200,"#ffffff");
+    rect(213.3,0,106.7,200,"#008751");
+
+  }else if(code==="KE"){
+    rect(0,0,320,65,"#000000");
+    rect(0,65,320,70,"#bb1e10");
+    rect(0,135,320,65,"#006600");
+    ctx.strokeStyle="#ffffff";
+    ctx.lineWidth=12;
+    ctx.beginPath();
+    ctx.moveTo(0,70);ctx.lineTo(320,130);
+    ctx.moveTo(320,70);ctx.lineTo(0,130);
+    ctx.stroke();
+
+  }else if(code==="MA"){
+    rect(0,0,320,200,"#c1272d");
+    ctx.strokeStyle="#006233";
+    ctx.lineWidth=7;
+    ctx.beginPath();
+    for(let i=0;i<5;i++){
+      const a=-Math.PI/2+i*2*Math.PI/5;
+      const x=160+48*Math.cos(a);
+      const y=100+48*Math.sin(a);
+      if(i===0)ctx.moveTo(x,y);else ctx.lineTo(x,y);
+    }
+    ctx.closePath();ctx.stroke();
+
+  }else if(code==="SA"){
+    rect(0,0,320,200,"#006c35");
+    rect(55,105,210,8,"#ffffff");
+
+  }else if(code==="AE"){
+    rect(0,0,80,200,"#ff0000");
+    rect(80,0,240,66.7,"#00732f");
+    rect(80,66.7,240,66.6,"#ffffff");
+    rect(80,133.3,240,66.7,"#000000");
+
+  }else if(code==="IL"){
+    rect(0,0,320,200,"#ffffff");
+    rect(0,25,320,30,"#0038b8");
+    rect(0,145,320,30,"#0038b8");
+    ctx.strokeStyle="#0038b8";
+    ctx.lineWidth=7;
+    ctx.beginPath();
+    ctx.moveTo(160,60);ctx.lineTo(195,120);ctx.lineTo(125,120);
+    ctx.closePath();ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(160,140);ctx.lineTo(125,80);ctx.lineTo(195,80);
+    ctx.closePath();ctx.stroke();
+
+  }else if(code==="PK"){
+    rect(0,0,70,200,"#ffffff");
+    rect(70,0,250,200,"#01411c");
+    circle(175,95,45,"#ffffff");
+    circle(190,85,40,"#01411c");
+
+  }else if(code==="BD"){
+    rect(0,0,320,200,"#006a4e");
+    circle(145,100,55,"#f42a41");
+
+  }else if(code==="LK"){
+    rect(0,0,320,200,"#ffb81c");
+    rect(20,20,280,160,"#8d153a");
+    rect(0,0,20,200,"#ffb81c");
+
+  }else{
+    // Jangan pernah membuat bendera polos.
+    // Jika ada kode baru yang belum didukung, gunakan
+    // kotak merah dengan kode negara sebagai penanda error.
+    rect(0,0,320,200,"#cc0000");
+    ctx.fillStyle="#ffffff";
+    ctx.font="bold 55px sans-serif";
+    ctx.textAlign="center";
+    ctx.textBaseline="middle";
+    ctx.fillText(code,160,100);
+  }
+
+  const texture=new THREE.CanvasTexture(canvas);
+  texture.colorSpace=THREE.SRGBColorSpace;
+  texture.minFilter=THREE.LinearFilter;
+  texture.magFilter=THREE.LinearFilter;
+
+  const material=new THREE.MeshBasicMaterial({
+    map:texture,
+    transparent:true,
+    depthTest:false,
+    depthWrite:false,
+    side:THREE.DoubleSide
+  });
+
+  const sprite=new THREE.Mesh(
+    new THREE.PlaneGeometry(1.55,0.95),
+    material
+  );
+
+  sprite.position.set(-1.20,1.35,0);
+  sprite.rotation.set(-Math.PI/2,0,0);
+  sprite.renderOrder=20;
+
+  sprite.userData.countryCode=code;
+  sprite.userData.countryName=name;
+  sprite.userData.keepUpright=true;
+
+  return sprite;
+}
+
+function removeCountryFlag(m){
+  const sprite=m && m.userData ? m.userData.countryFlag : null;
+  if(!sprite) return;
+
+  scene.remove(sprite);
+
+  if(sprite.material){
+    if(sprite.material.map) sprite.material.map.dispose();
+    sprite.material.dispose();
+  }
+
+  if(sprite.geometry) sprite.geometry.dispose();
+
+  m.userData.countryFlag=null;
+}
+
+function updateCountryFlags(){
+  for(const m of marbles){
+    const flag=m.userData && m.userData.countryFlag;
+
+    if(!flag) continue;
+
+    // Posisi flag mengikuti marble secara langsung.
+    // Karena flag berada di scene, ia tidak mewarisi
+    // rotation marble.
+    flag.position.set(
+      m.position.x - 1.20,
+      m.position.y + 1.35,
+      m.position.z
+    );
+
+    // Selalu tegak dan tidak ikut rotasi marble.
+    flag.rotation.set(-Math.PI/2,0,0);
+
+    flag.scale.set(1,1,1);
+
+    flag.visible=!(
+      m.userData.finished ||
+      m.userData.eliminated ||
+      m.userData.isTeleporting
+    );
+  }
+}
+
+function assignRandomCountry(m){
+  removeCountryFlag(m);
+
+  const c=COUNTRY_FLAGS[
+    Math.floor(Math.random()*COUNTRY_FLAGS.length)
+  ];
+
+  const sprite=createCountryFlag(c[0],c[1]);
+
+  // Jangan masukkan flag ke dalam marble.
+  // Kalau menjadi child marble, flag ikut rotation marble.
+  scene.add(sprite);
+
+  m.userData.countryCode=c[0];
+  m.userData.countryName=c[1];
+  m.userData.countryFlag=sprite;
+}
+
+
 const marbles=[];
 function makeMarble(color, id, cloneId = 0){
   const mesh=new THREE.Mesh(new THREE.SphereGeometry(RADIUS,32,24),
@@ -369,6 +898,7 @@ function makeMarble(color, id, cloneId = 0){
   const root=new THREE.Group();
   root.add(mesh);
   root.userData={id, cloneId, vx:0, vz:0, finished:false, eliminated:false, isTeleporting:false, teleportPhase: 'none', crowdTime: 0, isCrowding: false, boostCooldown: 0};
+  assignRandomCountry(root);
   return root;
 }
 
@@ -396,7 +926,11 @@ function respawnMarble(m, i){
 let activeTargetMarble = null;
 
 function resetMarbles(){
-  while(marbles.length){scene.remove(marbles.pop());}
+  while(marbles.length){
+    const oldMarble=marbles.pop();
+    removeCountryFlag(oldMarble);
+    scene.remove(oldMarble);
+  }
   activeTargetMarble = null;
   for(let i=0; i<4; i++){
     const m = makeMarble(COLORS[i], i, 0);
@@ -634,6 +1168,10 @@ function startRound(){
 
 function update(dt = 0.016){
   if(winner) return;
+
+  updateCountryFlags();
+
+
 
   traps.forEach(t => {
     if(t.type === 'bomb' && t.active && t.body){
