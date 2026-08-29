@@ -945,20 +945,69 @@ function resetMarbles(){
 }
 
 function updateUI(){
-  const box=document.getElementById('players');box.innerHTML='';
-  [...marbles].map((m,i)=>({m, i, d:Math.hypot(m.position.x-exitPos.x,m.position.z-exitPos.z),eliminated:m.userData.eliminated}))
+  const box=document.getElementById('players');
+  box.innerHTML='';
+
+  [...marbles]
+    .map((m,i)=>({
+      m,
+      i,
+      d:Math.hypot(
+        m.position.x-exitPos.x,
+        m.position.z-exitPos.z
+      ),
+      eliminated:m.userData.eliminated
+    }))
     .sort((a,b)=>{
-      if(a.eliminated !== b.eliminated) return a.eliminated ? 1 : -1;
+      if(a.eliminated !== b.eliminated)
+        return a.eliminated ? 1 : -1;
       return a.d-b.d;
-    }).forEach((r,place)=>{
+    })
+    .forEach((r,place)=>{
       const div=document.createElement('div');
-      div.className='player'+(r.eliminated?' dead':(place===0?' lead':''));
-      const label = r.m.userData.cloneId > 0 ? `${NAMES[r.i]} (Klon ${r.m.userData.cloneId})` : NAMES[r.i];
-      div.innerHTML=`<div class="dot" style="background:#${COLORS[r.i].toString(16).padStart(6,'0')}"></div> ${label}`;
+
+      div.className=
+        'player' +
+        (r.eliminated ? ' dead' :
+        (place===0 ? ' lead' : ''));
+
+      const countryName =
+        r.m.userData.countryName || 'Unknown Country';
+
+      const flag =
+        r.m.userData.countryFlag;
+
+      let flagHTML =
+        `<span class="country-code">??</span>`;
+
+      if(
+        flag &&
+        flag.material &&
+        flag.material.map &&
+        flag.material.map.image &&
+        typeof flag.material.map.image.toDataURL === 'function'
+      ){
+        const dataURL =
+          flag.material.map.image.toDataURL('image/png');
+
+        flagHTML =
+          `<img src="${dataURL}" alt="${countryName}">`;
+      }
+
+      div.innerHTML=`
+        <div class="country-player">
+          <div class="country-flag-mini">
+            ${flagHTML}
+          </div>
+          <div class="country-name">
+            ${countryName}
+          </div>
+        </div>
+      `;
+
       box.appendChild(div);
     });
 }
-
 function createExplosion(x,z){
   playBombSFX();
   const exp=new THREE.Mesh(new THREE.SphereGeometry(0.5,16,16),new THREE.MeshBasicMaterial({color:0xff3300,wireframe:true}));
