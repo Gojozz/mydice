@@ -139,8 +139,9 @@ scene.background=new THREE.Color(0x120a05);
 
 const aspect = innerWidth / innerHeight;
 const camera = new THREE.PerspectiveCamera(aspect < 1 ? 64 : 44, aspect, 0.1, 350);
-const baseCamPos = { x: 0, y: aspect < 1 ? 68 : 58, z: aspect < 1 ? 25 : 21 };
+const baseCamPos = { x: 0, y: 55, z: 0 };
 camera.position.set(baseCamPos.x, baseCamPos.y, baseCamPos.z);
+  camera.lookAt(0, 0, 0);
 camera.lookAt(0, 0, 0);
 
 const renderer=new THREE.WebGLRenderer({antialias:true});
@@ -286,7 +287,7 @@ function generateMaze(){
   }
 
   for(let z=1;z<SIZE_Z-1;z++) for(let x=1;x<SIZE_X-1;x++){
-    if(Math.random()<0.12){
+    if(Math.random()<0.05){
       const d=Math.floor(Math.random()*4);
       cells[z][x].w[d]=false;
       const nx=x+dirs[d][0], nz=z+dirs[d][1];
@@ -780,11 +781,8 @@ function steer(m){
 
 // PERBAIKAN: Kamera Zoom In & Mengikuti Marble HANYA ketika mendekati garis exit sampai keluar
 function updateCamera(){
-  const EXIT_ZOOM_THRESHOLD = 8.0; // Radius jarak pemicu zoom saat mendekati exit
-  // FIXED CAMERA — selalu menampilkan seluruh labirin.
-  camera.position.set(baseCamPos.x, baseCamPos.y, baseCamPos.z);
+  camera.position.set(0, 55, 0);
   camera.lookAt(0, 0, 0);
-
 }
 
 function startRound(){
@@ -1032,8 +1030,8 @@ addEventListener('resize',()=>{
   const asp = innerWidth / innerHeight;
   camera.aspect = asp;
   camera.fov = asp < 1 ? 64 : 44;
-  baseCamPos.y = asp < 1 ? 68 : 58;
-  baseCamPos.z = asp < 1 ? 25 : 21;
+  baseCamPos.y = 55;
+  baseCamPos.z = 0;
   camera.updatePolyMatrix ? camera.updatePolyMatrix() : camera.updateProjectionMatrix();
   renderer.setSize(innerWidth,innerHeight);
 });
