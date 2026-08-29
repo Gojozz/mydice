@@ -139,7 +139,7 @@ scene.background=new THREE.Color(0x120a05);
 
 const aspect = innerWidth / innerHeight;
 const camera = new THREE.PerspectiveCamera(aspect < 1 ? 64 : 44, aspect, 0.1, 350);
-const baseCamPos = { x: 0, y: aspect < 1 ? 82 : 68, z: aspect < 1 ? 30 : 24 };
+const baseCamPos = { x: 0, y: aspect < 1 ? 68 : 58, z: aspect < 1 ? 25 : 21 };
 camera.position.set(baseCamPos.x, baseCamPos.y, baseCamPos.z);
 camera.lookAt(0, 0, 0);
 
@@ -575,7 +575,7 @@ function resetMarbles(){
   
   for(let i=0; i<4; i++){
     const m = makeMarble(COLORS[i], i, 0);
-    m.userData.speed = 0.22 + Math.random() * 0.04;
+    m.userData.speed = 0.33 + Math.random() * 0.06;
     m.userData.randomFactor = Math.random() * 5;
     scene.add(m);
     marbles.push(m);
@@ -1032,8 +1032,8 @@ addEventListener('resize',()=>{
   const asp = innerWidth / innerHeight;
   camera.aspect = asp;
   camera.fov = asp < 1 ? 64 : 44;
-  baseCamPos.y = asp < 1 ? 82 : 68;
-  baseCamPos.z = asp < 1 ? 30 : 24;
+  baseCamPos.y = asp < 1 ? 68 : 58;
+  baseCamPos.z = asp < 1 ? 25 : 21;
   camera.updatePolyMatrix ? camera.updatePolyMatrix() : camera.updateProjectionMatrix();
   renderer.setSize(innerWidth,innerHeight);
 });
