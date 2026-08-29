@@ -228,7 +228,7 @@ function makeMarble(color, id, cloneId = 0){
   
   const root=new THREE.Group();
   root.add(mesh);
-  root.userData={id, cloneId, vx:0, vz:0, finished:false, eliminated:false, isTeleporting:false, teleportPhase: 'none'};
+  root.userData={id, cloneId, vx:0, vz:0, finished:false, eliminated:false, isTeleporting:false, teleportPhase: 'none', crowdTime: 0, isCrowding: false};
   return root;
 }
 
@@ -241,6 +241,8 @@ function respawnMarble(m, i){
   m.scale.set(1, 1, 1);
   m.userData.isTeleporting = false;
   m.userData.teleportPhase = 'none';
+  m.userData.crowdTime = 0;
+  m.userData.isCrowding = false;
   m.position.set(baseX + ox + (m.userData.cloneId * 0.4), RADIUS + 0.05, baseZ + oz + (m.userData.cloneId * 0.4));
   m.userData.vx = 0; m.userData.vz = 0;
   m.userData.stuckTime = 0;
@@ -325,21 +327,56 @@ function collide(m){
   }
 }
 
-function separate(){
+function separate(dt = 0.016){
+  marbles.forEach(m => m.userData.isCrowding = false);
+
   for(let i=0;i<marbles.length;i++) for(let j=i+1;j<marbles.length;j++){
     const a=marbles[i],b=marbles[j];
     if(a.userData.finished || b.userData.finished || a.userData.eliminated || b.userData.eliminated || a.userData.isTeleporting || b.userData.isTeleporting) continue;
     let dx=b.position.x-a.position.x,dz=b.position.z-a.position.z,d=Math.hypot(dx,dz);
-    const minD=RADIUS*2.1;
-    if(d<minD&&d>1e-6){
-      const nx=dx/d,nz=dz/d,p=(minD-d)*0.5;
-      a.position.x-=nx*p;a.position.z-=nz*p;
-      b.position.x+=nx*p;b.position.z+=nz*p;
-      const pushForce = 0.18;
-      a.userData.vx -= nx * pushForce; a.userData.vz -= nz * pushForce;
-      b.userData.vx += nx * pushForce; b.userData.vz += nz * pushForce;
+    const minD=RADIUS*2.4; // Jarak deteksi berdesakan yang lebih responsif
+    
+    if(d<minD){
+      a.userData.isCrowding = true;
+      b.userData.isCrowding = true;
+
+      const newTime = Math.max(a.userData.crowdTime || 0, b.userData.crowdTime || 0) + dt;
+      a.userData.crowdTime = newTime;
+      b.userData.crowdTime = newTime;
+
+      if(newTime >= 7.0){
+        const victim = Math.random() < 0.5 ? a : b;
+        victim.userData.finished = true;
+        victim.userData.eliminated = true;
+        victim.visible = false;
+        createExplosion(victim.position.x, victim.position.z);
+        const victimName = NAMES[victim.userData.id] + (victim.userData.cloneId > 0 ? ` (Klon ${victim.userData.cloneId})` : '');
+        document.getElementById('status').textContent = `BENTROKAN! ${victimName} MELEDAK setelah 7 detik berdesakan!`;
+        a.userData.crowdTime = 0;
+        b.userData.crowdTime = 0;
+        updateUI();
+        continue;
+      }
+
+      if(d > 1e-6){
+        const nx=dx/d,nz=dz/d,p=(RADIUS*2.1-d)*0.5;
+        if(p > 0){
+          a.position.x-=nx*p;a.position.z-=nz*p;
+          b.position.x+=nx*p;b.position.z+=nz*p;
+        }
+        const pushForce = 0.12;
+        a.userData.vx -= nx * pushForce; a.userData.vz -= nz * pushForce;
+        b.userData.vx += nx * pushForce; b.userData.vz += nz * pushForce;
+      }
     }
   }
+
+  // Mengurangi timer bertahap alih-alih mereset mendadak ke 0 jika terpisah sejenak
+  marbles.forEach(m => {
+    if(!m.userData.isCrowding && m.userData.crowdTime > 0){
+      m.userData.crowdTime = Math.max(0, m.userData.crowdTime - dt * 1.5);
+    }
+  });
 }
 
 function steer(m){
@@ -392,7 +429,7 @@ function startRound(){
   document.getElementById('status').textContent=trapMultiplier > 1 ? `MARBLE RACE DIMULAI! (Perangkap ${trapMultiplier}x)` : 'MARBLE RACE DIMULAI!';
 }
 
-function update(){
+function update(dt = 0.016){
   if(winner) return;
 
   traps.forEach(t => {
@@ -550,15 +587,19 @@ function update(){
     setTimeout(()=>{ round++; startRound(); }, 3500);
   }
 
-  separate();
+  separate(dt);
   if(++tick%12===0) updateUI();
 }
 
 function animate(t){
   requestAnimationFrame(animate);
-  if(!winner) elapsed+=(t-last)/1000;last=t;
+  let dt = (t - last) / 1000;
+  if(dt > 0.1) dt = 0.016;
+  if(!winner) elapsed += dt;
+  last = t;
   document.getElementById('timer').textContent=String(Math.floor(elapsed/60)).padStart(2,'0')+':'+String(Math.floor(elapsed%60)).padStart(2,'0');
-  update();renderer.render(scene,camera);
+  update(dt);
+  renderer.render(scene,camera);
 }
 
 startRound(); requestAnimationFrame(animate);
