@@ -604,7 +604,7 @@ function updateCamera(){
 
     camera.position.x = THREE.MathUtils.lerp(camera.position.x, zoomCamX, 0.08);
     camera.position.y = THREE.MathUtils.lerp(camera.position.y, zoomCamY, 0.08);
-    camera.position.z = THREE.MathUtils.lerp(camera.position.z, zoomCamZ, 0.08);
+    camera.position.z = 18; // Fixed camera distance
 
     camTargetLook.x = THREE.MathUtils.lerp(camTargetLook.x, activeTargetMarble.position.x, 0.1);
     camTargetLook.y = THREE.MathUtils.lerp(camTargetLook.y, activeTargetMarble.position.y, 0.1);
@@ -613,7 +613,7 @@ function updateCamera(){
     // Tampilan default (Overview menyorot seluruh labirin)
     camera.position.x = THREE.MathUtils.lerp(camera.position.x, baseCamPos.x, 0.05);
     camera.position.y = THREE.MathUtils.lerp(camera.position.y, baseCamPos.y, 0.05);
-    camera.position.z = THREE.MathUtils.lerp(camera.position.z, baseCamPos.z, 0.05);
+    camera.position.z = 18; // Fixed camera distance
 
     camTargetLook.x = THREE.MathUtils.lerp(camTargetLook.x, 0, 0.05);
     camTargetLook.y = THREE.MathUtils.lerp(camTargetLook.y, 0, 0.05);
