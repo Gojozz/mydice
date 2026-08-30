@@ -199,27 +199,23 @@ function playStarSFX() {
 }
 
 
-// Rolling marble background audio
+// Rolling marble background audio (single instance, volume 5% for performance)
 let rollingAudio = null;
-let rollingAudio2 = null;
-let rollingTimer = null;
 
 function startRollingAudio() {
   try {
     if (!rollingAudio) {
-      rollingAudio = new Audio("assets/sound/rollmarble.wav"); rollingAudio2 = new Audio("assets/sound/rollmarble.wav"); rollingAudio2.loop = true; rollingAudio2.volume = 0.28;
+      rollingAudio = new Audio("assets/sound/rollmarble.wav");
       rollingAudio.loop = true;
-      rollingAudio.volume = 0.28;
+      rollingAudio.volume = 0.05; // 5% volume
       rollingAudio.preload = "auto";
     }
-
-    const promise = rollingAudio.play();
-    clearTimeout(rollingTimer);
-    rollingTimer = setTimeout(() => {
-      if (rollingAudio2) { rollingAudio2.currentTime = 0; rollingAudio2.play().catch(() => {}); }
-    }, 500);
-    if (promise && promise.catch) {
-      promise.catch(() => {});
+    // Hanya panggil play sekali (jika sudah playing, jangan restart)
+    if (rollingAudio.paused) {
+      const promise = rollingAudio.play();
+      if (promise && promise.catch) {
+        promise.catch(() => {});
+      }
     }
   } catch (e) {
     console.warn("Rolling audio unavailable:", e);
@@ -228,7 +224,6 @@ function startRollingAudio() {
 
 function stopRollingAudio() {
   if (!rollingAudio) return;
-
   try {
     rollingAudio.pause();
     rollingAudio.currentTime = 0;
