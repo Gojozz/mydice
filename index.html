@@ -127,75 +127,39 @@ function playHitSFX(vol = 0.2) {
   osc.start(); osc.stop(audioCtx.currentTime + 0.07);
 }
 
-function playBombSFX() {
-  if (!audioCtx || audioCtx.state !== 'running') return;
-  const bufferSize = audioCtx.sampleRate * 0.95;
-  const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
-  const data = buffer.getChannelData(0);
-  for (let i = 0; i < bufferSize; i++) data[i] = Math.random() * 2 - 1;
-  const noise = audioCtx.createBufferSource();
-  noise.buffer = buffer;
-  const filter = audioCtx.createBiquadFilter();
-  filter.type = 'lowpass';
-  filter.frequency.setValueAtTime(700, audioCtx.currentTime);
-  filter.frequency.exponentialRampToValueAtTime(25, audioCtx.currentTime + 0.4);
-  const gain = audioCtx.createGain();
-  gain.gain.setValueAtTime(0.6, audioCtx.currentTime);
-  gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.4);
-  noise.connect(filter); filter.connect(gain); gain.connect(audioCtx.destination);
-  noise.start(); noise.stop(audioCtx.currentTime + 0.4);
 
-  const sub = audioCtx.createOscillator();
-  const subGain = audioCtx.createGain();
-  sub.type = 'triangle';
-  sub.frequency.setValueAtTime(130, audioCtx.currentTime);
-  sub.frequency.exponentialRampToValueAtTime(30, audioCtx.currentTime + 0.38);
-  subGain.gain.setValueAtTime(0.5, audioCtx.currentTime);
-  subGain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.38);
-  sub.connect(subGain); subGain.connect(audioCtx.destination);
-  sub.start(); sub.stop(audioCtx.currentTime + 0.38);
+// SFX cache - 1 instance per suara (biar tidak berat)
+const sfxBomb = new Audio("assets/sound/explotion.mp3");
+const sfxStar = new Audio("assets/sound/star.mp3");
+const sfxBoost = new Audio("assets/sound/boost.wav");
+sfxBomb.preload = "auto";
+sfxStar.preload = "auto";
+sfxBoost.preload = "auto";
+
+function playSfx(audio, vol) {
+  try {
+    audio.pause();
+    audio.currentTime = 0;
+    audio.volume = vol;
+    const p = audio.play();
+    if (p && p.catch) p.catch(() => {});
+  } catch (e) {}
+}
+
+function playBombSFX() {
+  playSfx(sfxBomb, 0.8);
 }
 
 function playPortalSFX() {
-  if (!audioCtx || audioCtx.state !== 'running') return;
-  const osc = audioCtx.createOscillator();
-  const gain = audioCtx.createGain();
-  osc.type = 'sine';
-  osc.frequency.setValueAtTime(180, audioCtx.currentTime);
-  osc.frequency.exponentialRampToValueAtTime(950, audioCtx.currentTime + 0.26);
-  gain.gain.setValueAtTime(0.35, audioCtx.currentTime);
-  gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.26);
-  osc.connect(gain); gain.connect(audioCtx.destination);
-  osc.start(); osc.stop(audioCtx.currentTime + 0.26);
+  playSfx(sfxBoost, 0.4);
 }
 
 function playBoostSFX() {
-  if (!audioCtx || audioCtx.state !== 'running') return;
-  const osc = audioCtx.createOscillator();
-  const gain = audioCtx.createGain();
-  osc.type = 'sawtooth';
-  osc.frequency.setValueAtTime(280, audioCtx.currentTime);
-  osc.frequency.exponentialRampToValueAtTime(1100, audioCtx.currentTime + 0.16);
-  gain.gain.setValueAtTime(0.25, audioCtx.currentTime);
-  gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.16);
-  osc.connect(gain); gain.connect(audioCtx.destination);
-  osc.start(); osc.stop(audioCtx.currentTime + 0.16);
+  playSfx(sfxBoost, 0.7);
 }
 
 function playStarSFX() {
-  if (!audioCtx || audioCtx.state !== 'running') return;
-  const freqs = [523.25, 659.25, 783.99];
-  freqs.forEach((f, i) => {
-    const osc = audioCtx.createOscillator();
-    const gain = audioCtx.createGain();
-    osc.type = 'sine';
-    osc.frequency.setValueAtTime(f, audioCtx.currentTime + i * 0.05);
-    gain.gain.setValueAtTime(0.25, audioCtx.currentTime + i * 0.05);
-    gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + i * 0.05 + 0.12);
-    osc.connect(gain); gain.connect(audioCtx.destination);
-    osc.start(audioCtx.currentTime + i * 0.05);
-    osc.stop(audioCtx.currentTime + i * 0.05 + 0.12);
-  });
+  playSfx(sfxStar, 0.7);
 }
 
 
@@ -207,7 +171,7 @@ function startRollingAudio() {
     if (!rollingAudio) {
       rollingAudio = new Audio("assets/sound/rollmarble.wav");
       rollingAudio.loop = true;
-      rollingAudio.volume = 0.05; // 5% volume
+      rollingAudio.volume = 0.15; // 5% volume
       rollingAudio.preload = "auto";
     }
     // Hanya panggil play sekali (jika sudah playing, jangan restart)
@@ -604,7 +568,7 @@ function createCountryFlag(country){
   div.style.lineHeight="1";
   div.style.width="auto";
   div.style.height="auto";
-  div.style.transform="translate(-50%,-50%)";
+  div.style.transform="translate(-100%,-50%)";  // geser 50% ke samping
   div.style.textShadow="0 2px 5px rgba(0,0,0,.9)";
   div.dataset.countryCode=country.code;
   div.dataset.countryName=country.name;
@@ -727,7 +691,7 @@ function resetMarbles(){
 
   for(let i=0; i<4; i++){
     const m = makeMarble(roundColors[i], i, 0);
-    m.userData.speed = 0.20 + Math.random() * 0.04;
+    m.userData.speed = 0.24 + Math.random() * 0.048  // +20% lebih cepat;
     m.userData.randomFactor = Math.random() * 5;
     scene.add(m);
     marbles.push(m);
