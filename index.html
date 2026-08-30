@@ -159,19 +159,19 @@ const aspect = innerWidth / innerHeight;
 const camera = new THREE.PerspectiveCamera(aspect < 1 ? 64 : 44, aspect, 0.1, 350);
 const baseCamPos = { x: 0, y: 74, z: 0 };
 camera.position.set(baseCamPos.x, baseCamPos.y, baseCamPos.z);
-camera.lookAt(0, 0, 5);
+camera.lookAt(0, 0, 0);
 
 const renderer=new THREE.WebGLRenderer({antialias:true});
 renderer.setPixelRatio(Math.min(devicePixelRatio,2));
 renderer.setSize(innerWidth,innerHeight);
-renderer.shadowMap.enabled = true;
-renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.shadowMap.enabled = false;
+renderer.shadowMap.type = THREE.BasicShadowMap;
 document.getElementById('game').appendChild(renderer.domElement);
 
 scene.add(new THREE.HemisphereLight(0xffe6c0,0x3a2010,1.2));
 const sun=new THREE.DirectionalLight(0xffffff,2.8);
 sun.position.set(-25,50,25);
-sun.castShadow=true;
+sun.castShadow=false;
 sun.shadow.mapSize.width = 2048;
 sun.shadow.mapSize.height = 2048;
 sun.shadow.camera.near = 0.5;
@@ -211,8 +211,8 @@ let cells = [], exitPos={x:HALF_X*CELL, z:HALF_Z*CELL};
 function addWall(x,z,w,d){
   const m=new THREE.Mesh(new THREE.BoxGeometry(w,2.8,d),wallMat);
   m.position.set(x,1.2,z);
-  m.castShadow=true;
-  m.receiveShadow=true;
+  m.castShadow=false;
+  m.receiveShadow=false;
   maze.add(m);
   walls.push({x,z,w,d,hw:w/2,hd:d/2});
 }
@@ -234,10 +234,10 @@ function createTrapMesh(px, pz, type){
     const bGroup = new THREE.Group();
     const bombBody = new THREE.Mesh(new THREE.SphereGeometry(0.8, 16, 16), new THREE.MeshStandardMaterial({color: 0x111111, emissive: 0xff2200, emissiveIntensity: 0.8, roughness:0.2}));
     bombBody.position.y = 0.8;
-    bombBody.castShadow = true;
+    bombBody.castShadow = false;
     const cap = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.12, 0.4, 8), new THREE.MeshStandardMaterial({color: 0xffaa00}));
     cap.position.set(0, 1.5, 0);
-    cap.castShadow = true;
+    cap.castShadow = false;
     bGroup.add(bombBody, cap); bGroup.position.set(px, 0, pz);
     trapGroup.add(bGroup);
     traps.push({x: px, z: pz, type: 'bomb', mesh: bGroup, active: true, body: bombBody});
@@ -249,7 +249,7 @@ function createStarMesh(px, pz){
   const starMat = new THREE.MeshStandardMaterial({color: 0xffd700, emissive: 0xffaa00, emissiveIntensity: 0.8, metalness: 0.8, roughness: 0.2});
   const mesh = new THREE.Mesh(starGeo, starMat);
   mesh.position.set(px, 0.8, pz);
-  mesh.castShadow = true;
+  mesh.castShadow = false;
   starGroup.add(mesh);
   stars.push({x: px, z: pz, mesh, active: true});
 }
@@ -559,7 +559,20 @@ function makeMarble(color, id, cloneId = 0){
   
   const root=new THREE.Group();
   root.add(mesh);
-  root.userData={id, cloneId, vx:0, vz:0, finished:false, eliminated:false, isTeleporting:false, teleportPhase: 'none', crowdTime: 0, isCrowding: false, boostCooldown: 0};
+  root.userData={
+    id,
+    cloneId,
+    vx:0,
+    vz:0,
+    finished:false,
+    eliminated:false,
+    isTeleporting:false,
+    teleportPhase:'none',
+    crowdTime:0,
+    isCrowding:false,
+    boostCooldown:0,
+    boostTime:0
+  };
   assignRandomCountry(root);
   return root;
 }
@@ -593,7 +606,7 @@ function resetMarbles(){
   
   for(let i=0; i<4; i++){
     const m = makeMarble(COLORS[i], i, 0);
-    m.userData.speed = 0.33 + Math.random() * 0.06;
+    m.userData.speed = 0.20 + Math.random() * 0.04;
     m.userData.randomFactor = Math.random() * 5;
     scene.add(m);
     marbles.push(m);
@@ -643,13 +656,50 @@ function updateUI(){
 
 function createExplosion(x,z){
   playBombSFX();
-  const exp=new THREE.Mesh(new THREE.SphereGeometry(0.5,16,16),new THREE.MeshBasicMaterial({color:0xff3300,wireframe:true}));
-  exp.position.set(x,1,z);scene.add(exp);
-  let s=1;
+
+  const group = new THREE.Group();
+  group.position.set(x, 0.8, z);
+
+  const outer = new THREE.Mesh(
+    new THREE.SphereGeometry(0.7, 20, 20),
+    new THREE.MeshBasicMaterial({
+      color:0xff3300,
+      wireframe:true,
+      transparent:true,
+      opacity:1
+    })
+  );
+
+  const inner = new THREE.Mesh(
+    new THREE.SphereGeometry(0.38, 16, 16),
+    new THREE.MeshBasicMaterial({
+      color:0xffcc00,
+      transparent:true,
+      opacity:1
+    })
+  );
+
+  group.add(outer, inner);
+  scene.add(group);
+
+  let s=0.5;
+  let life=0;
+
   const timer=setInterval(()=>{
-    s+=0.9;exp.scale.set(s,s,s);
-    if(s>7){scene.remove(exp);clearInterval(timer);}
-  },25);
+    s += 0.45;
+    life += 0.05;
+
+    outer.scale.set(s,s,s);
+    inner.scale.set(s*0.7,s*0.7,s*0.7);
+
+    outer.material.opacity = Math.max(0,1-life/0.8);
+    inner.material.opacity = Math.max(0,1-life/0.45);
+
+    if(life >= 0.8){
+      scene.remove(group);
+      clearInterval(timer);
+    }
+  },50);
 }
 
 function createHolePulse(x, z, colorHex = 0x00c8ff){
@@ -792,14 +842,26 @@ function steer(m){
   const dx = tx - m.position.x, dz = tz - m.position.z;
   const len = Math.hypot(dx, dz) || 1;
 
-  m.userData.vx = THREE.MathUtils.lerp(m.userData.vx, (dx / len) * m.userData.speed, 0.85);
-  m.userData.vz = THREE.MathUtils.lerp(m.userData.vz, (dz / len) * m.userData.speed, 0.85);
+  const boostMultiplier = (m.userData.boostTime > 0) ? 1.45 : 1.0;
+  const currentSpeed = m.userData.speed * boostMultiplier;
+
+  m.userData.vx = THREE.MathUtils.lerp(
+    m.userData.vx,
+    (dx / len) * currentSpeed,
+    0.85
+  );
+
+  m.userData.vz = THREE.MathUtils.lerp(
+    m.userData.vz,
+    (dz / len) * currentSpeed,
+    0.85
+  );
 }
 
 // PERBAIKAN: Kamera Zoom In & Mengikuti Marble HANYA ketika mendekati garis exit sampai keluar
 function updateCamera(){
   camera.position.set(0, 74, 0);
-  camera.lookAt(0, 0, 5);
+  camera.lookAt(0, 0, 0);
 }
 
 function startRound(){
@@ -844,6 +906,15 @@ function update(dt = 0.016){
 
     if(m.userData.boostCooldown > 0){
       m.userData.boostCooldown -= dt;
+    }
+
+    // BOOST TIMER
+    if(m.userData.boostTime > 0){
+      m.userData.boostTime -= dt;
+
+      if(m.userData.boostTime <= 0){
+        m.userData.boostTime = 0;
+      }
     }
 
     if(m.userData.isTeleporting){
@@ -900,8 +971,15 @@ function update(dt = 0.016){
     }
 
     steer(m);
-    m.position.x+=m.userData.vx;m.position.z+=m.userData.vz;
-    m.userData.vx*=0.985;m.userData.vz*=0.985;
+    // Gerakan dibuat berbasis waktu agar tidak terlalu cepat
+    // ketika FPS perangkat tinggi.
+    const frameScale = Math.min(dt * 60, 1.5);
+
+    m.position.x += m.userData.vx * frameScale;
+    m.position.z += m.userData.vz * frameScale;
+
+    m.userData.vx *= Math.pow(0.985, frameScale);
+    m.userData.vz *= Math.pow(0.985, frameScale);
     collide(m);
     m.rotation.x+=m.userData.vz*4.8;m.rotation.z-=m.userData.vx*4.8;
 
@@ -947,6 +1025,31 @@ function update(dt = 0.016){
           document.getElementById('status').textContent = `★ ${m.userData.countryName || 'Unknown Country'} found a star (clone limit reached)`;
         }
         updateUI();
+        break;
+      }
+    }
+
+    // =========================================================
+    // BOOST PAD COLLISION
+    // =========================================================
+    for(const b of boosts){
+      if(!b || !b.mesh) continue;
+
+      const distBoost = Math.hypot(
+        m.position.x - b.x,
+        m.position.z - b.z
+      );
+
+      if(distBoost < CELL * 0.42 && m.userData.boostCooldown <= 0){
+
+        m.userData.boostTime = 2.0;
+        m.userData.boostCooldown = 2.5;
+
+        createBoostEffect(b.x, b.z);
+
+        document.getElementById('status').textContent =
+          `⚡ SPEED BOOST! ${m.userData.countryName || 'Unknown Country'} is speeding!`;
+
         break;
       }
     }
