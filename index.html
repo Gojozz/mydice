@@ -742,83 +742,35 @@ function updateUI(){
 function createExplosion(x,z){
   playBombSFX();
 
-  const group = new THREE.Group();
-  group.position.set(x, 0, z);
-  scene.add(group);
+  const explosion = document.createElement("img");
+  explosion.src = "assets/explosion.gif";
+  explosion.alt = "";
+  explosion.style.cssText = `
+    position: fixed;
+    z-index: 20;
+    width: 90px;
+    height: 90px;
+    object-fit: contain;
+    pointer-events: none;
+    transform: translate(-50%, -50%);
+  `;
 
-  // Flash besar di tengah
-  const flash = new THREE.Mesh(
-    new THREE.CircleGeometry(1.15, 32),
-    new THREE.MeshBasicMaterial({
-      color: 0xffcc00,
-      transparent: true,
-      opacity: 1,
-      side: THREE.DoubleSide
-    })
-  );
-  flash.rotation.x = -Math.PI / 2;
-  flash.position.y = 0.16;
-  group.add(flash);
+  document.body.appendChild(explosion);
 
-  // Ring merah utama
-  const ring = new THREE.Mesh(
-    new THREE.RingGeometry(0.35, 0.95, 32),
-    new THREE.MeshBasicMaterial({
-      color: 0xff3300,
-      transparent: true,
-      opacity: 1,
-      side: THREE.DoubleSide
-    })
-  );
-  ring.rotation.x = -Math.PI / 2;
-  ring.position.y = 0.18;
-  group.add(ring);
+  const pos = new THREE.Vector3(x, 0.15, z);
+  pos.project(camera);
 
-  // Ring kuning bagian dalam
-  const innerRing = new THREE.Mesh(
-    new THREE.RingGeometry(0.15, 0.55, 32),
-    new THREE.MeshBasicMaterial({
-      color: 0xffff00,
-      transparent: true,
-      opacity: 1,
-      side: THREE.DoubleSide
-    })
-  );
-  innerRing.rotation.x = -Math.PI / 2;
-  innerRing.position.y = 0.2;
-  group.add(innerRing);
+  explosion.style.left =
+    ((pos.x * 0.5 + 0.5) * innerWidth) + "px";
 
-  let scale = 0.7;
-  let life = 0;
+  explosion.style.top =
+    ((-pos.y * 0.5 + 0.5) * innerHeight) + "px";
 
-  const timer = setInterval(() => {
-    life += 0.05;
-    scale += 0.32;
-
-    flash.scale.set(scale, scale, scale);
-    ring.scale.set(scale * 1.8, scale * 1.8, scale * 1.8);
-    innerRing.scale.set(scale * 1.35, scale * 1.35, scale * 1.35);
-
-    const fade = Math.max(0, 1 - life / 0.75);
-
-    flash.material.opacity = fade;
-    ring.material.opacity = fade;
-    innerRing.material.opacity = fade;
-
-    if (life >= 0.75) {
-      scene.remove(group);
-
-      flash.geometry.dispose();
-      ring.geometry.dispose();
-      innerRing.geometry.dispose();
-
-      flash.material.dispose();
-      ring.material.dispose();
-      innerRing.material.dispose();
-
-      clearInterval(timer);
+  setTimeout(() => {
+    if (explosion.parentNode) {
+      explosion.parentNode.removeChild(explosion);
     }
-  }, 25);
+  }, 1000);
 }
 
 
