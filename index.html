@@ -201,17 +201,23 @@ function playStarSFX() {
 
 // Rolling marble background audio
 let rollingAudio = null;
+let rollingAudio2 = null;
+let rollingTimer = null;
 
 function startRollingAudio() {
   try {
     if (!rollingAudio) {
-      rollingAudio = new Audio("assets/sound/rollmarble.wav");
+      rollingAudio = new Audio("assets/sound/rollmarble.wav"); rollingAudio2 = new Audio("assets/sound/rollmarble.wav"); rollingAudio2.loop = true; rollingAudio2.volume = 0.28;
       rollingAudio.loop = true;
       rollingAudio.volume = 0.28;
       rollingAudio.preload = "auto";
     }
 
     const promise = rollingAudio.play();
+    clearTimeout(rollingTimer);
+    rollingTimer = setTimeout(() => {
+      if (rollingAudio2) { rollingAudio2.currentTime = 0; rollingAudio2.play().catch(() => {}); }
+    }, 500);
     if (promise && promise.catch) {
       promise.catch(() => {});
     }
