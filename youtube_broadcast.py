@@ -108,61 +108,38 @@ def create_and_bind_broadcast(youtube, title, description, stream_key, label):
     return broadcast_id, stream_id
 
 
-DESCRIPTION = """🏁 AI RACING BATTLE — LIVE!
+DESCRIPTION = """🌍 MARBLE MAYHEM LIVE! 🏁
 
-This is not just a racing stream — YOU can join the race and control your own car! 🏎️💨
+Want to join the race? YOU CAN! 🔥
 
-Race against AI drivers, fight for position, use Nitro, stop, start, and try to reach the finish line first!
+💬 TYPE YOUR COUNTRY NAME IN THE LIVE CHAT!
 
-🎮 HOW TO JOIN THE RACE
+When you type your country name, your country can enter the maze with its own 🇮🇩 FLAG + COUNTRY NAME!
 
-Want to play?
+🏁 Watch your country's marble race through the maze!
+💣 Avoid deadly bombs!
+⚡ Hit the boosts!
+⭐ Collect stars!
+🏆 Fight to reach the finish first!
 
-Type:
+🌎 ONE COUNTRY = ONE MARBLE
 
-JOIN
+Which country will survive?
+Which country will be the fastest?
+Which country will become the champion? 👑
 
-in the live chat to enter the race.
+👇 JOIN NOW:
+1️⃣ Type your COUNTRY NAME in the chat
+2️⃣ Get your country's FLAG + NAME
+3️⃣ Watch your marble enter the race!
+4️⃣ Cheer for your country! 🔥
 
-🚗 RACING COMMANDS
+⚠️ New rounds bring new races and new chances to win!
 
-JOIN
-→ Join the current race.
+🌍 REPRESENT YOUR COUNTRY!
+🏁 LET THE MARBLE RACE BEGIN!
 
-N
-→ Activate Nitro and boost your car! ⚡
-
-S
-→ Stop your car.
-
-G
-→ Start your car again and continue racing.
-
-🏆 YOUR GOAL
-
-Join the race, control your car, battle against AI drivers and other players, use your Nitro at the right moment, and fight for the podium!
-
-🔥 THIS IS INTERACTIVE RACING
-
-You're not just watching the race.
-
-YOU ARE PART OF THE RACE.
-
-Your commands control your car during the live stream.
-
-🏁 CAN YOU BEAT THE AI?
-
-Join the chat.
-Enter the race.
-Take control.
-Use your Nitro.
-Fight for the win.
-
-🔔 SUBSCRIBE & TURN ON NOTIFICATIONS
-
-Don't miss the next race and your chance to get on the track!
-
-#AIRacing #InteractiveRacing #SimRacing #RacingGame #LiveRacing #AIRacingBattle #PlayWithViewers"""
+#MarbleMayhem #MarbleRace #MarbleMaze #CountryRace #CountryMarbles #LiveGame #InteractiveGame #YouTubeLive #GamingLive #Shorts"""
 
 
 def create_broadcasts():
@@ -178,7 +155,7 @@ def create_broadcasts():
     if not landscape_key:
         raise RuntimeError("YOUTUBE_STREAM_KEY belum tersedia.")
 
-    landscape_title = "🎲 SPIN DICE LIVE | JOIN & PILIH ANGKA 1-6 | SPIN WHEEL! 🎰"
+    landscape_title = "🌍 MARBLE MAYHEM LIVE 🏁 | Type Your Country & Join the Race!"
     land_broadcast_id, land_stream_id = create_and_bind_broadcast(
         youtube,
         landscape_title,
@@ -197,7 +174,7 @@ def create_broadcasts():
     print(land_broadcast_id)
 
     if vertical_key:
-        vertical_title = "🎲 SPIN DICE LIVE | JOIN & PILIH ANGKA 1-6 | SPIN WHEEL! 🎰"
+        vertical_title = "🌍 MARBLE MAYHEM LIVE 🏁 | Type Your Country & Join the Race!"
         vert_broadcast_id, vert_stream_id = create_and_bind_broadcast(
             youtube,
             vertical_title,
