@@ -1,4 +1,4 @@
-<script>window.onerror=function(){return true;};window.addEventListener("error",function(e){e.stopImmediatePropagation();e.preventDefault();},true);</script><!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="id"><head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
@@ -6,40 +6,22 @@
 <style>
 *{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#0d0704;font-family:Arial,sans-serif;color:#fff}
 #game{position:fixed;inset:0}canvas{display:block;width:100%;height:100%}
-#hud{position:fixed;z-index:5;top:8px;left:50%;transform:translateX(-50%);width:100%;text-align:center;pointer-events:none;text-shadow:0 2px 8px #000}
-#hud h1{font-size:46px;margin:0 0 4px;line-height:1.0}
-#hud .sub{font-size:15px}
+#hud{position:fixed;z-index:5;top:12px;left:50%;transform:translateX(-50%);width:100%;text-align:center;pointer-events:none;text-shadow:0 2px 8px #000}
 h1{margin:0;font-size:clamp(24px,6vw,36px);font-weight:900;letter-spacing:3px;color:#ffd166}
 .sub{font-size:11px;letter-spacing:2px;color:#f5d7a0}
 .badge{display:inline-block;margin-top:6px;padding:6px 16px;background:#24140ae8;border:2px solid #b9782e;border-radius:20px;font-size:13px;font-weight:bold}
 #timer{color:#ffe45c;margin-left:8px}
-#players{
-position:fixed;
-z-index:6;
-left:50%;
-bottom:95px;
-transform:translateX(-50%);
-width:96%;
-display:flex;
-flex-direction:row;
-flex-wrap:wrap;
-justify-content:center;
-align-items:center;
-gap:10px 14px;
-max-height:28vh;
-overflow:hidden;
-pointer-events:none;
-}
+#players{position:fixed;z-index:6;top:72px;right:7px;display:flex;flex-direction:column;gap:3px;max-height:70vh;overflow:hidden;pointer-events:none}
  .player{display:flex;align-items:center;gap:5px;min-width:0;padding:3px 7px;background:#21130be8;border:1px solid #6d4525;border-radius:10px;text-align:left;font-size:9px;font-weight:700;white-space:nowrap;box-shadow:0 2px 5px #0008}
 .player.lead{border-color:#ffd166;box-shadow:0 0 10px #ffd16688}
 .player.dead{opacity:0.35;border-color:#772222;background:#140808e8;text-decoration:line-through}
-.flagEmoji{font-size:51px;line-height:1}.countryName{font-size:27px;line-height:1.05;font-weight:700}
+.flagEmoji{font-size:17px;line-height:1}.countryName{font-size:9px;line-height:1.1}
 #status{position:fixed;z-index:6;bottom:20px;left:50%;transform:translateX(-50%);padding:8px 16px;background:#21130be8;border:1px solid #87582d;border-radius:20px;font-size:12px;font-weight:bold;max-width:90%;text-align:center}
 #message{position:fixed;z-index:10;inset:0;display:none;align-items:center;justify-content:center;background:#000b}
 #message.show{display:flex}
 .messageBox{padding:25px 35px;text-align:center;background:linear-gradient(145deg,#3b210d,#160d07);border:3px solid #e9ae45;border-radius:18px}
 .messageBox h2{margin:5px 0;color:#ffd166;font-size:28px}
-</style><style>#error-box, #error-log, .error-banner, div[style*="background: red"], div[style*="background-color: red"], div[style*="red"] { display: none !important; }</style><style>div[style*="background: red"], div[style*="background:red"], div[style*="background-color: red"], div[style*="background-color:red"], div[style*="position: fixed"][style*="red"], div[style*="position: absolute"][style*="red"] { display: none !important; opacity: 0 !important; visibility: hidden !important; pointer-events: none !important; }</style></head><body>
+</style></head><body>
 <div id="game"></div>
 <div id="hud"><h1>MARBLE MAZE</h1><div class="sub">RACE LIVE SHORTS (9:16)</div>
 <div class="badge">ROUND <span id="round">1</span> <span id="timer">00:00</span></div></div>
@@ -47,57 +29,6 @@ pointer-events:none;
 <div id="status">Klik atau Ketuk Layar Untuk Mengaktifkan Suara!</div>
 <div id="message"><div class="messageBox"><small>ROUND RESULT</small><h2 id="winner">—</h2></div></div>
 
-<script>
-window.addEventListener('error', function(e) {
-  const msg =
-
-    (e.message || 'Unknown error') +
-    '\n\nFile: ' +
-    (e.filename || 'unknown') +
-    '\nLine: ' +
-    (e.lineno || '?') +
-    ':' +
-    (e.colno || '?');
-
-  console.error(msg);
-
-  let box = document.getElementById('debug-error');
-  if (!box) {
-    box = document.createElement('pre');
-    box.id = 'debug-error';
-    box.style.cssText =
-      'position:fixed;z-index:999999;left:5px;right:5px;top:5px;' +
-      'padding:15px;background:#220000;color:#ff7777;' +
-      'font:14px monospace;white-space:pre-wrap;border:2px solid red;' +
-      'max-height:90vh;overflow:auto;';
-    document.body.appendChild(box);
-  }
-
-  box.textContent = msg;
-});
-
-window.addEventListener('unhandledrejection', function(e) {
-  const reason = e.reason && e.reason.stack
-    ? e.reason.stack
-    : String(e.reason);
-
-  console.error('PROMISE ERROR', reason);
-
-  let box = document.getElementById('debug-error');
-  if (!box) {
-    box = document.createElement('pre');
-    box.id = 'debug-error';
-    box.style.cssText =
-      'position:fixed;z-index:999999;left:5px;right:5px;top:5px;' +
-      'padding:15px;background:#220000;color:#ff7777;' +
-      'font:14px monospace;white-space:pre-wrap;border:2px solid red;' +
-      'max-height:90vh;overflow:auto;';
-    document.body.appendChild(box);
-  }
-
-  box.textContent = 'PROMISE ERROR\n\n' + reason;
-});
-</script>
 <script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js"}}</script>
 <script type="module">
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js';
@@ -198,80 +129,31 @@ function playStarSFX() {
   });
 }
 
-
-// Rolling marble background audio
-let rollingAudio = null;
-
-function startRollingAudio() {
-  try {
-    if (!rollingAudio) {
-      rollingAudio = new Audio("assets/sound/rolling-marble.mp3");
-      rollingAudio.loop = true;
-      rollingAudio.volume = 0.28;
-      rollingAudio.preload = "auto";
-    }
-
-    const promise = rollingAudio.play();
-    if (promise && promise.catch) {
-      promise.catch(() => {});
-    }
-  } catch (e) {
-    console.warn("Rolling audio unavailable:", e);
-  }
-}
-
-function stopRollingAudio() {
-  if (!rollingAudio) return;
-
-  try {
-    rollingAudio.pause();
-    rollingAudio.currentTime = 0;
-  } catch (e) {}
-}
-
 let round = 1, winner = false, elapsed = 0, last = performance.now(), tick = 0;
 let trapMultiplier = 1;
 
-const COLORS=[
-  0xff2244, // Red
-  0x2288ff, // Blue
-  0x22dd66, // Green
-  0xffdd00, // Yellow
-  0x9b30ff, // Purple
-  0xff7a00, // Orange
-  0x00d9ff, // Cyan
-  0xff4fa3, // Pink
-  0x4f7cff, // Light Blue
-  0x9b5a2e, // Brown
-  0xffffff, // White
-  0x8cff00, // Lime
-  0xff3030, // Bright Red
-  0x00ffb7, // Mint
-  0xff5cff, // Magenta
-  0x7dffea  // Aqua
-], RADIUS=0.95;
-const marbles=[];
+const COLORS=[0xff2244,0x2288ff,0x22dd66,0xffdd00], RADIUS=0.95;
 
 const scene=new THREE.Scene();
 scene.background=new THREE.Color(0x120a05);
 
 const aspect = innerWidth / innerHeight;
 const camera = new THREE.PerspectiveCamera(aspect < 1 ? 64 : 44, aspect, 0.1, 350);
-const baseCamPos = { x: 0, y: 74, z: 0 };
+const baseCamPos = { x: 0, y: aspect < 1 ? 110 : 78, z: aspect < 1 ? 40 : 28 };
 camera.position.set(baseCamPos.x, baseCamPos.y, baseCamPos.z);
 camera.lookAt(0, 0, 0);
 
 const renderer=new THREE.WebGLRenderer({antialias:true});
 renderer.setPixelRatio(Math.min(devicePixelRatio,2));
 renderer.setSize(innerWidth,innerHeight);
-renderer.shadowMap.enabled = false;
-renderer.shadowMap.type = THREE.BasicShadowMap;
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 document.getElementById('game').appendChild(renderer.domElement);
 
 scene.add(new THREE.HemisphereLight(0xffe6c0,0x3a2010,1.2));
 const sun=new THREE.DirectionalLight(0xffffff,2.8);
 sun.position.set(-25,50,25);
-sun.castShadow=false;
+sun.castShadow=true;
 sun.shadow.mapSize.width = 2048;
 sun.shadow.mapSize.height = 2048;
 sun.shadow.camera.near = 0.5;
@@ -286,34 +168,18 @@ scene.add(sun);
 
 scene.add(new THREE.AmbientLight(0xffffff,0.3));
 
-const CELL=2.8, SIZE_X=14, SIZE_Z=25, HALF_X=(SIZE_X-1)/2, HALF_Z=(SIZE_Z-1)/2;
+const CELL=2.6, SIZE_X=11, SIZE_Z=19, HALF_X=(SIZE_X-1)/2, HALF_Z=(SIZE_Z-1)/2;
 
 // PERBAIKAN: Lantai diperluas (3.5x lebih lebar/panjang), ukuran labirin tetap sama
 const boardWidth = (SIZE_X * CELL + 1) * 3.5;
 const boardDepth = (SIZE_Z * CELL + 1) * 3.5;
 const board = new THREE.Mesh(
   new THREE.BoxGeometry(boardWidth, 0.5, boardDepth),
-  new THREE.MeshStandardMaterial({color: 0x17120f, roughness: 0.85})
+  new THREE.MeshStandardMaterial({color: 0xc49563, roughness: 0.85})
 );
 board.position.y = -0.3;
-board.receiveShadow = false;
+board.receiveShadow = true;
 scene.add(board);
-
-// Lantai khusus area maze
-const mazeFloorWidth = SIZE_X * CELL + 0.9;
-const mazeFloorDepth = SIZE_Z * CELL + 0.9;
-
-const mazeFloor = new THREE.Mesh(
-  new THREE.BoxGeometry(mazeFloorWidth, 0.08, mazeFloorDepth),
-  new THREE.MeshStandardMaterial({
-    color: 0x8b6948,
-    roughness: 0.9
-  })
-);
-
-mazeFloor.position.y = -0.02;
-mazeFloor.receiveShadow = false;
-scene.add(mazeFloor);
 
 const maze=new THREE.Group();scene.add(maze);
 const trapGroup=new THREE.Group();scene.add(trapGroup);
@@ -321,14 +187,14 @@ const starGroup=new THREE.Group();scene.add(starGroup);
 const boostGroup=new THREE.Group();scene.add(boostGroup);
 
 const walls=[], traps=[], stars=[], boosts=[];
-const wallMat=new THREE.MeshStandardMaterial({color:0x35251b,roughness:0.5});
+const wallMat=new THREE.MeshStandardMaterial({color:0x1a0e06,roughness:0.4});
 let cells = [], exitPos={x:HALF_X*CELL, z:HALF_Z*CELL};
 
 function addWall(x,z,w,d){
   const m=new THREE.Mesh(new THREE.BoxGeometry(w,2.8,d),wallMat);
   m.position.set(x,1.2,z);
-  m.castShadow=false;
-  m.receiveShadow=false;
+  m.castShadow=true;
+  m.receiveShadow=true;
   maze.add(m);
   walls.push({x,z,w,d,hw:w/2,hd:d/2});
 }
@@ -350,10 +216,10 @@ function createTrapMesh(px, pz, type){
     const bGroup = new THREE.Group();
     const bombBody = new THREE.Mesh(new THREE.SphereGeometry(0.8, 16, 16), new THREE.MeshStandardMaterial({color: 0x111111, emissive: 0xff2200, emissiveIntensity: 0.8, roughness:0.2}));
     bombBody.position.y = 0.8;
-    bombBody.castShadow = false;
+    bombBody.castShadow = true;
     const cap = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.12, 0.4, 8), new THREE.MeshStandardMaterial({color: 0xffaa00}));
     cap.position.set(0, 1.5, 0);
-    cap.castShadow = false;
+    cap.castShadow = true;
     bGroup.add(bombBody, cap); bGroup.position.set(px, 0, pz);
     trapGroup.add(bGroup);
     traps.push({x: px, z: pz, type: 'bomb', mesh: bGroup, active: true, body: bombBody});
@@ -365,7 +231,7 @@ function createStarMesh(px, pz){
   const starMat = new THREE.MeshStandardMaterial({color: 0xffd700, emissive: 0xffaa00, emissiveIntensity: 0.8, metalness: 0.8, roughness: 0.2});
   const mesh = new THREE.Mesh(starGeo, starMat);
   mesh.position.set(px, 0.8, pz);
-  mesh.castShadow = false;
+  mesh.castShadow = true;
   starGroup.add(mesh);
   stars.push({x: px, z: pz, mesh, active: true});
 }
@@ -420,7 +286,7 @@ function generateMaze(){
   }
 
   for(let z=1;z<SIZE_Z-1;z++) for(let x=1;x<SIZE_X-1;x++){
-    if(Math.random()<0.05){
+    if(Math.random()<0.12){
       const d=Math.floor(Math.random()*4);
       cells[z][x].w[d]=false;
       const nx=x+dirs[d][0], nz=z+dirs[d][1];
@@ -599,7 +465,7 @@ function createCountryFlag(country){
   div.style.position="absolute";
   div.style.pointerEvents="none";
   div.style.zIndex="20";
-  div.style.fontSize="60px";
+  div.style.fontSize="30px";
   div.style.lineHeight="1";
   div.style.width="auto";
   div.style.height="auto";
@@ -665,6 +531,7 @@ function assignRandomCountry(m){
   m.userData.countryFlag=flag;
 }
 
+const marbles=[];
 function makeMarble(color, id, cloneId = 0){
   const mesh=new THREE.Mesh(new THREE.SphereGeometry(RADIUS,32,24),
     new THREE.MeshStandardMaterial({color,roughness:0.2,metalness:0.25,emissive:color,emissiveIntensity:0.18})
@@ -674,20 +541,7 @@ function makeMarble(color, id, cloneId = 0){
   
   const root=new THREE.Group();
   root.add(mesh);
-  root.userData={
-    id,
-    cloneId,
-    vx:0,
-    vz:0,
-    finished:false,
-    eliminated:false,
-    isTeleporting:false,
-    teleportPhase:'none',
-    crowdTime:0,
-    isCrowding:false,
-    boostCooldown:0,
-    boostTime:0
-  };
+  root.userData={id, cloneId, vx:0, vz:0, finished:false, eliminated:false, isTeleporting:false, teleportPhase: 'none', crowdTime: 0, isCrowding: false, boostCooldown: 0};
   assignRandomCountry(root);
   return root;
 }
@@ -695,7 +549,7 @@ function makeMarble(color, id, cloneId = 0){
 function respawnMarble(m, i){
   const startCellX = 1, startCellZ = 1;
   const baseX = (startCellX - HALF_X) * CELL, baseZ = (startCellZ - HALF_Z) * CELL;
-  const gap = 1.85, offsets = [[-gap, -gap], [gap, -gap], [-gap, gap], [gap, gap]];
+  const gap = 1.3, offsets = [[-gap, -gap], [gap, -gap], [-gap, gap], [gap, gap]];
   const [ox, oz] = offsets[i % 4];
 
   m.scale.set(1, 1, 1);
@@ -719,14 +573,9 @@ function resetMarbles(){
     scene.remove(oldMarble);
   }
   
-  // Pilih 4 warna berbeda secara acak dari 16 warna
-  const roundColors = [...COLORS]
-    .sort(() => Math.random() - 0.5)
-    .slice(0, 4);
-
   for(let i=0; i<4; i++){
-    const m = makeMarble(roundColors[i], i, 0);
-    m.userData.speed = 0.20 + Math.random() * 0.04;
+    const m = makeMarble(COLORS[i], i, 0);
+    m.userData.speed = 0.22 + Math.random() * 0.04;
     m.userData.randomFactor = Math.random() * 5;
     scene.add(m);
     marbles.push(m);
@@ -776,228 +625,13 @@ function updateUI(){
 
 function createExplosion(x,z){
   playBombSFX();
-
-  const group = new THREE.Group();
-  group.position.set(x, 0, z);
-  scene.add(group);
-
-  // Flash besar di tengah
-  const flash = new THREE.Mesh(
-    new THREE.CircleGeometry(1.15, 32),
-    new THREE.MeshBasicMaterial({
-      color: 0xffcc00,
-      transparent: true,
-      opacity: 1,
-      side: THREE.DoubleSide
-    })
-  );
-  flash.rotation.x = -Math.PI / 2;
-  flash.position.y = 0.16;
-  group.add(flash);
-
-  // Ring merah utama
-  const ring = new THREE.Mesh(
-    new THREE.RingGeometry(0.35, 0.95, 32),
-    new THREE.MeshBasicMaterial({
-      color: 0xff3300,
-      transparent: true,
-      opacity: 1,
-      side: THREE.DoubleSide
-    })
-  );
-  ring.rotation.x = -Math.PI / 2;
-  ring.position.y = 0.18;
-  group.add(ring);
-
-  // Ring kuning bagian dalam
-  const innerRing = new THREE.Mesh(
-    new THREE.RingGeometry(0.15, 0.55, 32),
-    new THREE.MeshBasicMaterial({
-      color: 0xffff00,
-      transparent: true,
-      opacity: 1,
-      side: THREE.DoubleSide
-    })
-  );
-  innerRing.rotation.x = -Math.PI / 2;
-  innerRing.position.y = 0.2;
-  group.add(innerRing);
-
-  let scale = 0.7;
-  let life = 0;
-
-  const timer = setInterval(() => {
-    life += 0.05;
-    scale += 0.32;
-
-    flash.scale.set(scale, scale, scale);
-    ring.scale.set(scale * 1.8, scale * 1.8, scale * 1.8);
-    innerRing.scale.set(scale * 1.35, scale * 1.35, scale * 1.35);
-
-    const fade = Math.max(0, 1 - life / 0.75);
-
-    flash.material.opacity = fade;
-    ring.material.opacity = fade;
-    innerRing.material.opacity = fade;
-
-    if (life >= 0.75) {
-      scene.remove(group);
-
-      flash.geometry.dispose();
-      ring.geometry.dispose();
-      innerRing.geometry.dispose();
-
-      flash.material.dispose();
-      ring.material.dispose();
-      innerRing.material.dispose();
-
-      clearInterval(timer);
-    }
-  }, 25);
-}
-
-
-function playFinishSFX(){
-  if(!audioCtx || audioCtx.state !== 'running') return;
-
-  const now=audioCtx.currentTime;
-  const notes=[523.25,659.25,783.99,1046.5];
-
-  notes.forEach((f,i)=>{
-    const osc=audioCtx.createOscillator();
-    const gain=audioCtx.createGain();
-
-    osc.type='sine';
-    osc.frequency.setValueAtTime(f,now+i*0.07);
-
-    gain.gain.setValueAtTime(0.001,now+i*0.07);
-    gain.gain.exponentialRampToValueAtTime(
-      0.28,
-      now+i*0.07+0.025
-    );
-    gain.gain.exponentialRampToValueAtTime(
-      0.001,
-      now+i*0.07+0.22
-    );
-
-    osc.connect(gain);
-    gain.connect(audioCtx.destination);
-
-    osc.start(now+i*0.07);
-    osc.stop(now+i*0.07+0.24);
-  });
-}
-
-function createFinishEffect(x,z,colorHex=0xffd166){
-
-  playFinishSFX();
-
-  const group=new THREE.Group();
-  group.position.set(x,0,z);
-  scene.add(group);
-
-  // Flash kemenangan
-  const flash=new THREE.Mesh(
-    new THREE.CircleGeometry(1.2,32),
-    new THREE.MeshBasicMaterial({
-      color:colorHex,
-      transparent:true,
-      opacity:0.95,
-      side:THREE.DoubleSide
-    })
-  );
-
-  flash.rotation.x=-Math.PI/2;
-  flash.position.y=0.12;
-  group.add(flash);
-
-  // Ring utama
-  const ring=new THREE.Mesh(
-    new THREE.RingGeometry(0.25,0.65,32),
-    new THREE.MeshBasicMaterial({
-      color:colorHex,
-      transparent:true,
-      opacity:1,
-      side:THREE.DoubleSide
-    })
-  );
-
-  ring.rotation.x=-Math.PI/2;
-  ring.position.y=0.15;
-  group.add(ring);
-
-  // Partikel kemenangan
-  const particleCount=18;
-  const particles=[];
-
-  for(let i=0;i<particleCount;i++){
-
-    const particle=new THREE.Mesh(
-      new THREE.SphereGeometry(0.10,8,8),
-      new THREE.MeshBasicMaterial({
-        color:i%2===0 ? colorHex : 0xffffff,
-        transparent:true,
-        opacity:1
-      })
-    );
-
-    particle.position.set(0,0.35,0);
-
-    particle.userData={
-      vx:(Math.random()-0.5)*0.20,
-      vy:0.08+Math.random()*0.14,
-      vz:(Math.random()-0.5)*0.20
-    };
-
-    group.add(particle);
-    particles.push(particle);
-  }
-
-  let life=0;
-
-  function animateFinish(){
-
-    life+=0.035;
-
-    const scale=0.8+life*2.8;
-
-    flash.scale.set(scale,scale,scale);
-    ring.scale.set(scale*1.7,scale*1.7,scale*1.7);
-
-    flash.material.opacity=Math.max(0,0.95-life*1.8);
-    ring.material.opacity=Math.max(0,1-life*1.35);
-
-    for(const particle of particles){
-      particle.position.x+=particle.userData.vx;
-      particle.position.y+=particle.userData.vy;
-      particle.position.z+=particle.userData.vz;
-
-      particle.userData.vy-=0.006;
-      particle.rotation.x+=0.15;
-      particle.rotation.z+=0.12;
-
-      particle.material.opacity=Math.max(0,1-life*1.25);
-    }
-
-    if(life<0.85){
-      requestAnimationFrame(animateFinish);
-    }else{
-      scene.remove(group);
-
-      flash.geometry.dispose();
-      ring.geometry.dispose();
-
-      flash.material.dispose();
-      ring.material.dispose();
-
-      particles.forEach(p=>{
-        p.geometry.dispose();
-        p.material.dispose();
-      });
-    }
-  }
-
-  requestAnimationFrame(animateFinish);
+  const exp=new THREE.Mesh(new THREE.SphereGeometry(0.5,16,16),new THREE.MeshBasicMaterial({color:0xff3300,wireframe:true}));
+  exp.position.set(x,1,z);scene.add(exp);
+  let s=1;
+  const timer=setInterval(()=>{
+    s+=0.9;exp.scale.set(s,s,s);
+    if(s>7){scene.remove(exp);clearInterval(timer);}
+  },25);
 }
 
 function createHolePulse(x, z, colorHex = 0x00c8ff){
@@ -1012,83 +646,12 @@ function createHolePulse(x, z, colorHex = 0x00c8ff){
 
 function createStarEffect(x,z){
   playStarSFX();
-
-  const group = new THREE.Group();
-  group.position.set(x, 0, z);
-  scene.add(group);
-
-  // Flash emas di tengah
-  const flash = new THREE.Mesh(
-    new THREE.CircleGeometry(1.0, 32),
-    new THREE.MeshBasicMaterial({
-      color: 0xffff00,
-      transparent: true,
-      opacity: 1,
-      side: THREE.DoubleSide
-    })
-  );
-  flash.rotation.x = -Math.PI / 2;
-  flash.position.y = 0.16;
-  group.add(flash);
-
-  // Ring emas menyebar
-  const ring = new THREE.Mesh(
-    new THREE.RingGeometry(0.25, 0.75, 32),
-    new THREE.MeshBasicMaterial({
-      color: 0xffd000,
-      transparent: true,
-      opacity: 1,
-      side: THREE.DoubleSide
-    })
-  );
-  ring.rotation.x = -Math.PI / 2;
-  ring.position.y = 0.18;
-  group.add(ring);
-
-  // Ring putih/kuning bagian dalam
-  const innerRing = new THREE.Mesh(
-    new THREE.RingGeometry(0.1, 0.4, 32),
-    new THREE.MeshBasicMaterial({
-      color: 0xffffff,
-      transparent: true,
-      opacity: 1,
-      side: THREE.DoubleSide
-    })
-  );
-  innerRing.rotation.x = -Math.PI / 2;
-  innerRing.position.y = 0.2;
-  group.add(innerRing);
-
-  let scale = 0.6;
-  let life = 0;
-
-  const timer = setInterval(() => {
-    life += 0.05;
-    scale += 0.28;
-
-    flash.scale.set(scale, scale, scale);
-    ring.scale.set(scale * 1.8, scale * 1.8, scale * 1.8);
-    innerRing.scale.set(scale * 1.35, scale * 1.35, scale * 1.35);
-
-    const fade = Math.max(0, 1 - life / 0.75);
-
-    flash.material.opacity = fade;
-    ring.material.opacity = fade;
-    innerRing.material.opacity = fade;
-
-    if (life >= 0.75) {
-      scene.remove(group);
-
-      flash.geometry.dispose();
-      ring.geometry.dispose();
-      innerRing.geometry.dispose();
-
-      flash.material.dispose();
-      ring.material.dispose();
-      innerRing.material.dispose();
-
-      clearInterval(timer);
-    }
+  const sparkle=new THREE.Mesh(new THREE.SphereGeometry(1.2, 16, 16),new THREE.MeshBasicMaterial({color:0xffd700,wireframe:true}));
+  sparkle.position.set(x, 1, z); scene.add(sparkle);
+  let s=0.5;
+  const timer=setInterval(()=>{
+    s+=0.4; sparkle.scale.set(s,s,s);
+    if(s>5){scene.remove(sparkle); clearInterval(timer);}
   }, 25);
 }
 
@@ -1211,30 +774,20 @@ function steer(m){
   const dx = tx - m.position.x, dz = tz - m.position.z;
   const len = Math.hypot(dx, dz) || 1;
 
-  const boostMultiplier = (m.userData.boostTime > 0) ? 1.45 : 1.0;
-  const currentSpeed = m.userData.speed * boostMultiplier;
-
-  m.userData.vx = THREE.MathUtils.lerp(
-    m.userData.vx,
-    (dx / len) * currentSpeed,
-    0.85
-  );
-
-  m.userData.vz = THREE.MathUtils.lerp(
-    m.userData.vz,
-    (dz / len) * currentSpeed,
-    0.85
-  );
+  m.userData.vx = THREE.MathUtils.lerp(m.userData.vx, (dx / len) * m.userData.speed, 0.85);
+  m.userData.vz = THREE.MathUtils.lerp(m.userData.vz, (dz / len) * m.userData.speed, 0.85);
 }
 
 // PERBAIKAN: Kamera Zoom In & Mengikuti Marble HANYA ketika mendekati garis exit sampai keluar
 function updateCamera(){
-  camera.position.set(0, 74, 0);
+  const EXIT_ZOOM_THRESHOLD = 8.0; // Radius jarak pemicu zoom saat mendekati exit
+  // FIXED CAMERA — selalu menampilkan seluruh labirin.
+  camera.position.set(baseCamPos.x, baseCamPos.y, baseCamPos.z);
   camera.lookAt(0, 0, 0);
+
 }
 
 function startRound(){
-  startRollingAudio();
   winner=false;elapsed=0;
   document.getElementById('round').textContent=round;
   document.getElementById('message').classList.remove('show');
@@ -1244,10 +797,7 @@ function startRound(){
 }
 
 function update(dt = 0.016){
-  if(winner) {
-    stopRollingAudio();
-    return;
-}
+  if(winner) return;
 
   updateCountryFlags();
 
@@ -1279,15 +829,6 @@ function update(dt = 0.016){
 
     if(m.userData.boostCooldown > 0){
       m.userData.boostCooldown -= dt;
-    }
-
-    // BOOST TIMER
-    if(m.userData.boostTime > 0){
-      m.userData.boostTime -= dt;
-
-      if(m.userData.boostTime <= 0){
-        m.userData.boostTime = 0;
-      }
     }
 
     if(m.userData.isTeleporting){
@@ -1344,15 +885,8 @@ function update(dt = 0.016){
     }
 
     steer(m);
-    // Gerakan dibuat berbasis waktu agar tidak terlalu cepat
-    // ketika FPS perangkat tinggi.
-    const frameScale = Math.min(dt * 60, 1.5);
-
-    m.position.x += m.userData.vx * frameScale;
-    m.position.z += m.userData.vz * frameScale;
-
-    m.userData.vx *= Math.pow(0.985, frameScale);
-    m.userData.vz *= Math.pow(0.985, frameScale);
+    m.position.x+=m.userData.vx;m.position.z+=m.userData.vz;
+    m.userData.vx*=0.985;m.userData.vz*=0.985;
     collide(m);
     m.rotation.x+=m.userData.vz*4.8;m.rotation.z-=m.userData.vx*4.8;
 
@@ -1402,31 +936,6 @@ function update(dt = 0.016){
       }
     }
 
-    // =========================================================
-    // BOOST PAD COLLISION
-    // =========================================================
-    for(const b of boosts){
-      if(!b || !b.mesh) continue;
-
-      const distBoost = Math.hypot(
-        m.position.x - b.x,
-        m.position.z - b.z
-      );
-
-      if(distBoost < CELL * 0.42 && m.userData.boostCooldown <= 0){
-
-        m.userData.boostTime = 2.0;
-        m.userData.boostCooldown = 2.5;
-
-        createBoostEffect(b.x, b.z);
-
-        document.getElementById('status').textContent =
-          `⚡ SPEED BOOST! ${m.userData.countryName || 'Unknown Country'} is speeding!`;
-
-        break;
-      }
-    }
-
     for(const t of traps){
       if(!t.active) continue;
       const dist = Math.hypot(m.position.x - t.x, m.position.z - t.z);
@@ -1434,56 +943,26 @@ function update(dt = 0.016){
         if(t.type === 'bomb' && dist < 1.1){
           const countryName = m.userData.countryName || 'Unknown Country';
 
-          // 1. Create explosion BEFORE hiding/removing the marble and bomb
-
-
-          createExplosion(t.x, t.z);
-
-
-
-          // 2. Eliminate the marble
-
-
+          // 1. Eliminate the marble
           m.userData.finished = true;
-
-
           m.userData.eliminated = true;
-
-
           m.visible = false;
 
-
-
-          // 3. Consume the bomb immediately
-
-
+          // 2. Consume the bomb immediately
           t.active = false;
 
-
-
           if(t.mesh){
-
-
             t.mesh.visible = false;
-
-
             trapGroup.remove(t.mesh);
-
-
           }
 
-
-
-          // 4. Clear camera target if necessary
-
-
+          // 3. Clear camera target if necessary
           if(activeTargetMarble === m){
-
-
             activeTargetMarble = null;
-
-
           }
+
+          // 4. Explosion effect
+          createExplosion(t.x, t.z);
 
           // 5. English event message
           document.getElementById('status').textContent =
@@ -1504,12 +983,6 @@ function update(dt = 0.016){
     }
 
     if(!m.userData.finished && !m.userData.eliminated && Math.hypot(m.position.x-exitPos.x, m.position.z-exitPos.z) < RADIUS + 0.45){
-      createFinishEffect(
-        m.position.x,
-        m.position.z,
-        COLORS[m.userData.id % COLORS.length]
-      );
-
       m.userData.finished=true;winner=true;
       trapMultiplier = 1;
       document.getElementById('winner').textContent=m.userData.countryName || 'Unknown Country' + (m.userData.cloneId > 0 ? ` (Clone ${m.userData.cloneId})` : '') + ' WINS!!';
@@ -1559,8 +1032,8 @@ addEventListener('resize',()=>{
   const asp = innerWidth / innerHeight;
   camera.aspect = asp;
   camera.fov = asp < 1 ? 64 : 44;
-  baseCamPos.y = 74;
-  baseCamPos.z = 0;
+  baseCamPos.y = asp < 1 ? 110 : 78;
+  baseCamPos.z = asp < 1 ? 40 : 28;
   camera.updatePolyMatrix ? camera.updatePolyMatrix() : camera.updateProjectionMatrix();
   renderer.setSize(innerWidth,innerHeight);
 });

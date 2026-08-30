@@ -1,4 +1,4 @@
-<script>window.onerror=function(){return true;};window.addEventListener("error",function(e){e.stopImmediatePropagation();e.preventDefault();},true);</script><!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="id"><head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
@@ -39,7 +39,7 @@ pointer-events:none;
 #message.show{display:flex}
 .messageBox{padding:25px 35px;text-align:center;background:linear-gradient(145deg,#3b210d,#160d07);border:3px solid #e9ae45;border-radius:18px}
 .messageBox h2{margin:5px 0;color:#ffd166;font-size:28px}
-</style><style>#error-box, #error-log, .error-banner, div[style*="background: red"], div[style*="background-color: red"], div[style*="red"] { display: none !important; }</style><style>div[style*="background: red"], div[style*="background:red"], div[style*="background-color: red"], div[style*="background-color:red"], div[style*="position: fixed"][style*="red"], div[style*="position: absolute"][style*="red"] { display: none !important; opacity: 0 !important; visibility: hidden !important; pointer-events: none !important; }</style></head><body>
+</style></head><body>
 <div id="game"></div>
 <div id="hud"><h1>MARBLE MAZE</h1><div class="sub">RACE LIVE SHORTS (9:16)</div>
 <div class="badge">ROUND <span id="round">1</span> <span id="timer">00:00</span></div></div>
@@ -47,57 +47,6 @@ pointer-events:none;
 <div id="status">Klik atau Ketuk Layar Untuk Mengaktifkan Suara!</div>
 <div id="message"><div class="messageBox"><small>ROUND RESULT</small><h2 id="winner">—</h2></div></div>
 
-<script>
-window.addEventListener('error', function(e) {
-  const msg =
-
-    (e.message || 'Unknown error') +
-    '\n\nFile: ' +
-    (e.filename || 'unknown') +
-    '\nLine: ' +
-    (e.lineno || '?') +
-    ':' +
-    (e.colno || '?');
-
-  console.error(msg);
-
-  let box = document.getElementById('debug-error');
-  if (!box) {
-    box = document.createElement('pre');
-    box.id = 'debug-error';
-    box.style.cssText =
-      'position:fixed;z-index:999999;left:5px;right:5px;top:5px;' +
-      'padding:15px;background:#220000;color:#ff7777;' +
-      'font:14px monospace;white-space:pre-wrap;border:2px solid red;' +
-      'max-height:90vh;overflow:auto;';
-    document.body.appendChild(box);
-  }
-
-  box.textContent = msg;
-});
-
-window.addEventListener('unhandledrejection', function(e) {
-  const reason = e.reason && e.reason.stack
-    ? e.reason.stack
-    : String(e.reason);
-
-  console.error('PROMISE ERROR', reason);
-
-  let box = document.getElementById('debug-error');
-  if (!box) {
-    box = document.createElement('pre');
-    box.id = 'debug-error';
-    box.style.cssText =
-      'position:fixed;z-index:999999;left:5px;right:5px;top:5px;' +
-      'padding:15px;background:#220000;color:#ff7777;' +
-      'font:14px monospace;white-space:pre-wrap;border:2px solid red;' +
-      'max-height:90vh;overflow:auto;';
-    document.body.appendChild(box);
-  }
-
-  box.textContent = 'PROMISE ERROR\n\n' + reason;
-});
-</script>
 <script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js"}}</script>
 <script type="module">
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js';
@@ -198,37 +147,6 @@ function playStarSFX() {
   });
 }
 
-
-// Rolling marble background audio
-let rollingAudio = null;
-
-function startRollingAudio() {
-  try {
-    if (!rollingAudio) {
-      rollingAudio = new Audio("assets/sound/rolling-marble.mp3");
-      rollingAudio.loop = true;
-      rollingAudio.volume = 0.28;
-      rollingAudio.preload = "auto";
-    }
-
-    const promise = rollingAudio.play();
-    if (promise && promise.catch) {
-      promise.catch(() => {});
-    }
-  } catch (e) {
-    console.warn("Rolling audio unavailable:", e);
-  }
-}
-
-function stopRollingAudio() {
-  if (!rollingAudio) return;
-
-  try {
-    rollingAudio.pause();
-    rollingAudio.currentTime = 0;
-  } catch (e) {}
-}
-
 let round = 1, winner = false, elapsed = 0, last = performance.now(), tick = 0;
 let trapMultiplier = 1;
 
@@ -250,7 +168,6 @@ const COLORS=[
   0xff5cff, // Magenta
   0x7dffea  // Aqua
 ], RADIUS=0.95;
-const marbles=[];
 
 const scene=new THREE.Scene();
 scene.background=new THREE.Color(0x120a05);
