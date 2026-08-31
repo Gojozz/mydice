@@ -44,11 +44,11 @@ jobs:
           mkdir -p piper_models
           cd piper_models
           wget -q --show-progress \
-            https://huggingface.co/rhasspy/piper-voices/resolve/main/id/id_ID/news_tts/medium/id_ID-news_tts-medium.onnx
+            https://huggingface.co/rhasspy/piper-voices/resolve/main/en/en_US/lessac/medium/en_US-lessac-medium.onnx
           wget -q --show-progress \
-            https://huggingface.co/rhasspy/piper-voices/resolve/main/id/id_ID/news_tts/medium/id_ID-news_tts-medium.onnx.json
+            https://huggingface.co/rhasspy/piper-voices/resolve/main/en/en_US/lessac/medium/en_US-lessac-medium.onnx.json
           cd ..
-          ls -lh piper_models/id_ID-news_tts-medium.*
+          ls -lh piper_models/en_US-lessac-medium.*
 
       - name: Start PulseAudio
         run: |
@@ -96,7 +96,7 @@ jobs:
           YOUTUBE_LIVE_ID: ${{ env.YOUTUBE_LIVE_ID }}
           YOUTUBE_VERTICAL_LIVE_ID: ${{ env.YOUTUBE_VERTICAL_LIVE_ID }}
           PIPER_BIN: piper
-          PIPER_MODEL: ${{ github.workspace }}/piper_models/id_ID-news_tts-medium.onnx
+          PIPER_MODEL: ${{ github.workspace }}/piper_models/en_US-lessac-medium.onnx
           PULSE_SINK: stream_sink
         run: |
           echo "===== START CHAT BOT ====="
