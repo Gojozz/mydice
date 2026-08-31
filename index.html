@@ -1929,163 +1929,178 @@ function update(dt = 0.016){
 
     for(const s of stars){
       if(!s.active) continue;
-      const dist = Math.hypot(m.position.x - s.x, m.position.z - s.z);
+
+      const dist = Math.hypot(
+        m.position.x - s.x,
+        m.position.z - s.z
+      );
+
       if(dist < 1.35){
         s.active = false;
         starGroup.remove(s.mesh);
         createStarEffect(s.x, s.z);
 
         /*
-         * STAR = NEW COUNTRY SPAWN
+         * ============================================================
+         * STAR = ALWAYS SPAWN ONE NEW MARBLE
+         * ============================================================
          *
-         * Keep the original marble-spawn mechanism.
-         * The new marble is NOT a copy of the source country.
-         * It receives the next waiting viewer from chat.
+         * Ada viewer baru:
+         *   -> marble baru memakai negara viewer.
+         *
+         * Tidak ada viewer baru:
+         *   -> marble baru memakai negara random.
+         *
+         * Dalam kedua kondisi:
+         *   -> selalu marble BARU.
+         *   -> bukan clone.
+         *   -> masuk dari START.
          */
 
-        const colorId = m.userData.id;
+        const occupiedUsers = new Set(
+          marbles
+            .filter(item =>
+              !item.userData.eliminated &&
+              !item.userData.finished &&
+              item.userData.chatAssigned
+            )
+            .map(item =>
+              String(
+                item.userData.chatUser || ""
+              ).trim().toLowerCase()
+            )
+        );
 
-        const currentClones =
-          marbles.filter(item =>
-            item.userData.id === colorId &&
-            !item.userData.eliminated
-          ).length;
+        const nextPlayer = getAllChatPlayers().find(player => {
+          const key = playerKey(player);
+          return key && !occupiedUsers.has(key);
+        });
 
-        if(currentClones <= 3){
+        /*
+         * Marble baru independen.
+         */
+        const newId = marbles.length;
 
-          const newCloneId =
-            marbles.filter(item =>
-              item.userData.id === colorId
-            ).length;
+        const newColor =
+          COLORS[Math.floor(Math.random() * COLORS.length)];
 
-          const cloneColor =
-            COLORS[Math.floor(Math.random() * COLORS.length)];
+        const newMarble = makeMarble(
+          newColor,
+          newId,
+          0
+        );
 
-          const cloneMesh =
-            makeMarble(
-              cloneColor,
-              colorId,
-              newCloneId
-            );
+        let viewer = "Random";
+        let country = "Unknown Country";
+        let emoji = "🏳️";
+
+        if(nextPlayer){
 
           /*
-           * Find the next viewer who does not already
-           * have a live marble.
+           * Ada viewer baru:
+           * negara mengikuti viewer.
            */
-          const occupiedUsers = new Set(
-            marbles
-              .filter(item =>
-                !item.userData.eliminated &&
-                !item.userData.finished &&
-                item.userData.chatAssigned
-              )
-              .map(item =>
-                String(
-                  item.userData.chatUser || ""
-                ).toLowerCase()
-              )
+          applyPlayerToMarble(
+            newMarble,
+            nextPlayer
           );
 
-          const nextPlayer =
-            getAllChatPlayers().find(player => {
+          newMarble.userData.chatAssigned = true;
 
-              const key = playerKey(player);
+          viewer =
+            nextPlayer.viewerName ||
+            nextPlayer.name ||
+            nextPlayer.user ||
+            "Viewer";
 
-              return (
-                key &&
-                !occupiedUsers.has(key)
-              );
+          country =
+            nextPlayer.countryName ||
+            nextPlayer.country ||
+            "Unknown Country";
 
-            });
+          emoji =
+            nextPlayer.countryEmoji ||
+            nextPlayer.flag ||
+            "🏳️";
 
-          if(nextPlayer){
-
-            /*
-             * NEW COUNTRY.
-             * Do not inherit the source marble.
-             */
-            applyPlayerToMarble(
-              cloneMesh,
-              nextPlayer
-            );
-
-          } else {
-
-            /*
-             * No viewer waiting yet.
-             * Keep the old random-country fallback.
-             */
-            assignRandomCountry(
-              cloneMesh
-            );
-
-            cloneMesh.userData.chatAssigned = false;
-            cloneMesh.userData.chatUser = "";
-            cloneMesh.userData.viewerName = "";
-          }
-
-          cloneMesh.userData.speed =
-            m.userData.speed;
-
-          cloneMesh.userData.randomFactor =
-            m.userData.randomFactor;
-
-          scene.add(cloneMesh);
-
-          marbles.push(cloneMesh);
-
-          respawnMarble(
-            cloneMesh,
-            colorId
+          console.log(
+            "[STAR] NEW VIEWER SPAWN:",
+            emoji,
+            country,
+            viewer
           );
-
-          if(nextPlayer){
-
-            const viewer =
-              nextPlayer.viewerName ||
-              nextPlayer.name ||
-              nextPlayer.user ||
-              "Viewer";
-
-            const country =
-              nextPlayer.countryName ||
-              nextPlayer.country ||
-              "Unknown Country";
-
-            const emoji =
-              nextPlayer.countryEmoji ||
-              nextPlayer.flag ||
-              "🏳️";
-
-            document.getElementById('status').textContent =
-              `🌍 ${emoji} ${country} — ${viewer} entered the arena!`;
-
-            console.log(
-              "[STAR] NEW COUNTRY:",
-              emoji,
-              country,
-              viewer
-            );
-
-          } else {
-
-            document.getElementById('status').textContent =
-              `★ ${m.userData.countryName || 'Unknown Country'} found a star! Waiting for the next country...`;
-
-          }
 
         } else {
 
-          document.getElementById('status').textContent =
-            `★ ${m.userData.countryName || 'Unknown Country'} found a star!`;
+          /*
+           * Tidak ada viewer:
+           * tetap spawn marble dengan negara random.
+           */
+          assignRandomCountry(newMarble);
 
+          newMarble.userData.chatAssigned = false;
+          newMarble.userData.chatUser = "";
+          newMarble.userData.viewerName = "";
+
+          country =
+            newMarble.userData.countryName ||
+            "Unknown Country";
+
+          emoji =
+            newMarble.userData.countryEmoji ||
+            "🏳️";
+
+          console.log(
+            "[STAR] RANDOM COUNTRY SPAWN:",
+            emoji,
+            country
+          );
         }
+
+        /*
+         * Pertahankan karakteristik gerakan marble sumber,
+         * tetapi bukan identitasnya.
+         */
+        newMarble.userData.speed =
+          m.userData.speed ||
+          (0.24 + Math.random() * 0.048);
+
+        newMarble.userData.randomFactor =
+          Math.random() * 5;
+
+        /*
+         * Masukkan marble baru ke scene.
+         */
+        scene.add(newMarble);
+        marbles.push(newMarble);
+
+        /*
+         * Spawn dari START.
+         */
+        respawnMarble(
+          newMarble,
+          marbles.length - 1
+        );
+
+        if(nextPlayer){
+          document.getElementById('status').textContent =
+            `🌍 ${emoji} ${country} — ${viewer} entered the arena!`;
+        } else {
+          document.getElementById('status').textContent =
+            `⭐ ${emoji} ${country} spawned from a star!`;
+        }
+
+        console.log(
+          "[STAR] MARBLE CREATED:",
+          "id:", newId,
+          "country:", country,
+          "viewer:", viewer
+        );
 
         updateUI();
         break;
       }
     }
-
     // =========================================================
     // BOOST PAD COLLISION
     // =========================================================
