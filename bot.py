@@ -699,10 +699,22 @@ COUNTRY_ALIASES = {
 def detect_country(text):
     text = str(text or "").strip().lower()
 
-    if len(text) > 40:
+    if not text or len(text) > 60:
         return None
 
-    return COUNTRY_ALIASES.get(text)
+    # exact match dulu
+    hit = COUNTRY_ALIASES.get(text)
+    if hit:
+        return hit
+
+    # match alias sebagai whole word di dalam pesan
+    for alias, data in COUNTRY_ALIASES.items():
+        if len(alias) < 3:
+            continue
+        if re.search(rf"(?<!\w){re.escape(alias)}(?!\w)", text):
+            return data
+
+    return None
 
 
 def normalize_user(user):
@@ -1167,170 +1179,142 @@ def template_category(text):
 
 COMBO_PARTS = {
     "greeting": {
-        "open": [
-            "Yo", "Woy", "Halo", "Hai", "Nah", "Akhirnya nongol"
-        ],
+        "open": ["Hey", "Yo", "Hello", "Hi", "Welcome"],
         "middle": [
-            "game dadunya lagi panas",
-            "game lagi rame",
-            "kita gas nonton",
-            "aksi lagi brutal",
-            "suasana makin pecah"
+            "the marble maze is heating up",
+            "the race is getting wild",
+            "great to see you here",
+            "the arena is packed",
+            "action is nonstop"
         ],
         "end": [
-            "gas terus!",
-            "jangan kedip!",
-            "pantengin sampai finish!",
-            "siap-siap kaget!",
-            "mantul!"
+            "enjoy the race!",
+            "don't blink!",
+            "cheer for your country!",
+            "have fun!",
+            "let's go!"
         ],
     },
-
     "reaction": {
-        "open": [
-            "Waduh", "Buset", "Gila", "Anjay", "Wih", "Edan", "Njir"
-        ],
+        "open": ["Whoa", "Wow", "Nice", "Insane", "Oh no"],
         "middle": [
-            "itu manuvernya brutal",
-            "duelnya makin panas",
-            "mobilnya makin ngaco",
-            "tadi nyaris tabrakan",
-            "posisinya berubah terus",
-            "aksi depannya gak santai"
+            "that move was crazy",
+            "the lead is changing fast",
+            "what a close call",
+            "positions keep shifting",
+            "the front is intense"
         ],
         "end": [
-            "jangan kedip!",
-            "gokil sih!",
-            "auto tegang!",
-            "parah banget!",
-            "ini baru racing!"
+            "don't blink!",
+            "this is wild!",
+            "keep watching!",
+            "what a race!",
+            "unreal!"
         ],
     },
-
     "racing": {
-        "open": [
-            "Gas", "Woy", "Nah", "Gila", "Buset", "Mantap"
-        ],
+        "open": ["Go", "Yes", "Whoa", "Nice", "Come on"],
         "middle": [
-            "duel depan makin panas",
-            "overtake tadi bersih banget",
-            "posisi masih bisa berubah",
-            "lap berikutnya bakal brutal",
-            "mobil belakang mulai ngancem",
-            "jaraknya makin tipis"
+            "the duel up front is intense",
+            "what a clean overtake",
+            "positions can still change",
+            "the next stretch will be brutal",
+            "the gap is getting thin"
         ],
         "end": [
-            "jangan kedip!",
-            "pantengin terus!",
-            "gas sampai hadiah!",
-            "ini belum kelar!",
-            "siapa yang bakal P1?"
+            "don't blink!",
+            "keep watching!",
+            "who takes first?",
+            "this is not over!",
+            "let's go!"
         ],
     },
-
     "laugh": {
-        "open": [
-            "Wkwkwk", "Hahaha", "Wkwk", "Hehe", "Kocak"
-        ],
+        "open": ["Haha", "Lol", "Nice", "Funny", "Hah"],
         "middle": [
-            "chat lu bikin rame",
-            "komentar lu pecah banget",
-            "lu bisa aja",
-            "suasana makin ngakak",
-            "LUNA ikut ketawa"
+            "chat is hilarious",
+            "that comment made it better",
+            "you cracked me up",
+            "the vibe is great",
+            "Luna is laughing too"
         ],
         "end": [
-            "lanjut terus!",
-            "jangan berhenti komen!",
-            "gas lagi!",
-            "mantap!",
-            "wkwkwk!"
+            "keep it coming!",
+            "don't stop chatting!",
+            "love it!",
+            "awesome!",
+            "haha!"
         ],
     },
-
     "support": {
-        "open": [
-            "Mantap", "Gas", "Nah gitu", "Keren", "Gokil", "Sip"
-        ],
+        "open": ["Awesome", "Nice", "Yes", "Great", "Love it"],
         "middle": [
-            "support kalian bikin rame",
-            "komentarnya makin seru",
-            "semangatnya kerasa",
-            "live makin hidup",
-            "dukungan kalian mantul"
+            "your support keeps the stream alive",
+            "chat energy is strong",
+            "thanks for being here",
+            "the live feels better with you",
+            "appreciate the support"
         ],
         "end": [
-            "lanjut terus!",
-            "jangan pergi!",
-            "gas sampai hadiah!",
-            "makasih!",
-            "tetap ramaikan!"
+            "keep it up!",
+            "don't leave!",
+            "thanks!",
+            "stay with us!",
+            "let's go!"
         ],
     },
-
     "join": {
-        "open": [
-            "Gas", "Woy", "Ayo", "Nah", "Berani?",
-            "Siap-siap"
-        ],
+        "open": ["Go", "Hey", "Come on", "Yes", "Ready"],
         "middle": [
-            "ketik join kalau mau turun",
-            "tinggal ketik join",
-            "masuk antrean dulu",
-            "game masih terbuka",
-            "kesempatan masih ada"
+            "type your country name to join",
+            "just type a country to enter",
+            "pick a country in chat",
+            "the race is open",
+            "spots are still available"
         ],
         "end": [
-            "jangan cuma nonton!",
-            "gaskeun!",
-            "berani gak?",
-            "langsung masuk!",
-            "siapa takut?"
+            "join now!",
+            "don't just watch!",
+            "enter the arena!",
+            "let's go!",
+            "type a country!"
         ],
     },
-
     "question": {
-        "open": [
-            "Siap", "Oke", "Nah", "Tenang", "Santai", "Woy"
-        ],
+        "open": ["Sure", "Okay", "Hey", "Alright", "Got it"],
         "middle": [
-            "kita pantau terus",
-            "sebentar lagi kelihatan",
-            "jawabannya bakal kebaca",
-            "posisinya masih berubah",
-            "kita lihat sampai finish"
+            "we are watching closely",
+            "it will be clear soon",
+            "positions are still changing",
+            "stay tuned to the finish",
+            "let's see how this plays out"
         ],
         "end": [
-            "tetap pantengin!",
-            "jangan kedip!",
-            "gas terus!",
-            "sabar dulu!",
-            "bentar lagi!"
+            "keep watching!",
+            "don't blink!",
+            "hang tight!",
+            "almost there!",
+            "let's go!"
         ],
     },
-
     "generic": {
-        "open": [
-            "Gas", "Woy", "Mantap", "Buset", "Nah", "Gokil"
-        ],
+        "open": ["Hey", "Yo", "Nice", "Whoa", "Yes"],
         "middle": [
-            "chat lu bikin rame",
-            "suasana makin panas",
-            "live makin pecah",
-            "game dadunya makin seru",
-            "game makin brutal"
+            "chat is keeping the energy high",
+            "the marble maze is wild",
+            "the live is popping",
+            "this race is intense",
+            "great vibes in chat"
         ],
         "end": [
-            "lanjut terus!",
-            "gas lagi!",
-            "jangan pergi!",
-            "pantengin terus!",
-            "mantul!"
+            "keep chatting!",
+            "enjoy the race!",
+            "don't leave!",
+            "let's go!",
+            "awesome!"
         ],
     },
 }
-
-
 def template_reply(user, text):
     category = template_category(text)
     parts = COMBO_PARTS.get(category, COMBO_PARTS["generic"])
@@ -1609,15 +1593,17 @@ def start_bot():
                     print(
                         f'[COUNTRY JOIN] {emoji} {country_name} <- {user} [ACTIVE]'
                     )
+                    speak(f"{country_name} has joined the race!")
 
                 elif result == "queue":
                     print(
                         f'[COUNTRY JOIN] {emoji} {country_name} <- {user} [QUEUE]'
                     )
+                    speak(f"{country_name} is in the queue!")
 
                 elif result == "already":
                     print(
-                        f'[COUNTRY JOIN] {user} sudah ikut.'
+                        f'[COUNTRY JOIN] {user} already joined.'
                     )
 
                 continue
