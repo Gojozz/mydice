@@ -228,6 +228,15 @@ ENGAGE_PROMOS = [
     "Subscribe so you don't miss the next marble maze!",
 ]
 
+
+def clean_tts_text(text):
+    if not text:
+        return ""
+    text = str(text).strip()
+    text = re.sub(r"[^\w\s\.,!?\-']", " ", text, flags=re.UNICODE)
+    text = re.sub(r"\s+", " ", text).strip()
+    return text
+
 def run_piper(text):
     text = clean_tts_text(text)
 
