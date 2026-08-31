@@ -286,6 +286,235 @@ const starGroup=new THREE.Group();scene.add(starGroup);
 const boostGroup=new THREE.Group();scene.add(boostGroup);
 
 const walls=[], traps=[], stars=[], boosts=[];
+
+// ============================================================
+// DYNAMIC STAR SYSTEM
+// ============================================================
+
+const MAX_ACTIVE_STARS = 3;
+const STAR_RESPAWN_DELAY = 5000;
+
+function countActiveStars(){
+  return stars.filter(s => s.active).length;
+}
+
+function findSafeStarPosition(){
+
+  for(let attempt = 0; attempt < 100; attempt++){
+
+    const cx =
+      Math.floor(Math.random() * SIZE_X);
+
+    const cz =
+      Math.floor(Math.random() * SIZE_Z);
+
+    // Hindari area start
+    if(cx <= 2 && cz <= 2) continue;
+
+    // Hindari area exit
+    if(
+      cx >= SIZE_X - 3 &&
+      cz >= SIZE_Z - 3
+    ) continue;
+
+    const x = (cx - HALF_X) * CELL;
+    const z = (cz - HALF_Z) * CELL;
+
+    // Jangan terlalu dekat dengan marble
+    let blocked = false;
+
+    for(const m of marbles){
+
+      if(
+        m.userData.eliminated ||
+        m.userData.finished
+      ){
+        continue;
+      }
+
+      if(
+        Math.hypot(
+          m.position.x - x,
+          m.position.z - z
+        ) < 2.5
+      ){
+        blocked = true;
+        break;
+      }
+    }
+
+    if(blocked) continue;
+
+    // Jangan menumpuk dengan star lain
+    for(const star of stars){
+
+      if(!star.active) continue;
+
+      if(
+        Math.hypot(
+          star.x - x,
+          star.z - z
+        ) < 3
+      ){
+        blocked = true;
+        break;
+      }
+    }
+
+    if(blocked) continue;
+
+    return {x,z};
+  }
+
+  return null;
+}
+
+function spawnDynamicStar(){
+
+  if(countActiveStars() >= MAX_ACTIVE_STARS){
+    console.log("[STAR] Maximum active stars reached.");
+    return false;
+  }
+
+  /*
+   * Ambil semua cell maze yang valid.
+   */
+  const candidates = [];
+
+  for(let z = 0; z < SIZE_Z; z++){
+    for(let x = 0; x < SIZE_X; x++){
+
+      // Hindari start
+      if(x <= 2 && z <= 2) continue;
+
+      // Hindari exit
+      if(
+        x >= SIZE_X - 3 &&
+        z >= SIZE_Z - 3
+      ){
+        continue;
+      }
+
+      const px = (x - HALF_X) * CELL;
+      const pz = (z - HALF_Z) * CELL;
+
+      /*
+       * Jangan terlalu dekat dengan marble.
+       */
+      let occupied = false;
+
+      for(const m of marbles){
+
+        if(
+          m.userData.eliminated ||
+          m.userData.finished
+        ){
+          continue;
+        }
+
+        if(
+          Math.hypot(
+            m.position.x - px,
+            m.position.z - pz
+          ) < 2.2
+        ){
+          occupied = true;
+          break;
+        }
+      }
+
+      if(occupied) continue;
+
+      /*
+       * Jangan menumpuk dengan star lain.
+       */
+      let starTooClose = false;
+
+      for(const st of stars){
+
+        if(!st.active) continue;
+
+        if(
+          Math.hypot(
+            st.x - px,
+            st.z - pz
+          ) < 2.5
+        ){
+          starTooClose = true;
+          break;
+        }
+      }
+
+      if(starTooClose) continue;
+
+      candidates.push({
+        x: px,
+        z: pz
+      });
+    }
+  }
+
+  if(candidates.length === 0){
+
+    console.warn(
+      "[STAR] Tidak ada posisi valid untuk STAR baru."
+    );
+
+    /*
+     * Coba lagi 2 detik kemudian.
+     */
+    setTimeout(() => {
+      spawnDynamicStar();
+    }, 2000);
+
+    return false;
+  }
+
+  const pos =
+    candidates[
+      Math.floor(
+        Math.random() * candidates.length
+      )
+    ];
+
+  createStarMesh(
+    pos.x,
+    pos.z
+  );
+
+  console.log(
+    `[STAR] NEW STAR spawned: ${countActiveStars()}/${MAX_ACTIVE_STARS}`,
+    pos
+  );
+
+  return true;
+}
+
+function maintainDynamicStars(){
+
+  while(
+    countActiveStars() < MAX_ACTIVE_STARS
+  ){
+    if(!spawnDynamicStar()){
+      break;
+    }
+  }
+}
+
+function startDynamicStarSystem(){
+
+  console.log(
+    "[STAR] Dynamic Star System STARTED"
+  );
+
+  /*
+   * generateMaze() sudah membuat star awal.
+   * Kita hanya memastikan jumlahnya maksimal 3.
+   */
+  maintainDynamicStars();
+}
+
+
 const wallMat=new THREE.MeshStandardMaterial({color:0x35251b,roughness:0.5});
 let cells = [], exitPos={x:HALF_X*CELL, z:HALF_Z*CELL};
 
@@ -319,14 +548,16 @@ function createTrapMesh(px, pz, type){
     const cap = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.12, 0.4, 8), new THREE.MeshStandardMaterial({color: 0xffaa00}));
     cap.position.set(0, 1.5, 0);
     cap.castShadow = false;
-    bGroup.add(bombBody, cap); bGroup.position.set(px, 0, pz);
+    bGroup.add(bombBody, cap);
+    bGroup.scale.set(0.5, 0.5, 0.5);
+    bGroup.position.set(px, 0, pz);
     trapGroup.add(bGroup);
     traps.push({x: px, z: pz, type: 'bomb', mesh: bGroup, active: true, body: bombBody});
   }
 }
 
 function createStarMesh(px, pz){
-  const starGeo = new THREE.OctahedronGeometry(0.7, 0);
+  const starGeo = new THREE.OctahedronGeometry(0.35, 0);
   const starMat = new THREE.MeshStandardMaterial({color: 0xffd700, emissive: 0xffaa00, emissiveIntensity: 0.8, metalness: 0.8, roughness: 0.2});
   const mesh = new THREE.Mesh(starGeo, starMat);
   mesh.position.set(px, 0.8, pz);
@@ -414,7 +645,7 @@ function generateMaze(){
 
   const remainingForBombs = allValidCells.filter(c => !occupiedKeys.has(`${c.x},${c.z}`));
   remainingForBombs.sort(() => Math.random() - 0.5);
-  const bombCount = Math.min(remainingForBombs.length, 4 * trapMultiplier);
+  const bombCount = Math.min(remainingForBombs.length, 10);
   for(let i = 0; i < bombCount; i++){
     const cell = remainingForBombs[i];
     const px = (cell.x - HALF_X)*CELL, pz = (cell.z - HALF_Z)*CELL;
@@ -424,7 +655,7 @@ function generateMaze(){
 
   const remainingForStars = allValidCells.filter(c => !occupiedKeys.has(`${c.x},${c.z}`));
   remainingForStars.sort(() => Math.random() - 0.5);
-  const starCount = Math.min(remainingForStars.length, 5);
+  const starCount = Math.min(remainingForStars.length, 10);
   for(let i = 0; i < starCount; i++){
     const cell = remainingForStars[i];
     const px = (cell.x - HALF_X)*CELL, pz = (cell.z - HALF_Z)*CELL;
@@ -612,6 +843,405 @@ function updateCountryFlags(){
   }
 }
 
+
+/* ============================================================
+   COUNTRY CHAT SYNC V1
+   chat_state.json -> viewer -> country -> marble / clone
+   ============================================================ */
+
+const COUNTRY_CHAT_SYNC_V1 = true;
+
+let chatStatePlayers = [];
+let chatStateSignature = "";
+let chatStateLastFetch = 0;
+let chatStateBusy = false;
+
+function removeCountryFlagSafe(m){
+  if(typeof removeCountryFlag === "function"){
+    removeCountryFlag(m);
+  }
+}
+
+function applyPlayerToMarble(m, player){
+  if(!m || !player) return false;
+
+  removeCountryFlagSafe(m);
+
+  const emoji =
+    player.countryEmoji ||
+    player.flag ||
+    "🏳️";
+
+  const countryName =
+    player.countryName ||
+    player.country ||
+    "Unknown Country";
+
+  const countryCode =
+    player.countryCode ||
+    "";
+
+  const viewerName =
+    player.viewerName ||
+    player.name ||
+    player.user ||
+    "Viewer";
+
+  const flag = createCountryFlag({
+    code: countryCode,
+    name: countryName,
+    emoji: emoji
+  });
+
+  document.body.appendChild(flag);
+
+  m.userData.viewerName = viewerName;
+  m.userData.user = viewerName;
+
+  m.userData.countryCode = countryCode;
+  m.userData.countryName = countryName;
+  m.userData.countryEmoji = emoji;
+  m.userData.countryFlag = flag;
+
+  m.userData.chatAssigned = true;
+  m.userData.chatUser = viewerName;
+
+  return true;
+}
+
+function playerKey(p){
+  return String(
+    p.user ||
+    p.viewerName ||
+    p.name ||
+    ""
+  ).trim().toLowerCase();
+}
+
+function playerCountryKey(p){
+  return String(
+    p.countryCode ||
+    p.countryName ||
+    p.country ||
+    ""
+  ).trim().toLowerCase();
+}
+
+function getAllChatPlayers(){
+  return Array.isArray(chatStatePlayers)
+    ? chatStatePlayers
+    : [];
+}
+
+function getMarblePlayers(){
+  return marbles.filter(m =>
+    !m.userData.eliminated
+  );
+}
+
+/*
+ * Assign active players first.
+ * Additional players use existing clones.
+ *
+ * A clone belongs to the same color/id as its parent,
+ * so we only use a free marble when it has not already
+ * been assigned to a viewer.
+ */
+
+function spawnNextCountryFromQueue(sourceMarble){
+
+  const players = getAllChatPlayers();
+
+  if(!players.length){
+    console.log("[STAR] No waiting country.");
+    return false;
+  }
+
+  /*
+   * Find viewers that do not already have a marble.
+   */
+  const occupiedUsers = new Set(
+    marbles
+      .filter(m =>
+        !m.userData.eliminated &&
+        !m.userData.finished &&
+        m.userData.chatAssigned
+      )
+      .map(m =>
+        String(m.userData.chatUser || "").toLowerCase()
+      )
+  );
+
+  const nextPlayer = players.find(p => {
+    const key = playerKey(p);
+    return key && !occupiedUsers.has(key);
+  });
+
+  if(!nextPlayer){
+    console.log("[STAR] No waiting country.");
+    return false;
+  }
+
+  /*
+   * A star creates a completely NEW marble.
+   * It does NOT copy the source country's identity.
+   */
+  const id = marbles.length;
+  const cloneId = 0;
+
+  const color =
+    COLORS[Math.floor(Math.random() * COLORS.length)];
+
+  const newMarble =
+    makeMarble(color, id, cloneId);
+
+  applyPlayerToMarble(
+    newMarble,
+    nextPlayer
+  );
+
+  newMarble.userData.speed =
+    sourceMarble?.userData?.speed ||
+    (0.24 + Math.random() * 0.048);
+
+  newMarble.userData.randomFactor =
+    sourceMarble?.userData?.randomFactor ||
+    Math.random() * 5;
+
+  scene.add(newMarble);
+  marbles.push(newMarble);
+
+  /*
+   * Spawn at the normal entrance.
+   */
+  respawnMarble(
+    newMarble,
+    marbles.length - 1
+  );
+
+  updateUI();
+
+  const viewer =
+    nextPlayer.viewerName ||
+    nextPlayer.name ||
+    nextPlayer.user ||
+    "Viewer";
+
+  const country =
+    nextPlayer.countryName ||
+    nextPlayer.country ||
+    "Unknown Country";
+
+  const emoji =
+    nextPlayer.countryEmoji ||
+    nextPlayer.flag ||
+    "🏳️";
+
+  document.getElementById('status').textContent =
+    `🌍 ${emoji} ${country} — ${viewer} has entered the arena!`;
+
+  console.log(
+    "[STAR] NEW COUNTRY:",
+    emoji,
+    country,
+    "viewer:",
+    viewer
+  );
+
+  /*
+   * Do not let normal synchronization immediately
+   * treat this marble as empty.
+   */
+  newMarble.userData.chatAssigned = true;
+  newMarble.userData.chatUser = viewer;
+
+  return true;
+}
+
+function syncChatPlayersToMarbles(){
+  const players = getAllChatPlayers();
+
+  if(!players.length || !marbles.length){
+    return;
+  }
+
+  const assignedUsers = new Set();
+
+  for(const m of marbles){
+    if(m.userData.chatAssigned){
+      assignedUsers.add(
+        String(m.userData.chatUser || "").toLowerCase()
+      );
+    }
+  }
+
+  const available = marbles.filter(m =>
+    !m.userData.eliminated &&
+    !m.userData.finished &&
+    !m.userData.chatAssigned
+  );
+
+  let availableIndex = 0;
+
+  for(const player of players){
+
+    const key = playerKey(player);
+
+    if(!key || assignedUsers.has(key)){
+      continue;
+    }
+
+    if(availableIndex >= available.length){
+      break;
+    }
+
+    const marble = available[availableIndex++];
+
+    applyPlayerToMarble(marble, player);
+
+    assignedUsers.add(key);
+
+    console.log(
+      "[COUNTRY SYNC]",
+      player.countryEmoji,
+      player.countryName,
+      "->",
+      player.viewerName || player.user,
+      "marble",
+      marble.userData.id,
+      "clone",
+      marble.userData.cloneId
+    );
+  }
+
+  updateUI();
+}
+
+async function fetchChatState(){
+  if(chatStateBusy){
+    return;
+  }
+
+  chatStateBusy = true;
+
+  try{
+    const url =
+      "chat_state.json?t=" +
+      Date.now();
+
+    const response = await fetch(
+      url,
+      {
+        cache: "no-store"
+      }
+    );
+
+    if(!response.ok){
+      throw new Error(
+        "HTTP " + response.status
+      );
+    }
+
+    const state = await response.json();
+
+    const active =
+      Array.isArray(state.active)
+        ? state.active
+        : [];
+
+    const queue =
+      Array.isArray(state.queue)
+        ? state.queue
+        : [];
+
+    /*
+     * Active players are prioritized.
+     * Queue is also included so clones can be
+     * populated when they exist.
+     */
+    const players = [
+      ...active,
+      ...queue
+    ];
+
+    const signature = JSON.stringify(
+      players.map(p => ({
+        user: playerKey(p),
+        country: playerCountryKey(p)
+      }))
+    );
+
+    if(signature !== chatStateSignature){
+      chatStateSignature = signature;
+      chatStatePlayers = players;
+
+      console.log(
+        "[COUNTRY SYNC] State changed:",
+        players.length,
+        "players"
+      );
+
+      syncChatPlayersToMarbles();
+    }
+
+  }catch(error){
+    console.log(
+      "[COUNTRY SYNC] Waiting for chat_state.json...",
+      error.message
+    );
+  }finally{
+    chatStateBusy = false;
+  }
+}
+
+function startCountryChatSync(){
+
+  fetchChatState();
+
+  setInterval(
+    fetchChatState,
+    1500
+  );
+}
+
+function inheritChatPlayerToClone(parent, clone){
+
+  if(!parent || !clone){
+    return;
+  }
+
+  /*
+   * Clone created by a star inherits the same viewer/country.
+   * This keeps the existing Star -> Clone gameplay intact.
+   */
+  if(parent.userData.chatAssigned){
+
+    const player = {
+      user:
+        parent.userData.viewerName ||
+        parent.userData.user,
+
+      viewerName:
+        parent.userData.viewerName ||
+        parent.userData.user,
+
+      countryCode:
+        parent.userData.countryCode,
+
+      countryName:
+        parent.userData.countryName,
+
+      countryEmoji:
+        parent.userData.countryEmoji
+    };
+
+    applyPlayerToMarble(
+      clone,
+      player
+    );
+  }
+}
+
 function assignRandomCountry(m){
   removeCountryFlag(m);
 
@@ -654,6 +1284,9 @@ function makeMarble(color, id, cloneId = 0){
     boostTime:0
   };
   assignRandomCountry(root);
+  root.userData.chatAssigned = false;
+  root.userData.chatUser = "";
+  root.userData.viewerName = "";
   return root;
 }
 
@@ -1297,23 +1930,152 @@ function update(dt = 0.016){
         starGroup.remove(s.mesh);
         createStarEffect(s.x, s.z);
 
+        /*
+         * STAR = NEW COUNTRY SPAWN
+         *
+         * Keep the original marble-spawn mechanism.
+         * The new marble is NOT a copy of the source country.
+         * It receives the next waiting viewer from chat.
+         */
+
         const colorId = m.userData.id;
-        const currentClones = marbles.filter(item => item.userData.id === colorId && !item.userData.eliminated).length;
+
+        const currentClones =
+          marbles.filter(item =>
+            item.userData.id === colorId &&
+            !item.userData.eliminated
+          ).length;
 
         if(currentClones <= 3){
-          const newCloneId = marbles.filter(item => item.userData.id === colorId).length;
-          const cloneColor = COLORS[Math.floor(Math.random() * COLORS.length)];
-          const cloneMesh = makeMarble(cloneColor, colorId, newCloneId);
-          assignRandomCountry(cloneMesh);
-          cloneMesh.userData.speed = m.userData.speed;
-          cloneMesh.userData.randomFactor = m.userData.randomFactor;
+
+          const newCloneId =
+            marbles.filter(item =>
+              item.userData.id === colorId
+            ).length;
+
+          const cloneColor =
+            COLORS[Math.floor(Math.random() * COLORS.length)];
+
+          const cloneMesh =
+            makeMarble(
+              cloneColor,
+              colorId,
+              newCloneId
+            );
+
+          /*
+           * Find the next viewer who does not already
+           * have a live marble.
+           */
+          const occupiedUsers = new Set(
+            marbles
+              .filter(item =>
+                !item.userData.eliminated &&
+                !item.userData.finished &&
+                item.userData.chatAssigned
+              )
+              .map(item =>
+                String(
+                  item.userData.chatUser || ""
+                ).toLowerCase()
+              )
+          );
+
+          const nextPlayer =
+            getAllChatPlayers().find(player => {
+
+              const key = playerKey(player);
+
+              return (
+                key &&
+                !occupiedUsers.has(key)
+              );
+
+            });
+
+          if(nextPlayer){
+
+            /*
+             * NEW COUNTRY.
+             * Do not inherit the source marble.
+             */
+            applyPlayerToMarble(
+              cloneMesh,
+              nextPlayer
+            );
+
+          } else {
+
+            /*
+             * No viewer waiting yet.
+             * Keep the old random-country fallback.
+             */
+            assignRandomCountry(
+              cloneMesh
+            );
+
+            cloneMesh.userData.chatAssigned = false;
+            cloneMesh.userData.chatUser = "";
+            cloneMesh.userData.viewerName = "";
+          }
+
+          cloneMesh.userData.speed =
+            m.userData.speed;
+
+          cloneMesh.userData.randomFactor =
+            m.userData.randomFactor;
+
           scene.add(cloneMesh);
+
           marbles.push(cloneMesh);
-          respawnMarble(cloneMesh, colorId);
-          document.getElementById('status').textContent = `★ STAR! ${m.userData.countryName || 'Unknown Country'} created a clone (${currentClones}/3)!`;
+
+          respawnMarble(
+            cloneMesh,
+            colorId
+          );
+
+          if(nextPlayer){
+
+            const viewer =
+              nextPlayer.viewerName ||
+              nextPlayer.name ||
+              nextPlayer.user ||
+              "Viewer";
+
+            const country =
+              nextPlayer.countryName ||
+              nextPlayer.country ||
+              "Unknown Country";
+
+            const emoji =
+              nextPlayer.countryEmoji ||
+              nextPlayer.flag ||
+              "🏳️";
+
+            document.getElementById('status').textContent =
+              `🌍 ${emoji} ${country} — ${viewer} entered the arena!`;
+
+            console.log(
+              "[STAR] NEW COUNTRY:",
+              emoji,
+              country,
+              viewer
+            );
+
+          } else {
+
+            document.getElementById('status').textContent =
+              `★ ${m.userData.countryName || 'Unknown Country'} found a star! Waiting for the next country...`;
+
+          }
+
         } else {
-          document.getElementById('status').textContent = `★ ${m.userData.countryName || 'Unknown Country'} found a star (clone limit reached)`;
+
+          document.getElementById('status').textContent =
+            `★ ${m.userData.countryName || 'Unknown Country'} found a star!`;
+
         }
+
         updateUI();
         break;
       }
@@ -1471,7 +2233,9 @@ function animate(t){
   renderer.render(scene,camera);
 }
 
-startRound(); requestAnimationFrame(animate);
+startRound();
+startCountryChatSync();
+requestAnimationFrame(animate);
 addEventListener('resize',()=>{
   const asp = innerWidth / innerHeight;
   camera.aspect = asp;
