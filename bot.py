@@ -199,84 +199,45 @@ last_processed_race = None
 # =========================================================
 
 PIPER_BIN = os.environ.get("PIPER_BIN", "piper")
-
 PIPER_MODEL = os.environ.get(
     "PIPER_MODEL",
-    "models/id_ID-news_tts-medium.onnx"
+    "models/en_US-lessac-medium.onnx"
 )
 
 tts_queue = queue.Queue()
-
 tts_lock = threading.Lock()
-
 last_tts_time = 0.0
 
 CHAT_COOLDOWN = 4.0
-
 last_chat_response = {}
 
 ENGAGEMENT_INTERVAL = 90
-
 last_engagement_time = time.time() - 10000
-
 engagement_index = 0
 
-
 ENGAGE_PROMOS = [
-    "Woy jangan lupa laik-nya, biar game dadunya nambah gila!",
-    "Klik subs kreb dong, biar kagak ketinggalan game dadu berikutnya!",
-    "Komen di kolom komentar, LUNA baca kok, jangan diem aja!",
-    "Laik, subs kreb, trus ketik join kalau berani turun game!",
-    "Yang baru datang: laik dulu, subs kreb, baru nonton sambil ngegas!",
-    "Komen gas di kolom komentar, biar suasana langsung panas!",
-    "Subs kreb-nya jangan pelit, game dadu ini butuh dukungan kalian!",
-    "Pencet laik biar algoritma gak tidur, game dadu tetap ramai!",
+    "If you enjoy the marble maze, please like the stream!",
+    "Don't forget to subscribe for more marble maze action!",
+    "Enjoying the game? Leave a comment and tell us your favorite country!",
+    "Hit like if you want to see more marble maze battles!",
+    "Subscribe and stay tuned for the next marble maze!",
+    "Tell us where you are watching from in the comments!",
+    "Like, subscribe, and leave a comment to support the game!",
+    "Which country are you cheering for? Tell us in the comments!",
+    "If you are enjoying the maze, show some love with a like!",
+    "Subscribe so you don't miss the next marble maze!",
 ]
-
-JOIN_PROMOS = [
-    "Mau turun ke game? Ketik join di komentar, nama kalian jadi pemain!",
-    "Berani game dadu? Ketik join, nanti nama kalian ikut ngegas!",
-    "Jangan cuma nonton! Ketik join dan siap-siap jadi pemain!",
-    "Pengen game dadu? Ketik join di komentar, siapa tahu mobil kalian paling brutal!",
-    "Ketik join kalau berani! Nama kalian bisa muncul di game!",
-]
-
-
-
-def clean_tts_text(text):
-
-    text = str(text or "").strip()
-
-    text = re.sub(
-        r"https?://\S+",
-        "",
-        text
-    )
-
-    text = text.replace(
-        "\n",
-        " "
-    )
-
-    text = re.sub(
-        r"\s+",
-        " ",
-        text
-    )
-
-    return text[:400].strip()
-
 
 def run_piper(text):
-
     text = clean_tts_text(text)
 
     if not text:
         return False
 
     model_path = Path(PIPER_MODEL)
+
     if not model_path.exists():
-        print(f"[TTS ERROR] Model tidak ditemukan: {model_path}")
+        print(f"[TTS ERROR] Model not found: {model_path}")
         return False
 
     wav_path = Path(
@@ -289,7 +250,10 @@ def run_piper(text):
     try:
         print(f"[TTS] {text}")
         print(f"[TTS] model={model_path}")
-        print(f"[TTS] PULSE_SINK={os.environ.get('PULSE_SINK', '')}")
+        print(
+            f"[TTS] PULSE_SINK="
+            f"{os.environ.get('PULSE_SINK', '')}"
+        )
 
         process = subprocess.run(
             [
@@ -308,29 +272,42 @@ def run_piper(text):
         if process.returncode != 0:
             print(
                 "[TTS ERROR]",
-                process.stderr.decode("utf-8", errors="replace")[-1000:]
+                process.stderr.decode(
+                    "utf-8",
+                    errors="replace"
+                )[-1000:]
             )
             return False
 
         if not wav_path.exists() or wav_path.stat().st_size < 100:
-            print("[TTS ERROR] File WAV kosong / tidak dibuat")
+            print("[TTS ERROR] WAV file missing or empty")
             return False
 
-        print(f"[TTS] WAV size={wav_path.stat().st_size} bytes")
+        print(
+            f"[TTS] WAV size={wav_path.stat().st_size} bytes"
+        )
 
-        # Pastikan main ke stream_sink
         env = os.environ.copy()
-        env["PULSE_SINK"] = env.get("PULSE_SINK", "stream_sink")
+        env["PULSE_SINK"] = env.get(
+            "PULSE_SINK",
+            "stream_sink"
+        )
 
-        # Set default sink (abaikan error jika sudah)
         subprocess.run(
-            ["pactl", "set-default-sink", env["PULSE_SINK"]],
+            [
+                "pactl",
+                "set-default-sink",
+                env["PULSE_SINK"]
+            ],
             stdout=subprocess.DEVNULL,
             stderr=subprocess.DEVNULL
         )
 
         result = subprocess.run(
-            ["paplay", str(wav_path)],
+            [
+                "paplay",
+                str(wav_path)
+            ],
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             timeout=45,
@@ -338,21 +315,32 @@ def run_piper(text):
         )
 
         if result.returncode != 0:
-            err = result.stderr.decode("utf-8", errors="replace")[-1000:]
+            err = result.stderr.decode(
+                "utf-8",
+                errors="replace"
+            )[-1000:]
+
             print("[PAPLAY ERROR]", err)
 
-            # Fallback: coba device eksplisit
             result2 = subprocess.run(
-                ["paplay", f"--device={env['PULSE_SINK']}", str(wav_path)],
+                [
+                    "paplay",
+                    f"--device={env['PULSE_SINK']}",
+                    str(wav_path)
+                ],
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
                 timeout=45,
                 env=env
             )
+
             if result2.returncode != 0:
                 print(
                     "[PAPLAY ERROR2]",
-                    result2.stderr.decode("utf-8", errors="replace")[-1000:]
+                    result2.stderr.decode(
+                        "utf-8",
+                        errors="replace"
+                    )[-1000:]
                 )
                 return False
 
@@ -415,9 +403,6 @@ threading.Thread(
 def pick_engagement_line():
     global engagement_index
     engagement_index += 1
-    # 2x ajakan sosmed, 1x ajakan join
-    if engagement_index % 3 == 0:
-        return random.choice(JOIN_PROMOS)
     return random.choice(ENGAGE_PROMOS)
 
 def speak(text):
@@ -625,12 +610,97 @@ def save_state(state):
         raise
 
 
+
+# ============================================================
+# COUNTRY CHAT
+# Penonton cukup mengetik nama negara untuk masuk ke game.
+# ============================================================
+
+COUNTRY_ALIASES = {
+    "indonesia": ("ID", "Indonesia", "🇮🇩"),
+    "malaysia": ("MY", "Malaysia", "🇲🇾"),
+    "singapore": ("SG", "Singapore", "🇸🇬"),
+    "singapura": ("SG", "Singapore", "🇸🇬"),
+    "thailand": ("TH", "Thailand", "🇹🇭"),
+    "vietnam": ("VN", "Vietnam", "🇻🇳"),
+    "philippines": ("PH", "Philippines", "🇵🇭"),
+    "filipina": ("PH", "Philippines", "🇵🇭"),
+    "brunei": ("BN", "Brunei", "🇧🇳"),
+    "cambodia": ("KH", "Cambodia", "🇰🇭"),
+    "myanmar": ("MM", "Myanmar", "🇲🇲"),
+    "laos": ("LA", "Laos", "🇱🇦"),
+
+    "china": ("CN", "China", "🇨🇳"),
+    "japan": ("JP", "Japan", "🇯🇵"),
+    "jepang": ("JP", "Japan", "🇯🇵"),
+    "korea": ("KR", "South Korea", "🇰🇷"),
+    "south korea": ("KR", "South Korea", "🇰🇷"),
+    "india": ("IN", "India", "🇮🇳"),
+    "australia": ("AU", "Australia", "🇦🇺"),
+    "new zealand": ("NZ", "New Zealand", "🇳🇿"),
+
+    "palestine": ("PS", "Palestine", "🇵🇸"),
+    "palestina": ("PS", "Palestine", "🇵🇸"),
+
+    "usa": ("US", "United States", "🇺🇸"),
+    "america": ("US", "United States", "🇺🇸"),
+    "amerika": ("US", "United States", "🇺🇸"),
+    "united states": ("US", "United States", "🇺🇸"),
+    "canada": ("CA", "Canada", "🇨🇦"),
+    "mexico": ("MX", "Mexico", "🇲🇽"),
+    "brazil": ("BR", "Brazil", "🇧🇷"),
+    "brasil": ("BR", "Brazil", "🇧🇷"),
+    "argentina": ("AR", "Argentina", "🇦🇷"),
+    "chile": ("CL", "Chile", "🇨🇱"),
+    "colombia": ("CO", "Colombia", "🇨🇴"),
+    "peru": ("PE", "Peru", "🇵🇪"),
+
+    "england": ("GB", "England", "🏴"),
+    "uk": ("GB", "United Kingdom", "🇬🇧"),
+    "united kingdom": ("GB", "United Kingdom", "🇬🇧"),
+    "france": ("FR", "France", "🇫🇷"),
+    "germany": ("DE", "Germany", "🇩🇪"),
+    "jerman": ("DE", "Germany", "🇩🇪"),
+    "italy": ("IT", "Italy", "🇮🇹"),
+    "italia": ("IT", "Italy", "🇮🇹"),
+    "spain": ("ES", "Spain", "🇪🇸"),
+    "spanyol": ("ES", "Spain", "🇪🇸"),
+    "netherlands": ("NL", "Netherlands", "🇳🇱"),
+    "belanda": ("NL", "Netherlands", "🇳🇱"),
+    "belgium": ("BE", "Belgium", "🇧🇪"),
+    "switzerland": ("CH", "Switzerland", "🇨🇭"),
+    "portugal": ("PT", "Portugal", "🇵🇹"),
+    "turkey": ("TR", "Turkey", "🇹🇷"),
+    "turki": ("TR", "Turkey", "🇹🇷"),
+    "russia": ("RU", "Russia", "🇷🇺"),
+    "ukraine": ("UA", "Ukraine", "🇺🇦"),
+    "poland": ("PL", "Poland", "🇵🇱"),
+    "sweden": ("SE", "Sweden", "🇸🇪"),
+    "norway": ("NO", "Norway", "🇳🇴"),
+    "denmark": ("DK", "Denmark", "🇩🇰"),
+    "finland": ("FI", "Finland", "🇫🇮"),
+
+    "south africa": ("ZA", "South Africa", "🇿🇦"),
+    "egypt": ("EG", "Egypt", "🇪🇬"),
+    "saudi arabia": ("SA", "Saudi Arabia", "🇸🇦"),
+    "uae": ("AE", "United Arab Emirates", "🇦🇪"),
+    "united arab emirates": ("AE", "United Arab Emirates", "🇦🇪"),
+}
+
+def detect_country(text):
+    text = str(text or "").strip().lower()
+
+    if len(text) > 40:
+        return None
+
+    return COUNTRY_ALIASES.get(text)
+
+
 def normalize_user(user):
     return str(user).strip()
 
 
 def already_joined(state, user):
-
     active_names = {
         p["user"].lower()
         for p in state["active"]
@@ -643,37 +713,42 @@ def already_joined(state, user):
 
     return (
         user.lower() in active_names
-        or
-        user.lower() in queue_names
+        or user.lower() in queue_names
     )
 
 
-def add_player(state, user):
-
+def add_player(state, user, country):
     if already_joined(state, user):
         return "already"
 
+    code, country_name, emoji = country
+
+    # Negara yang sama untuk viewer yang sama tidak boleh membuat marble kedua.
     player = {
         "user": user,
         "name": user,
+        "viewerName": user,
         "joinedAt": time.time(),
         "control": None,
         "controlAt": 0,
         "controlId": 0,
-        "flag": random.choice(DEFAULT_FLAGS),
-        "country": "random"
+        "flag": emoji,
+        "country": country_name,
+        "countryCode": code,
+        "countryName": country_name,
+        "countryEmoji": emoji,
+        "cloneId": 0
     }
 
     if len(state["active"]) < MAX_PLAYERS:
-
         state["active"].append(player)
-
         return "active"
 
+    # Lebih dari 4 tetap boleh ikut.
+    # Untuk sementara kita simpan sebagai queue; tahap game berikutnya
+    # akan menghubungkan peserta tambahan ke clone marble.
     state["queue"].append(player)
-
     return "queue"
-
 
 def rotate_after_race(eliminated_name):
 
@@ -1469,7 +1544,7 @@ def start_bot():
     else:
         print("[BOT] Vertical chat tidak di-start.")
 
-    speak("Luna siap di landscape dan vertical. Ketik join untuk ikut main Spin Dice!")
+    speak("Luna is ready! Enjoy the marble maze and have fun!")
 
     print("====================================")
 
@@ -1494,106 +1569,46 @@ def start_bot():
 
             print(f"[CHAT:{label}] {user}: {raw_msg}")
 
-            # Pilihan angka dadu 1-6
-            controls = {
-                "1": "1",
-                "2": "2",
-                "3": "3",
-                "4": "4",
-                "5": "5",
-                "6": "6",
-                "satu": "1",
-                "dua": "2",
-                "tiga": "3",
-                "empat": "4",
-                "lima": "5",
-                "enam": "6",
-            }
+            # CHAT GAME:
+            # Penonton cukup mengetik nama negara.
+            # Tidak ada JOIN dan tidak ada pilihan angka.
 
-            control = controls.get(msg)
-
-            if control:
-                player = next(
-                    (
-                        p for p in state["active"]
-                        if str(p.get("user", "")).lower() == user.lower()
-                    ),
-                    None
-                )
-
-                if player:
-                    player["control"] = control
-                    player["controlAt"] = time.time()
-                    player["controlId"] = int(time.time() * 1000)
-
-                    save_state(state)
-
-                    print(
-                        f"[GAME CONTROL] {user} -> pilih {control}"
-                    )
-
-                    speak(f"{user} pilih angka {control}!")
-
-                else:
-                    print(
-                        f"[CONTROL IGNORE] {user} belum ikut main"
-                    )
-
+            if msg == "join" or msg.startswith("join "):
+                print(f"[CHAT] JOIN diabaikan: {user}")
                 continue
 
-            if (
-                msg == "join"
-                or
-                msg.startswith("join ")
-            ):
+            # =====================================================
+            # COUNTRY JOIN AUTO
+            # Viewer cukup mengetik nama negara.
+            # =====================================================
+            country = detect_country(raw_msg)
+
+            if country:
+                state = load_state()
 
                 result = add_player(
                     state,
-                    user
+                    user,
+                    country
                 )
 
+                save_state(state)
+
+                code, country_name, emoji = country
+
                 if result == "active":
-
                     print(
-                        f"[JOIN] {user} -> "
-                        f"PEMAIN AKTIF "
-                        f"({len(state['active'])}/"
-                        f"{MAX_PLAYERS})"
-                    )
-
-                    save_state(state)
-
-                    print(
-                        f"[STATE] active: "
-                        f"{[p['user'] for p in state['active']]}"
-                    )
-
-                    speak(
-                        f"Woy {user} masuk game, siap pilih angka!"
+                        f'[COUNTRY JOIN] {emoji} {country_name} <- {user} [ACTIVE]'
                     )
 
                 elif result == "queue":
-
-                    position = len(
-                        state["queue"]
-                    )
-
                     print(
-                        f"[QUEUE] {user} -> "
-                        f"ANTREAN #{position}"
+                        f'[COUNTRY JOIN] {emoji} {country_name} <- {user} [QUEUE]'
                     )
 
-                    save_state(state)
-
-                    speak(
-                        f"{user} antri dulu ya, bentar lagi masuk!"
-                    )
-
-                else:
-
+                elif result == "already":
                     print(
-                        f"[IGNORE] {user} "
-                        f"sudah terdaftar"
+                        f'[COUNTRY JOIN] {user} sudah ikut.'
                     )
 
                 continue
