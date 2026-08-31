@@ -2,6 +2,9 @@ name: YouTube Live Stream
 
 on:
   workflow_dispatch:
+  schedule:
+    # Setiap 6 jam (UTC): 00:00, 06:00, 12:00, 18:00
+    - cron: "0 */6 * * *"
 
 concurrency:
   group: youtube-live-stream
@@ -10,7 +13,7 @@ concurrency:
 jobs:
   stream:
     runs-on: ubuntu-latest
-    timeout-minutes: 355
+    timeout-minutes: 350
 
     steps:
       - name: Checkout repository
