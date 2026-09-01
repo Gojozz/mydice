@@ -42,7 +42,7 @@ pointer-events:none;
 </style><style>#error-box, #error-log, .error-banner, div[style*="background: red"], div[style*="background-color: red"], div[style*="red"] { display: none !important; }</style><style>div[style*="background: red"], div[style*="background:red"], div[style*="background-color: red"], div[style*="background-color:red"], div[style*="position: fixed"][style*="red"], div[style*="position: absolute"][style*="red"] { display: none !important; opacity: 0 !important; visibility: hidden !important; pointer-events: none !important; }</style></head><body>
 <div id="game"></div>
 <div id="hud"><h1>MARBLE MAZE</h1><div class="sub">RACE LIVE SHORTS (9:16)</div>
-<div class="badge">ROUND <span id="round">1</span> <span id="timer">00:00</span></div></div>
+<div class="badge">ROUND <span id="round">1</span> </div></div>
 <div id="players"></div>
 <div id="status">Klik atau Ketuk Layar Untuk Mengaktifkan Suara!</div>
 <div id="message"><div class="messageBox"><small>ROUND RESULT</small><h2 id="winner">—</h2></div></div>
@@ -227,7 +227,7 @@ camera.position.set(baseCamPos.x, baseCamPos.y, baseCamPos.z);
 camera.lookAt(0, 0, 0);
 
 const renderer=new THREE.WebGLRenderer({antialias:true});
-renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+renderer.setPixelRatio(1);
 renderer.setSize(innerWidth,innerHeight);
 renderer.shadowMap.enabled = false;
 renderer.shadowMap.type = THREE.BasicShadowMap;
@@ -1324,7 +1324,7 @@ function resetMarbles(){
 
   for(let i=0; i<4; i++){
     const m = makeMarble(roundColors[i], i, 0);
-    m.userData.speed = 0.24 + Math.random() * 0.048  // +20% lebih cepat;
+    m.userData.speed = (0.24 + Math.random() * 0.048) * 1.7  // +20% lebih cepat;
     m.userData.randomFactor = Math.random() * 5;
     scene.add(m);
     marbles.push(m);
@@ -2208,7 +2208,7 @@ function update(dt = 0.016){
     setTimeout(()=>{ round++; startRound(); }, 3500);
   }
 
-  if(elapsed >= 180 && !winner){
+  if(elapsed >= 130 && !winner){
     winner = true;
     trapMultiplier *= 2;
     document.getElementById('winner').textContent = "TIME'S UP!";
@@ -2228,7 +2228,6 @@ function animate(t){
   if(dt > 0.1) dt = 0.016;
   if(!winner) elapsed += dt;
   last = t;
-  document.getElementById('timer').textContent=String(Math.floor(elapsed/60)).padStart(2,'0')+':'+String(Math.floor(elapsed%60)).padStart(2,'0');
   update(dt);
   renderer.render(scene,camera);
 }
