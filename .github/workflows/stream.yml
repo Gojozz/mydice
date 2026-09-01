@@ -21,13 +21,14 @@ jobs:
 
       - name: Install dependencies
         run: |
+          wget -q https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
           sudo apt-get update
+          sudo apt-get install -y ./google-chrome-stable_current_amd64.deb
           sudo apt-get install -y \
             ffmpeg \
             xvfb \
             pulseaudio \
             pulseaudio-utils \
-            chromium-browser \
             imagemagick \
             mesa-utils \
             libgl1-mesa-dri \
@@ -113,8 +114,8 @@ jobs:
         run: |
           command -v ffmpeg
           ffmpeg -version | head -1
-          command -v chromium-browser || command -v chromium
-          chromium --version || chromium-browser --version
+          command -v google-chrome
+          google-chrome --version
 
       - name: Start Stream
         env:
@@ -137,7 +138,7 @@ jobs:
           sleep 3
 
           echo "===== START CHROMIUM (9:16 portrait) ====="
-          chromium-browser \
+          google-chrome \
             --no-sandbox \
             --disable-dev-shm-usage \
             --disable-gpu-sandbox \
@@ -182,7 +183,7 @@ jobs:
               -thread_queue_size 1024 \
               -f x11grab \
               -video_size 720x1280 \
-              -framerate 25 \
+              -framerate 30 \
               -i :99.0 \
               -thread_queue_size 1024 \
               -f pulse \
@@ -192,11 +193,11 @@ jobs:
               -preset ultrafast \
               -tune zerolatency \
               -pix_fmt yuv420p \
-              -r 25 \
+              -r 30 \
               -b:v 2500k \
               -maxrate 2500k \
               -bufsize 5000k \
-              -g 50 \
+              -g 60 \
               -c:a aac \
               -b:a 128k \
               -ar 44100 \
