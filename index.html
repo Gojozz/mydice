@@ -1,0 +1,746 @@
+<script>window.onerror=function(){return true;};window.addEventListener("error",function(e){e.stopImmediatePropagation();e.preventDefault();},true);</script>
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Marble Maze - YouTube Shorts Live (2D)</title>
+<style>
+*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#0d0704;font-family:Arial,sans-serif;color:#fff}
+#game{position:fixed;inset:0}canvas{display:block;width:100%;height:100%}
+#hud{position:fixed;z-index:5;top:8px;left:50%;transform:translateX(-50%);width:100%;text-align:center;pointer-events:none;text-shadow:0 2px 8px #000}
+#hud h1{font-size:clamp(22px,5.5vw,40px);margin:0 0 4px;line-height:1;font-weight:900;letter-spacing:3px;color:#ffd166}
+#hud .sub{font-size:11px;letter-spacing:2px;color:#f5d7a0}
+.badge{display:inline-block;margin-top:6px;padding:6px 16px;background:#24140ae8;border:2px solid #b9782e;border-radius:20px;font-size:13px;font-weight:bold}
+#timer{color:#ffe45c;margin-left:8px}
+#players{position:fixed;z-index:6;left:50%;bottom:95px;transform:translateX(-50%);width:96%;display:flex;flex-wrap:wrap;justify-content:center;gap:8px 12px;max-height:28vh;overflow:hidden;pointer-events:none}
+.player{display:flex;align-items:center;gap:5px;padding:3px 8px;background:#21130be8;border:1px solid #6d4525;border-radius:10px;font-size:11px;font-weight:700;box-shadow:0 2px 5px #0008}
+.player.lead{border-color:#ffd166;box-shadow:0 0 10px #ffd16688}
+.player.dead{opacity:.35;border-color:#772222;text-decoration:line-through}
+.flagEmoji{font-size:22px;line-height:1}.countryName{font-size:12px;font-weight:700}
+#status{position:fixed;z-index:6;bottom:20px;left:50%;transform:translateX(-50%);padding:8px 16px;background:#21130be8;border:1px solid #87582d;border-radius:20px;font-size:12px;font-weight:bold;max-width:90%;text-align:center}
+#message{position:fixed;z-index:10;inset:0;display:none;align-items:center;justify-content:center;background:#000b}
+#message.show{display:flex}
+.messageBox{padding:25px 35px;text-align:center;background:linear-gradient(145deg,#3b210d,#160d07);border:3px solid #e9ae45;border-radius:18px}
+.messageBox h2{margin:5px 0;color:#ffd166;font-size:28px}
+</style>
+</head>
+<body>
+<div id="game"><canvas id="c"></canvas></div>
+<div id="hud">
+  <h1>MARBLE MAZE</h1>
+  <div class="sub">RACE LIVE SHORTS (9:16) · 2D</div>
+  <div class="badge">ROUND <span id="round">1</span> <span id="timer">00:00</span></div>
+</div>
+<div id="players"></div>
+<div id="status">Tap screen to enable sound · Type a country in chat to join</div>
+<div id="message"><div class="messageBox"><small>ROUND RESULT</small><h2 id="winner">—</h2></div></div>
+
+<script>
+(() => {
+"use strict";
+
+const canvas = document.getElementById("c");
+const ctx = canvas.getContext("2d", { alpha: false });
+
+const COLORS = [
+  "#ff2244","#2288ff","#22dd66","#ffdd00",
+  "#9b30ff","#ff7a00","#00d9ff","#ff4fa3",
+  "#4f7cff","#9b5a2e","#ffffff","#8cff00"
+];
+
+const SIZE_X = 14, SIZE_Z = 25;
+const MAX_PLAYERS = 4;
+const TIME_LIMIT = 180;
+
+let W = 0, H = 0, scale = 1, ox = 0, oy = 0, cell = 1;
+let round = 1, winner = false, elapsed = 0, last = performance.now();
+let trapMultiplier = 1;
+let cells = [];
+let wallsSeg = [];
+let traps = [];
+let stars = [];
+let boosts = [];
+let marbles = [];
+let exitCell = { x: SIZE_X - 1, z: SIZE_Z - 1 };
+let particles = [];
+
+// ---------- audio (lightweight) ----------
+let audioCtx = null;
+function initAudio() {
+  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  if (audioCtx.state === "suspended") audioCtx.resume();
+}
+window.addEventListener("pointerdown", initAudio, { once: true });
+
+function blip(f0, f1, dur, vol) {
+  if (!audioCtx || audioCtx.state !== "running") return;
+  const o = audioCtx.createOscillator();
+  const g = audioCtx.createGain();
+  o.type = "sine";
+  o.frequency.setValueAtTime(f0, audioCtx.currentTime);
+  o.frequency.exponentialRampToValueAtTime(f1, audioCtx.currentTime + dur);
+  g.gain.setValueAtTime(vol, audioCtx.currentTime);
+  g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + dur);
+  o.connect(g); g.connect(audioCtx.destination);
+  o.start(); o.stop(audioCtx.currentTime + dur);
+}
+
+// ---------- layout ----------
+function resize() {
+  W = canvas.width = innerWidth * devicePixelRatio;
+  H = canvas.height = innerHeight * devicePixelRatio;
+  canvas.style.width = innerWidth + "px";
+  canvas.style.height = innerHeight + "px";
+  const pad = 28 * devicePixelRatio;
+  const mazeW = SIZE_X;
+  const mazeH = SIZE_Z;
+  const s = Math.min((W - pad * 2) / mazeW, (H - pad * 2) / mazeH);
+  cell = s;
+  scale = s;
+  ox = (W - mazeW * cell) / 2;
+  oy = (H - mazeH * cell) / 2;
+}
+addEventListener("resize", resize);
+resize();
+
+function wx(cx) { return ox + (cx + 0.5) * cell; }
+function wz(cz) { return oy + (cz + 0.5) * cell; }
+
+// ---------- maze ----------
+function generateMaze() {
+  cells = [];
+  for (let z = 0; z < SIZE_Z; z++) {
+    cells[z] = [];
+    for (let x = 0; x < SIZE_X; x++) {
+      cells[z][x] = { v: false, w: [true, true, true, true] }; // N E S W
+    }
+  }
+  const dirs = [[0, -1, 0, 2], [1, 0, 1, 3], [0, 1, 2, 0], [-1, 0, 3, 1]];
+  function carve(x, z) {
+    cells[z][x].v = true;
+    for (const di of [0, 1, 2, 3].sort(() => Math.random() - 0.5)) {
+      const nx = x + dirs[di][0], nz = z + dirs[di][1];
+      if (nx >= 0 && nx < SIZE_X && nz >= 0 && nz < SIZE_Z && !cells[nz][nx].v) {
+        cells[z][x].w[dirs[di][2]] = false;
+        cells[nz][nx].w[dirs[di][3]] = false;
+        carve(nx, nz);
+      }
+    }
+  }
+  carve(0, 0);
+  // open start zone
+  for (let z = 0; z <= 2; z++) {
+    for (let x = 0; x <= 2; x++) {
+      if (x + 1 <= 2) { cells[z][x].w[1] = false; cells[z][x + 1].w[3] = false; }
+      if (z + 1 <= 2) { cells[z][x].w[2] = false; cells[z + 1][x].w[0] = false; }
+    }
+  }
+  // extra openings
+  for (let z = 1; z < SIZE_Z - 1; z++) {
+    for (let x = 1; x < SIZE_X - 1; x++) {
+      if (Math.random() < 0.05) {
+        const d = Math.floor(Math.random() * 4);
+        cells[z][x].w[d] = false;
+        const nx = x + dirs[d][0], nz = z + dirs[d][1];
+        if (nx >= 0 && nx < SIZE_X && nz >= 0 && nz < SIZE_Z) {
+          cells[nz][nx].w[dirs[d][3]] = false;
+        }
+      }
+    }
+  }
+
+  wallsSeg = [];
+  for (let z = 0; z < SIZE_Z; z++) {
+    for (let x = 0; x < SIZE_X; x++) {
+      const c = cells[z][x];
+      const x0 = ox + x * cell, y0 = oy + z * cell;
+      const x1 = x0 + cell, y1 = y0 + cell;
+      if (c.w[0]) wallsSeg.push({ x0, y0, x1: x1, y1: y0 });
+      if (c.w[1]) wallsSeg.push({ x0: x1, y0, x1: x1, y1: y1 });
+      if (c.w[2]) wallsSeg.push({ x0, y0: y1, x1: x1, y1: y1 });
+      if (c.w[3]) wallsSeg.push({ x0, y0, x1: x0, y1: y1 });
+    }
+  }
+
+  // traps / stars / boosts
+  traps = [];
+  stars = [];
+  boosts = [];
+  const valid = [];
+  for (let z = 1; z < SIZE_Z - 1; z++) {
+    for (let x = 1; x < SIZE_X - 1; x++) {
+      if (x <= 2 && z <= 2) continue;
+      if (x >= SIZE_X - 3 && z >= SIZE_Z - 3) continue;
+      valid.push({ x, z });
+    }
+  }
+  valid.sort(() => Math.random() - 0.5);
+  const used = new Set();
+  const holeN = Math.min(Math.floor(valid.length * 0.12) * trapMultiplier, 12);
+  for (let i = 0; i < holeN && i < valid.length; i++) {
+    const c = valid[i];
+    used.add(c.x + "," + c.z);
+    traps.push({ x: c.x, z: c.z, type: "hole", active: true });
+  }
+  const rest = valid.filter(c => !used.has(c.x + "," + c.z));
+  rest.sort(() => Math.random() - 0.5);
+  const bombN = Math.min(8, rest.length);
+  for (let i = 0; i < bombN; i++) {
+    const c = rest[i];
+    used.add(c.x + "," + c.z);
+    traps.push({ x: c.x, z: c.z, type: "bomb", active: true });
+  }
+  const rest2 = valid.filter(c => !used.has(c.x + "," + c.z));
+  rest2.sort(() => Math.random() - 0.5);
+  for (let i = 0; i < Math.min(3, rest2.length); i++) {
+    const c = rest2[i];
+    used.add(c.x + "," + c.z);
+    stars.push({ x: c.x, z: c.z, active: true });
+  }
+  const rest3 = valid.filter(c => !used.has(c.x + "," + c.z));
+  rest3.sort(() => Math.random() - 0.5);
+  for (let i = 0; i < Math.min(5, rest3.length); i++) {
+    const c = rest3[i];
+    boosts.push({ x: c.x, z: c.z });
+  }
+}
+
+// ---------- marbles ----------
+const COUNTRY_POOL = [
+  { code: "ID", name: "Indonesia", emoji: "🇮🇩" },
+  { code: "JP", name: "Japan", emoji: "🇯🇵" },
+  { code: "US", name: "United States", emoji: "🇺🇸" },
+  { code: "BR", name: "Brazil", emoji: "🇧🇷" },
+  { code: "KR", name: "South Korea", emoji: "🇰🇷" },
+  { code: "GB", name: "United Kingdom", emoji: "🇬🇧" },
+  { code: "FR", name: "France", emoji: "🇫🇷" },
+  { code: "DE", name: "Germany", emoji: "🇩🇪" },
+  { code: "IN", name: "India", emoji: "🇮🇳" },
+  { code: "TH", name: "Thailand", emoji: "🇹🇭" },
+  { code: "MY", name: "Malaysia", emoji: "🇲🇾" },
+  { code: "AU", name: "Australia", emoji: "🇦🇺" },
+];
+
+function randomCountry() {
+  return COUNTRY_POOL[Math.floor(Math.random() * COUNTRY_POOL.length)];
+}
+
+function makeMarble(id, color) {
+  const co = randomCountry();
+  return {
+    id,
+    color,
+    x: 1 + (id % 2) * 0.6,
+    z: 1 + Math.floor(id / 2) * 0.6,
+    vx: 0,
+    vz: 0,
+    r: 0.32,
+    speed: 0.9 + Math.random() * 0.25,
+    eliminated: false,
+    finished: false,
+    stuck: 0,
+    boostT: 0,
+    boostCd: 0,
+    chatAssigned: false,
+    chatUser: "",
+    countryCode: co.code,
+    countryName: co.name,
+    countryEmoji: co.emoji,
+    spin: 0,
+  };
+}
+
+function resetMarbles() {
+  marbles = [];
+  const cols = [...COLORS].sort(() => Math.random() - 0.5).slice(0, MAX_PLAYERS);
+  for (let i = 0; i < MAX_PLAYERS; i++) marbles.push(makeMarble(i, cols[i]));
+}
+
+// ---------- AI steer ----------
+function cellOf(m) {
+  return {
+    x: Math.max(0, Math.min(SIZE_X - 1, Math.floor(m.x))),
+    z: Math.max(0, Math.min(SIZE_Z - 1, Math.floor(m.z))),
+  };
+}
+
+function steer(m) {
+  const c = cellOf(m);
+  const target = exitCell;
+  // prefer open direction toward exit
+  const options = [];
+  const dirs = [
+    { dx: 0, dz: -1, wall: 0 },
+    { dx: 1, dz: 0, wall: 1 },
+    { dx: 0, dz: 1, wall: 2 },
+    { dx: -1, dz: 0, wall: 3 },
+  ];
+  for (const d of dirs) {
+    if (cells[c.z][c.x].w[d.wall]) continue;
+    const nx = c.x + d.dx, nz = c.z + d.dz;
+    if (nx < 0 || nz < 0 || nx >= SIZE_X || nz >= SIZE_Z) continue;
+    const dist = Math.abs(nx - target.x) + Math.abs(nz - target.z);
+    options.push({ dx: d.dx, dz: d.dz, dist });
+  }
+  if (!options.length) {
+    m.vx += (Math.random() - 0.5) * 0.4;
+    m.vz += (Math.random() - 0.5) * 0.4;
+    return;
+  }
+  options.sort((a, b) => a.dist - b.dist);
+  // mostly best path, sometimes random for chaos
+  const pick = Math.random() < 0.72 ? options[0] : options[Math.floor(Math.random() * options.length)];
+  const force = m.speed * (m.boostT > 0 ? 1.55 : 1);
+  m.vx += pick.dx * force * 0.08;
+  m.vz += pick.dz * force * 0.08;
+  // slight center bias
+  const cx = c.x + 0.5, cz = c.z + 0.5;
+  m.vx += (cx - m.x) * 0.02;
+  m.vz += (cz - m.z) * 0.02;
+}
+
+function collideWalls(m) {
+  const r = m.r;
+  // grid clamp soft
+  m.x = Math.max(r, Math.min(SIZE_X - r, m.x));
+  m.z = Math.max(r, Math.min(SIZE_Z - r, m.z));
+  const c = cellOf(m);
+  const localX = m.x - c.x;
+  const localZ = m.z - c.z;
+  const w = cells[c.z][c.x].w;
+  if (w[0] && localZ < r) { m.z = c.z + r; m.vz = Math.abs(m.vz) * 0.35; }
+  if (w[2] && localZ > 1 - r) { m.z = c.z + 1 - r; m.vz = -Math.abs(m.vz) * 0.35; }
+  if (w[3] && localX < r) { m.x = c.x + r; m.vx = Math.abs(m.vx) * 0.35; }
+  if (w[1] && localX > 1 - r) { m.x = c.x + 1 - r; m.vx = -Math.abs(m.vx) * 0.35; }
+}
+
+function separate() {
+  for (let i = 0; i < marbles.length; i++) {
+    for (let j = i + 1; j < marbles.length; j++) {
+      const a = marbles[i], b = marbles[j];
+      if (a.eliminated || b.eliminated || a.finished || b.finished) continue;
+      const dx = b.x - a.x, dz = b.z - a.z;
+      const d = Math.hypot(dx, dz) || 0.001;
+      const min = a.r + b.r;
+      if (d < min) {
+        const push = (min - d) * 0.5;
+        const nx = dx / d, nz = dz / d;
+        a.x -= nx * push; a.z -= nz * push;
+        b.x += nx * push; b.z += nz * push;
+        a.vx -= nx * 0.15; a.vz -= nz * 0.15;
+        b.vx += nx * 0.15; b.vz += nz * 0.15;
+        blip(280, 90, 0.05, 0.04);
+      }
+    }
+  }
+}
+
+function burst(x, z, color, n) {
+  for (let i = 0; i < n; i++) {
+    const a = Math.random() * Math.PI * 2;
+    const sp = 0.5 + Math.random() * 1.5;
+    particles.push({
+      x, z,
+      vx: Math.cos(a) * sp,
+      vz: Math.sin(a) * sp,
+      life: 0.4 + Math.random() * 0.5,
+      color,
+      r: 0.06 + Math.random() * 0.08,
+    });
+  }
+}
+
+// ---------- chat sync ----------
+let chatPlayers = [];
+let chatSig = "";
+let chatBusy = false;
+
+function applyPlayer(m, p) {
+  m.countryCode = p.countryCode || m.countryCode;
+  m.countryName = p.countryName || p.country || m.countryName;
+  m.countryEmoji = p.countryEmoji || p.flag || m.countryEmoji;
+  m.chatUser = p.viewerName || p.name || p.user || "";
+  m.chatAssigned = true;
+}
+
+function syncChat() {
+  if (!chatPlayers.length) return;
+  const assigned = new Set(marbles.filter(m => m.chatAssigned).map(m => (m.chatUser || "").toLowerCase()));
+  const free = marbles.filter(m => !m.eliminated && !m.finished && !m.chatAssigned);
+  let fi = 0;
+  for (const p of chatPlayers) {
+    const key = String(p.user || p.viewerName || p.name || "").toLowerCase();
+    if (!key || assigned.has(key)) continue;
+    if (fi >= free.length) break;
+    applyPlayer(free[fi++], p);
+    assigned.add(key);
+  }
+  updateUI();
+}
+
+async function fetchChatState() {
+  if (chatBusy) return;
+  chatBusy = true;
+  try {
+    const res = await fetch("chat_state.json?t=" + Date.now(), { cache: "no-store" });
+    if (!res.ok) throw new Error("http " + res.status);
+    const state = await res.json();
+    const players = [...(state.active || []), ...(state.queue || [])];
+    const sig = JSON.stringify(players.map(p => [p.user, p.countryCode, p.countryName]));
+    if (sig !== chatSig) {
+      chatSig = sig;
+      chatPlayers = players;
+      syncChat();
+    }
+  } catch (e) {
+    // silent
+  } finally {
+    chatBusy = false;
+  }
+}
+
+// ---------- round ----------
+function startRound() {
+  winner = false;
+  elapsed = 0;
+  document.getElementById("message").classList.remove("show");
+  document.getElementById("round").textContent = String(round);
+  generateMaze();
+  resetMarbles();
+  syncChat();
+  document.getElementById("status").textContent = "Round " + round + " — type a country in chat to join!";
+  updateUI();
+}
+
+function updateUI() {
+  const box = document.getElementById("players");
+  box.innerHTML = "";
+  const sorted = [...marbles].sort((a, b) => {
+    const da = Math.hypot(a.x - (exitCell.x + 0.5), a.z - (exitCell.z + 0.5));
+    const db = Math.hypot(b.x - (exitCell.x + 0.5), b.z - (exitCell.z + 0.5));
+    return da - db;
+  });
+  sorted.forEach((m, i) => {
+    const el = document.createElement("div");
+    el.className = "player" + (i === 0 && !m.eliminated ? " lead" : "") + (m.eliminated ? " dead" : "");
+    el.innerHTML = `<span class="flagEmoji">${m.countryEmoji}</span><span class="countryName">${m.countryName}</span>`;
+    box.appendChild(el);
+  });
+}
+
+// ---------- update ----------
+function update(dt) {
+  if (winner) {
+    for (const p of particles) {
+      p.x += p.vx * dt; p.z += p.vz * dt; p.life -= dt;
+    }
+    particles = particles.filter(p => p.life > 0);
+    return;
+  }
+
+  for (const m of marbles) {
+    if (m.eliminated || m.finished) continue;
+    if (m.boostT > 0) m.boostT -= dt;
+    if (m.boostCd > 0) m.boostCd -= dt;
+
+    const prevX = m.x, prevZ = m.z;
+    steer(m);
+    const frame = Math.min(dt * 60, 1.6);
+    m.x += m.vx * 0.055 * frame;
+    m.z += m.vz * 0.055 * frame;
+    m.vx *= Math.pow(0.985, frame);
+    m.vz *= Math.pow(0.985, frame);
+    collideWalls(m);
+    m.spin += Math.hypot(m.vx, m.vz) * 0.2;
+
+    if (Math.hypot(m.x - prevX, m.z - prevZ) < 0.002) {
+      m.stuck++;
+      if (m.stuck > 12) {
+        m.vx += (Math.random() - 0.5) * 0.8;
+        m.vz += (Math.random() - 0.5) * 0.8;
+        m.stuck = 0;
+      }
+    } else m.stuck = 0;
+
+    // boost pads
+    for (const b of boosts) {
+      if (Math.hypot(m.x - (b.x + 0.5), m.z - (b.z + 0.5)) < 0.45 && m.boostCd <= 0) {
+        m.boostT = 1.2;
+        m.boostCd = 1.5;
+        const len = Math.hypot(m.vx, m.vz) || 1;
+        m.vx += (m.vx / len) * 1.2;
+        m.vz += (m.vz / len) * 1.2;
+        document.getElementById("status").textContent = "⚡ " + m.countryName + " speed boost!";
+        blip(420, 720, 0.1, 0.08);
+      }
+    }
+
+    // stars
+    for (const s of stars) {
+      if (!s.active) continue;
+      if (Math.hypot(m.x - (s.x + 0.5), m.z - (s.z + 0.5)) < 0.42) {
+        s.active = false;
+        blip(600, 900, 0.12, 0.1);
+        // spawn extra marble with random country if under cap
+        if (marbles.length < 8) {
+          const nm = makeMarble(marbles.length, COLORS[marbles.length % COLORS.length]);
+          nm.x = 1.2; nm.z = 1.2;
+          // prefer next chat player not assigned
+          const assigned = new Set(marbles.filter(x => x.chatAssigned).map(x => (x.chatUser || "").toLowerCase()));
+          const next = chatPlayers.find(p => {
+            const k = String(p.user || p.name || "").toLowerCase();
+            return k && !assigned.has(k);
+          });
+          if (next) applyPlayer(nm, next);
+          marbles.push(nm);
+          document.getElementById("status").textContent = "⭐ " + nm.countryEmoji + " " + nm.countryName + " entered!";
+        }
+        burst(s.x + 0.5, s.z + 0.5, "#ffd166", 12);
+      }
+    }
+
+    // traps
+    for (const t of traps) {
+      if (!t.active) continue;
+      if (Math.hypot(m.x - (t.x + 0.5), m.z - (t.z + 0.5)) < 0.38) {
+        if (t.type === "hole") {
+          // teleport to start
+          m.x = 1 + Math.random() * 0.5;
+          m.z = 1 + Math.random() * 0.5;
+          m.vx = 0; m.vz = 0;
+          document.getElementById("status").textContent = "🌀 " + m.countryName + " fell in a hole!";
+          blip(180, 60, 0.15, 0.1);
+        } else if (t.type === "bomb") {
+          t.active = false;
+          m.eliminated = true;
+          burst(m.x, m.z, m.color, 18);
+          document.getElementById("status").textContent = "💥 " + m.countryName + " exploded!";
+          blip(120, 40, 0.2, 0.12);
+        }
+      }
+    }
+
+    // finish
+    if (Math.hypot(m.x - (exitCell.x + 0.5), m.z - (exitCell.z + 0.5)) < 0.55) {
+      m.finished = true;
+      winner = true;
+      trapMultiplier = 1;
+      document.getElementById("winner").textContent = m.countryEmoji + " " + m.countryName + " WINS!!";
+      document.getElementById("status").textContent = m.countryName + " escaped the maze!";
+      document.getElementById("message").classList.add("show");
+      burst(m.x, m.z, "#ffd166", 24);
+      blip(500, 1000, 0.25, 0.12);
+      setTimeout(() => { round++; startRound(); }, 3500);
+    }
+  }
+
+  separate();
+
+  if (marbles.every(m => m.eliminated) && !winner) {
+    winner = true;
+    document.getElementById("winner").textContent = "ALL MARBLES OUT!";
+    document.getElementById("message").classList.add("show");
+    setTimeout(() => { round++; startRound(); }, 3500);
+  }
+  if (elapsed >= TIME_LIMIT && !winner) {
+    winner = true;
+    trapMultiplier = Math.min(trapMultiplier * 2, 4);
+    document.getElementById("winner").textContent = "TIME'S UP!";
+    document.getElementById("status").textContent = "Traps increased next round!";
+    document.getElementById("message").classList.add("show");
+    setTimeout(() => { round++; startRound(); }, 3500);
+  }
+
+  for (const p of particles) {
+    p.x += p.vx * dt; p.z += p.vz * dt; p.life -= dt;
+  }
+  particles = particles.filter(p => p.life > 0);
+}
+
+// ---------- draw ----------
+function drawMarble(m) {
+  const px = wx(m.x - 0.5), py = wz(m.z - 0.5);
+  const rad = m.r * cell;
+  // shadow
+  ctx.beginPath();
+  ctx.ellipse(px + rad * 0.15, py + rad * 0.35, rad * 0.85, rad * 0.45, 0, 0, Math.PI * 2);
+  ctx.fillStyle = "rgba(0,0,0,0.35)";
+  ctx.fill();
+  // ball
+  const g = ctx.createRadialGradient(px - rad * 0.3, py - rad * 0.35, rad * 0.1, px, py, rad);
+  g.addColorStop(0, "#ffffff");
+  g.addColorStop(0.25, m.color);
+  g.addColorStop(1, shade(m.color, 0.45));
+  ctx.beginPath();
+  ctx.arc(px, py, rad, 0, Math.PI * 2);
+  ctx.fillStyle = g;
+  ctx.fill();
+  ctx.lineWidth = Math.max(1, cell * 0.03);
+  ctx.strokeStyle = "rgba(0,0,0,0.35)";
+  ctx.stroke();
+  // flag emoji
+  if (!m.eliminated && !m.finished) {
+    ctx.font = Math.floor(cell * 0.55) + "px sans-serif";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText(m.countryEmoji, px - rad * 1.35, py);
+  }
+  if (m.boostT > 0) {
+    ctx.beginPath();
+    ctx.arc(px, py, rad * 1.25, 0, Math.PI * 2);
+    ctx.strokeStyle = "rgba(255,220,80,0.7)";
+    ctx.lineWidth = 2;
+    ctx.stroke();
+  }
+}
+
+function shade(hex, f) {
+  const n = parseInt(hex.slice(1), 16);
+  let r = (n >> 16) & 255, g = (n >> 8) & 255, b = n & 255;
+  r = Math.floor(r * f); g = Math.floor(g * f); b = Math.floor(b * f);
+  return "rgb(" + r + "," + g + "," + b + ")";
+}
+
+function draw() {
+  // background
+  ctx.fillStyle = "#120a05";
+  ctx.fillRect(0, 0, W, H);
+
+  // outer board
+  const bw = SIZE_X * cell, bh = SIZE_Z * cell;
+  ctx.fillStyle = "#17120f";
+  ctx.fillRect(ox - cell * 0.35, oy - cell * 0.35, bw + cell * 0.7, bh + cell * 0.7);
+
+  // maze floor
+  ctx.fillStyle = "#8b6948";
+  ctx.fillRect(ox, oy, bw, bh);
+
+  // checker subtle
+  for (let z = 0; z < SIZE_Z; z++) {
+    for (let x = 0; x < SIZE_X; x++) {
+      if ((x + z) % 2 === 0) {
+        ctx.fillStyle = "rgba(0,0,0,0.06)";
+        ctx.fillRect(ox + x * cell, oy + z * cell, cell, cell);
+      }
+    }
+  }
+
+  // exit glow
+  ctx.fillStyle = "rgba(80,220,120,0.25)";
+  ctx.beginPath();
+  ctx.arc(wx(exitCell.x), wz(exitCell.z), cell * 0.4, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.strokeStyle = "#4dff88";
+  ctx.lineWidth = 2;
+  ctx.stroke();
+
+  // boost pads
+  for (const b of boosts) {
+    const px = wx(b.x), py = wz(b.z);
+    ctx.fillStyle = "rgba(80,180,255,0.35)";
+    ctx.fillRect(px - cell * 0.35, py - cell * 0.35, cell * 0.7, cell * 0.7);
+    ctx.fillStyle = "#7ecbff";
+    ctx.font = Math.floor(cell * 0.35) + "px sans-serif";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText("⚡", px, py);
+  }
+
+  // traps
+  for (const t of traps) {
+    if (!t.active && t.type === "bomb") continue;
+    const px = wx(t.x), py = wz(t.z);
+    if (t.type === "hole") {
+      ctx.beginPath();
+      ctx.arc(px, py, cell * 0.28, 0, Math.PI * 2);
+      ctx.fillStyle = "#0a1520";
+      ctx.fill();
+      ctx.strokeStyle = "#3a7ebd";
+      ctx.lineWidth = 2;
+      ctx.stroke();
+    } else {
+      ctx.beginPath();
+      ctx.arc(px, py, cell * 0.22, 0, Math.PI * 2);
+      ctx.fillStyle = "#c03020";
+      ctx.fill();
+      ctx.fillStyle = "#222";
+      ctx.font = "bold " + Math.floor(cell * 0.28) + "px sans-serif";
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillText("B", px, py + 1);
+    }
+  }
+
+  // stars
+  for (const s of stars) {
+    if (!s.active) continue;
+    const px = wx(s.x), py = wz(s.z);
+    ctx.fillStyle = "#ffd166";
+    ctx.font = Math.floor(cell * 0.45) + "px sans-serif";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText("⭐", px, py);
+  }
+
+  // walls
+  ctx.strokeStyle = "#35251b";
+  ctx.lineWidth = Math.max(2, cell * 0.12);
+  ctx.lineCap = "round";
+  ctx.beginPath();
+  for (const s of wallsSeg) {
+    ctx.moveTo(s.x0, s.y0);
+    ctx.lineTo(s.x1, s.y1);
+  }
+  ctx.stroke();
+  // wall highlight
+  ctx.strokeStyle = "rgba(185,120,46,0.35)";
+  ctx.lineWidth = Math.max(1, cell * 0.04);
+  ctx.beginPath();
+  for (const s of wallsSeg) {
+    ctx.moveTo(s.x0, s.y0);
+    ctx.lineTo(s.x1, s.y1);
+  }
+  ctx.stroke();
+
+  // marbles
+  for (const m of marbles) {
+    if (m.eliminated) continue;
+    drawMarble(m);
+  }
+
+  // particles
+  for (const p of particles) {
+    const px = wx(p.x - 0.5), py = wz(p.z - 0.5);
+    ctx.globalAlpha = Math.max(0, p.life);
+    ctx.fillStyle = p.color;
+    ctx.beginPath();
+    ctx.arc(px, py, p.r * cell, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.globalAlpha = 1;
+  }
+}
+
+// ---------- loop ----------
+function frame(t) {
+  requestAnimationFrame(frame);
+  let dt = (t - last) / 1000;
+  if (dt > 0.1) dt = 1 / 30;
+  dt = Math.min(dt, 1 / 20);
+  last = t;
+  if (!winner) elapsed += dt;
+  document.getElementById("timer").textContent =
+    String(Math.floor(elapsed / 60)).padStart(2, "0") + ":" +
+    String(Math.floor(elapsed % 60)).padStart(2, "0");
+  update(dt);
+  draw();
+}
+
+startRound();
+setInterval(fetchChatState, 1500);
+fetchChatState();
+requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>
