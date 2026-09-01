@@ -127,10 +127,8 @@ jobs:
           export DISPLAY=:99
           sleep 3
 
-          sudo mkdir -p /etc/chromium/policies/managed
-          sudo mkdir -p /etc/chromium-browser/policies/managed
-          printf '%s\n' '{' '  "TranslateEnabled": false' '}' | sudo tee /etc/chromium/policies/managed/stream-policy.json > /dev/null
-          printf '%s\n' '{' '  "TranslateEnabled": false' '}' | sudo tee /etc/chromium-browser/policies/managed/stream-policy.json > /dev/null
+          sudo mkdir -p /etc/opt/chrome/policies/managed
+          printf '%s\n' '{' '  "TranslateEnabled": false' '}' | sudo tee /etc/opt/chrome/policies/managed/stream-policy.json > /dev/null
           sleep 1
 
           echo "===== START HTTP SERVER ====="
