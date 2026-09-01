@@ -1,2268 +1,929 @@
-<script>window.onerror=function(){return true;};window.addEventListener("error",function(e){e.stopImmediatePropagation();e.preventDefault();},true);</script><!DOCTYPE html>
-<html lang="id"><head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>Marble Maze - YouTube Shorts Live</title>
-<style>
-*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#0d0704;font-family:Arial,sans-serif;color:#fff}
-#game{position:fixed;inset:0}canvas{display:block;width:100%;height:100%}
-#hud{position:fixed;z-index:5;top:8px;left:50%;transform:translateX(-50%);width:100%;text-align:center;pointer-events:none;text-shadow:0 2px 8px #000}
-#hud h1{font-size:46px;margin:0 0 4px;line-height:1.0}
-#hud .sub{font-size:15px}
-h1{margin:0;font-size:clamp(24px,6vw,36px);font-weight:900;letter-spacing:3px;color:#ffd166}
-.sub{font-size:11px;letter-spacing:2px;color:#f5d7a0}
-.badge{display:inline-block;margin-top:6px;padding:6px 16px;background:#24140ae8;border:2px solid #b9782e;border-radius:20px;font-size:13px;font-weight:bold}
-#timer{color:#ffe45c;margin-left:8px}
-#players{
-position:fixed;
-z-index:6;
-left:50%;
-bottom:95px;
-transform:translateX(-50%);
-width:96%;
-display:flex;
-flex-direction:row;
-flex-wrap:wrap;
-justify-content:center;
-align-items:center;
-gap:10px 14px;
-max-height:28vh;
-overflow:hidden;
-pointer-events:none;
-}
- .player{display:flex;align-items:center;gap:5px;min-width:0;padding:3px 7px;background:#21130be8;border:1px solid #6d4525;border-radius:10px;text-align:left;font-size:9px;font-weight:700;white-space:nowrap;box-shadow:0 2px 5px #0008}
-.player.lead{border-color:#ffd166;box-shadow:0 0 10px #ffd16688}
-.player.dead{opacity:0.35;border-color:#772222;background:#140808e8;text-decoration:line-through}
-.flagEmoji{font-size:51px;line-height:1}.countryName{font-size:27px;line-height:1.05;font-weight:700}
-#status{position:fixed;z-index:6;bottom:20px;left:50%;transform:translateX(-50%);padding:8px 16px;background:#21130be8;border:1px solid #87582d;border-radius:20px;font-size:12px;font-weight:bold;max-width:90%;text-align:center}
-#message{position:fixed;z-index:10;inset:0;display:none;align-items:center;justify-content:center;background:#000b}
-#message.show{display:flex}
-.messageBox{padding:25px 35px;text-align:center;background:linear-gradient(145deg,#3b210d,#160d07);border:3px solid #e9ae45;border-radius:18px}
-.messageBox h2{margin:5px 0;color:#ffd166;font-size:28px}
-</style><style>#error-box, #error-log, .error-banner, div[style*="background: red"], div[style*="background-color: red"], div[style*="red"] { display: none !important; }</style><style>div[style*="background: red"], div[style*="background:red"], div[style*="background-color: red"], div[style*="background-color:red"], div[style*="position: fixed"][style*="red"], div[style*="position: absolute"][style*="red"] { display: none !important; opacity: 0 !important; visibility: hidden !important; pointer-events: none !important; }</style></head><body>
-<div id="game"></div>
-<div id="hud"><h1>MARBLE MAZE</h1><div class="sub">RACE LIVE SHORTS (9:16)</div>
-<div class="badge">ROUND <span id="round">1</span> <span id="timer">00:00</span></div></div>
-<div id="players"></div>
-<div id="status">Klik atau Ketuk Layar Untuk Mengaktifkan Suara!</div>
-<div id="message"><div class="messageBox"><small>ROUND RESULT</small><h2 id="winner">—</h2></div></div>
-
-<script>
-window.addEventListener('error', function(e) {
-  const msg =
-
-    (e.message || 'Unknown error') +
-    '\n\nFile: ' +
-    (e.filename || 'unknown') +
-    '\nLine: ' +
-    (e.lineno || '?') +
-    ':' +
-    (e.colno || '?');
-
-  console.error(msg);
-
-  let box = document.getElementById('debug-error');
-  if (!box) {
-    box = document.createElement('pre');
-    box.id = 'debug-error';
-    box.style.cssText =
-      'position:fixed;z-index:999999;left:5px;right:5px;top:5px;' +
-      'padding:15px;background:#220000;color:#ff7777;' +
-      'font:14px monospace;white-space:pre-wrap;border:2px solid red;' +
-      'max-height:90vh;overflow:auto;';
-    document.body.appendChild(box);
-  }
-
-  box.textContent = msg;
-});
-
-window.addEventListener('unhandledrejection', function(e) {
-  const reason = e.reason && e.reason.stack
-    ? e.reason.stack
-    : String(e.reason);
-
-  console.error('PROMISE ERROR', reason);
-
-  let box = document.getElementById('debug-error');
-  if (!box) {
-    box = document.createElement('pre');
-    box.id = 'debug-error';
-    box.style.cssText =
-      'position:fixed;z-index:999999;left:5px;right:5px;top:5px;' +
-      'padding:15px;background:#220000;color:#ff7777;' +
-      'font:14px monospace;white-space:pre-wrap;border:2px solid red;' +
-      'max-height:90vh;overflow:auto;';
-    document.body.appendChild(box);
-  }
-
-  box.textContent = 'PROMISE ERROR\n\n' + reason;
-});
-</script>
-<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js"}}</script>
-<script type="module">
-import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js';
-
-let audioCtx = null;
-function initAudio() {
-  if (!audioCtx) {
-    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-  }
-  if (audioCtx.state === 'suspended') {
-    audioCtx.resume();
-  }
-}
-window.addEventListener('pointerdown', initAudio, { once: true });
-window.addEventListener('keydown', initAudio, { once: true });
-
-function playHitSFX(vol = 0.2) {
-  if (!audioCtx || audioCtx.state !== 'running') return;
-  const osc = audioCtx.createOscillator();
-  const gain = audioCtx.createGain();
-  osc.type = 'sine';
-  osc.frequency.setValueAtTime(320 + Math.random() * 120, audioCtx.currentTime);
-  osc.frequency.exponentialRampToValueAtTime(70, audioCtx.currentTime + 0.07);
-  gain.gain.setValueAtTime(vol, audioCtx.currentTime);
-  gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.07);
-  osc.connect(gain); gain.connect(audioCtx.destination);
-  osc.start(); osc.stop(audioCtx.currentTime + 0.07);
-}
-
-
-// SFX cache - 1 instance per suara (biar tidak berat)
-const sfxBomb = new Audio("assets/sound/explotion.mp3");
-const sfxStar = new Audio("assets/sound/star.mp3");
-const sfxBoost = new Audio("assets/sound/boost.wav");
-sfxBomb.preload = "auto";
-sfxStar.preload = "auto";
-sfxBoost.preload = "auto";
-
-function playSfx(audio, vol) {
-  try {
-    audio.pause();
-    audio.currentTime = 0;
-    audio.volume = vol;
-    const p = audio.play();
-    if (p && p.catch) p.catch(() => {});
-  } catch (e) {}
-}
-
-function playBombSFX() {
-  playSfx(sfxBomb, 0.8);
-}
-
-function playPortalSFX() {
-  playSfx(sfxBoost, 0.4);
-}
-
-function playBoostSFX() {
-  playSfx(sfxBoost, 0.7);
-}
-
-function playStarSFX() {
-  playSfx(sfxStar, 0.7);
-}
-
-
-// Rolling marble background audio (single instance, volume 5% for performance)
-let rollingAudio = null;
-
-function startRollingAudio() {
-  try {
-    if (!rollingAudio) {
-      rollingAudio = new Audio("assets/sound/rollmarble.wav");
-      rollingAudio.loop = true;
-      rollingAudio.volume = 0.15; // 5% volume
-      rollingAudio.preload = "auto";
-    }
-    // Hanya panggil play sekali (jika sudah playing, jangan restart)
-    if (rollingAudio.paused) {
-      const promise = rollingAudio.play();
-      if (promise && promise.catch) {
-        promise.catch(() => {});
-      }
-    }
-  } catch (e) {
-    console.warn("Rolling audio unavailable:", e);
-  }
-}
-
-function stopRollingAudio() {
-  if (!rollingAudio) return;
-  try {
-    rollingAudio.pause();
-    rollingAudio.currentTime = 0;
-  } catch (e) {}
-}
-
-let round = 1, winner = false, elapsed = 0, last = performance.now(), tick = 0;
-let trapMultiplier = 1;
-
-const COLORS=[
-  0xff2244, // Red
-  0x2288ff, // Blue
-  0x22dd66, // Green
-  0xffdd00, // Yellow
-  0x9b30ff, // Purple
-  0xff7a00, // Orange
-  0x00d9ff, // Cyan
-  0xff4fa3, // Pink
-  0x4f7cff, // Light Blue
-  0x9b5a2e, // Brown
-  0xffffff, // White
-  0x8cff00, // Lime
-  0xff3030, // Bright Red
-  0x00ffb7, // Mint
-  0xff5cff, // Magenta
-  0x7dffea  // Aqua
-], RADIUS=0.95;
-const marbles=[];
-
-const scene=new THREE.Scene();
-scene.background=new THREE.Color(0x120a05);
-
-const aspect = innerWidth / innerHeight;
-const camera = new THREE.PerspectiveCamera(aspect < 1 ? 64 : 44, aspect, 0.1, 350);
-const baseCamPos = { x: 0, y: 74, z: 0 };
-camera.position.set(baseCamPos.x, baseCamPos.y, baseCamPos.z);
-camera.lookAt(0, 0, 0);
-
-const renderer=new THREE.WebGLRenderer({antialias:true});
-renderer.setPixelRatio(Math.min(devicePixelRatio,2));
-renderer.setSize(innerWidth,innerHeight);
-renderer.shadowMap.enabled = false;
-renderer.shadowMap.type = THREE.BasicShadowMap;
-document.getElementById('game').appendChild(renderer.domElement);
-
-scene.add(new THREE.HemisphereLight(0xffe6c0,0x3a2010,1.2));
-const sun=new THREE.DirectionalLight(0xffffff,2.8);
-sun.position.set(-25,50,25);
-sun.castShadow=false;
-sun.shadow.mapSize.width = 2048;
-sun.shadow.mapSize.height = 2048;
-sun.shadow.camera.near = 0.5;
-sun.shadow.camera.far = 180;
-const d = 50;
-sun.shadow.camera.left = -d;
-sun.shadow.camera.right = d;
-sun.shadow.camera.top = d;
-sun.shadow.camera.bottom = -d;
-sun.shadow.bias = -0.0005;
-scene.add(sun);
-
-scene.add(new THREE.AmbientLight(0xffffff,0.3));
-
-const CELL=2.8, SIZE_X=14, SIZE_Z=25, HALF_X=(SIZE_X-1)/2, HALF_Z=(SIZE_Z-1)/2;
-
-// PERBAIKAN: Lantai diperluas (3.5x lebih lebar/panjang), ukuran labirin tetap sama
-const boardWidth = (SIZE_X * CELL + 1) * 3.5;
-const boardDepth = (SIZE_Z * CELL + 1) * 3.5;
-const board = new THREE.Mesh(
-  new THREE.BoxGeometry(boardWidth, 0.5, boardDepth),
-  new THREE.MeshStandardMaterial({color: 0x17120f, roughness: 0.85})
-);
-board.position.y = -0.3;
-board.receiveShadow = false;
-scene.add(board);
-
-// Lantai khusus area maze
-const mazeFloorWidth = SIZE_X * CELL + 0.9;
-const mazeFloorDepth = SIZE_Z * CELL + 0.9;
-
-const mazeFloor = new THREE.Mesh(
-  new THREE.BoxGeometry(mazeFloorWidth, 0.08, mazeFloorDepth),
-  new THREE.MeshStandardMaterial({
-    color: 0x8b6948,
-    roughness: 0.9
-  })
-);
-
-mazeFloor.position.y = -0.02;
-mazeFloor.receiveShadow = false;
-scene.add(mazeFloor);
-
-const maze=new THREE.Group();scene.add(maze);
-const trapGroup=new THREE.Group();scene.add(trapGroup);
-const starGroup=new THREE.Group();scene.add(starGroup);
-const boostGroup=new THREE.Group();scene.add(boostGroup);
-
-const walls=[], traps=[], stars=[], boosts=[];
-
-// ============================================================
-// DYNAMIC STAR SYSTEM
-// ============================================================
-
-const MAX_ACTIVE_STARS = 3;
-const STAR_RESPAWN_DELAY = 5000;
-
-function countActiveStars(){
-  return stars.filter(s => s.active).length;
-}
-
-function findSafeStarPosition(){
-
-  for(let attempt = 0; attempt < 100; attempt++){
-
-    const cx =
-      Math.floor(Math.random() * SIZE_X);
-
-    const cz =
-      Math.floor(Math.random() * SIZE_Z);
-
-    // Hindari area start
-    if(cx <= 2 && cz <= 2) continue;
-
-    // Hindari area exit
-    if(
-      cx >= SIZE_X - 3 &&
-      cz >= SIZE_Z - 3
-    ) continue;
-
-    const x = (cx - HALF_X) * CELL;
-    const z = (cz - HALF_Z) * CELL;
-
-    // Jangan terlalu dekat dengan marble
-    let blocked = false;
-
-    for(const m of marbles){
-
-      if(
-        m.userData.eliminated ||
-        m.userData.finished
-      ){
-        continue;
-      }
-
-      if(
-        Math.hypot(
-          m.position.x - x,
-          m.position.z - z
-        ) < 2.5
-      ){
-        blocked = true;
-        break;
-      }
-    }
-
-    if(blocked) continue;
-
-    // Jangan menumpuk dengan star lain
-    for(const star of stars){
-
-      if(!star.active) continue;
-
-      if(
-        Math.hypot(
-          star.x - x,
-          star.z - z
-        ) < 3
-      ){
-        blocked = true;
-        break;
-      }
-    }
-
-    if(blocked) continue;
-
-    return {x,z};
-  }
-
-  return null;
-}
-
-function spawnDynamicStar(){
-
-  if(countActiveStars() >= MAX_ACTIVE_STARS){
-    console.log("[STAR] Maximum active stars reached.");
-    return false;
-  }
-
-  /*
-   * Ambil semua cell maze yang valid.
-   */
-  const candidates = [];
-
-  for(let z = 0; z < SIZE_Z; z++){
-    for(let x = 0; x < SIZE_X; x++){
-
-      // Hindari start
-      if(x <= 2 && z <= 2) continue;
-
-      // Hindari exit
-      if(
-        x >= SIZE_X - 3 &&
-        z >= SIZE_Z - 3
-      ){
-        continue;
-      }
-
-      const px = (x - HALF_X) * CELL;
-      const pz = (z - HALF_Z) * CELL;
-
-      /*
-       * Jangan terlalu dekat dengan marble.
-       */
-      let occupied = false;
-
-      for(const m of marbles){
-
-        if(
-          m.userData.eliminated ||
-          m.userData.finished
-        ){
-          continue;
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SuperSpin - Multi Game Arena</title>
+    <style>
+        :root {
+            --primary: #f39c12;
+            --bg-dark: #121212;
+            --card-bg: #1e1e1e;
+            --text: #ffffff;
+            --green: #27ae60;
         }
 
-        if(
-          Math.hypot(
-            m.position.x - px,
-            m.position.z - pz
-          ) < 2.2
-        ){
-          occupied = true;
-          break;
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'Segoe UI', Arial, sans-serif;
+            background-color: var(--bg-dark);
+            color: var(--text);
+            padding-bottom: 40px;
         }
-      }
 
-      if(occupied) continue;
-
-      /*
-       * Jangan menumpuk dengan star lain.
-       */
-      let starTooClose = false;
-
-      for(const st of stars){
-
-        if(!st.active) continue;
-
-        if(
-          Math.hypot(
-            st.x - px,
-            st.z - pz
-          ) < 2.5
-        ){
-          starTooClose = true;
-          break;
+        header {
+            background: var(--card-bg);
+            padding: 10px 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px solid var(--primary);
+            flex-wrap: wrap;
+            gap: 8px;
         }
-      }
 
-      if(starTooClose) continue;
-
-      candidates.push({
-        x: px,
-        z: pz
-      });
-    }
-  }
-
-  if(candidates.length === 0){
-
-    console.warn(
-      "[STAR] Tidak ada posisi valid untuk STAR baru."
-    );
-
-    /*
-     * Coba lagi 2 detik kemudian.
-     */
-    setTimeout(() => {
-      spawnDynamicStar();
-    }, 2000);
-
-    return false;
-  }
-
-  const pos =
-    candidates[
-      Math.floor(
-        Math.random() * candidates.length
-      )
-    ];
-
-  createStarMesh(
-    pos.x,
-    pos.z
-  );
-
-  console.log(
-    `[STAR] NEW STAR spawned: ${countActiveStars()}/${MAX_ACTIVE_STARS}`,
-    pos
-  );
-
-  return true;
-}
-
-function maintainDynamicStars(){
-
-  while(
-    countActiveStars() < MAX_ACTIVE_STARS
-  ){
-    if(!spawnDynamicStar()){
-      break;
-    }
-  }
-}
-
-function startDynamicStarSystem(){
-
-  console.log(
-    "[STAR] Dynamic Star System STARTED"
-  );
-
-  /*
-   * generateMaze() sudah membuat star awal.
-   * Kita hanya memastikan jumlahnya maksimal 3.
-   */
-  maintainDynamicStars();
-}
-
-
-const wallMat=new THREE.MeshStandardMaterial({color:0x35251b,roughness:0.5});
-let cells = [], exitPos={x:HALF_X*CELL, z:HALF_Z*CELL};
-
-function addWall(x,z,w,d){
-  const m=new THREE.Mesh(new THREE.BoxGeometry(w,2.8,d),wallMat);
-  m.position.set(x,1.2,z);
-  m.castShadow=false;
-  m.receiveShadow=false;
-  maze.add(m);
-  walls.push({x,z,w,d,hw:w/2,hd:d/2});
-}
-
-function createTrapMesh(px, pz, type){
-  if(type === 'hole_blue'){
-    const holeGroup = new THREE.Group();
-    const ring = new THREE.Mesh(
-      new THREE.RingGeometry(0.6, 1.25, 32), 
-      new THREE.MeshBasicMaterial({color: 0x00c8ff, side: THREE.DoubleSide})
-    );
-    ring.rotation.x = -Math.PI / 2; ring.position.y = 0.04;
-    const holeCore = new THREE.Mesh(new THREE.CylinderGeometry(0.85, 0.85, 0.1, 32), new THREE.MeshBasicMaterial({color: 0x000000}));
-    holeCore.position.y = 0.02;
-    holeGroup.add(ring, holeCore); holeGroup.position.set(px, 0, pz);
-    trapGroup.add(holeGroup);
-    traps.push({x: px, z: pz, type, mesh: holeGroup, active: true, ring});
-  } else if(type === 'bomb'){
-    const bGroup = new THREE.Group();
-    const bombBody = new THREE.Mesh(new THREE.SphereGeometry(0.8, 16, 16), new THREE.MeshStandardMaterial({color: 0x111111, emissive: 0xff2200, emissiveIntensity: 0.8, roughness:0.2}));
-    bombBody.position.y = 0.8;
-    bombBody.castShadow = false;
-    const cap = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.12, 0.4, 8), new THREE.MeshStandardMaterial({color: 0xffaa00}));
-    cap.position.set(0, 1.5, 0);
-    cap.castShadow = false;
-    bGroup.add(bombBody, cap);
-    bGroup.scale.set(0.5, 0.5, 0.5);
-    bGroup.position.set(px, 0, pz);
-    trapGroup.add(bGroup);
-    traps.push({x: px, z: pz, type: 'bomb', mesh: bGroup, active: true, body: bombBody});
-  }
-}
-
-function createStarMesh(px, pz){
-  const starGeo = new THREE.OctahedronGeometry(0.35, 0);
-  const starMat = new THREE.MeshStandardMaterial({color: 0xffd700, emissive: 0xffaa00, emissiveIntensity: 0.8, metalness: 0.8, roughness: 0.2});
-  const mesh = new THREE.Mesh(starGeo, starMat);
-  mesh.position.set(px, 0.8, pz);
-  mesh.castShadow = false;
-  starGroup.add(mesh);
-  stars.push({x: px, z: pz, mesh, active: true});
-}
-
-function createBoostPadMesh(px, pz){
-  const bGroup = new THREE.Group();
-  const padPlane = new THREE.Mesh(
-    new THREE.PlaneGeometry(CELL * 0.75, CELL * 0.75),
-    new THREE.MeshStandardMaterial({color: 0x00ff88, emissive: 0x00ff66, emissiveIntensity: 0.7, side: THREE.DoubleSide, roughness:0.3})
-  );
-  padPlane.rotation.x = -Math.PI / 2;
-  padPlane.position.y = 0.03;
-
-  const arrowMesh = new THREE.Mesh(
-    new THREE.ConeGeometry(0.45, 0.9, 3),
-    new THREE.MeshBasicMaterial({color: 0xffffff})
-  );
-  arrowMesh.rotation.x = -Math.PI / 2;
-  arrowMesh.position.y = 0.05;
-
-  bGroup.add(padPlane, arrowMesh);
-  bGroup.position.set(px, 0, pz);
-  boostGroup.add(bGroup);
-  boosts.push({x: px, z: pz, mesh: bGroup, arrow: arrowMesh});
-}
-
-function generateMaze(){
-  while(maze.children.length) maze.remove(maze.children[0]);
-  while(trapGroup.children.length) trapGroup.remove(trapGroup.children[0]);
-  while(starGroup.children.length) starGroup.remove(starGroup.children[0]);
-  while(boostGroup.children.length) boostGroup.remove(boostGroup.children[0]);
-  walls.length=0; traps.length=0; stars.length=0; boosts.length=0; cells=[];
-
-  for(let z=0;z<SIZE_Z;z++){cells[z]=[];for(let x=0;x<SIZE_X;x++) cells[z][x]={v:false,w:[true,true,true,true]};}
-  const dirs=[[0,-1,0,2],[1,0,1,3],[0,1,2,0],[-1,0,3,1]];
-  function carve(x,z){
-    cells[z][x].v=true;
-    for(const di of [0,1,2,3].sort(()=>Math.random()-0.5)){
-      const nx=x+dirs[di][0],nz=z+dirs[di][1];
-      if(nx>=0&&nx<SIZE_X&&nz>=0&&nz<SIZE_Z&&!cells[nz][nx].v){
-        cells[z][x].w[dirs[di][2]]=false;cells[nz][nx].w[dirs[di][3]]=false;carve(nx,nz);
-      }
-    }
-  }
-  carve(0,0);
-
-  for(let z=0; z<=2; z++){
-    for(let x=0; x<=2; x++){
-      if(x+1 <= 2){ cells[z][x].w[1] = false; cells[z][x+1].w[3] = false; }
-      if(z+1 <= 2){ cells[z][x].w[2] = false; cells[z+1][x].w[0] = false; }
-    }
-  }
-
-  for(let z=1;z<SIZE_Z-1;z++) for(let x=1;x<SIZE_X-1;x++){
-    if(Math.random()<0.05){
-      const d=Math.floor(Math.random()*4);
-      cells[z][x].w[d]=false;
-      const nx=x+dirs[d][0], nz=z+dirs[d][1];
-      if(nx>=0&&nx<SIZE_X&&nz>=0&&nz<SIZE_Z) cells[nz][nx].w[dirs[d][3]]=false;
-    }
-  }
-
-  const allValidCells = [];
-  for(let z=1; z<SIZE_Z-1; z++){
-    for(let x=1; x<SIZE_X-1; x++){
-      if((x<=2 && z<=2) || (x===SIZE_X-1 && z===SIZE_Z-1)) continue;
-      allValidCells.push({x, z});
-    }
-  }
-
-  const occupiedKeys = new Set();
-  allValidCells.sort(() => Math.random() - 0.5);
-
-  const blueCount = Math.min(Math.floor(allValidCells.length * 0.4), 4 * trapMultiplier);
-  for(let i = 0; i < blueCount; i++){
-    const cell = allValidCells[i];
-    const px = (cell.x - HALF_X)*CELL, pz = (cell.z - HALF_Z)*CELL;
-    createTrapMesh(px, pz, 'hole_blue');
-    occupiedKeys.add(`${cell.x},${cell.z}`);
-  }
-
-  const remainingForBombs = allValidCells.filter(c => !occupiedKeys.has(`${c.x},${c.z}`));
-  remainingForBombs.sort(() => Math.random() - 0.5);
-  const bombCount = Math.min(remainingForBombs.length, 10);
-  for(let i = 0; i < bombCount; i++){
-    const cell = remainingForBombs[i];
-    const px = (cell.x - HALF_X)*CELL, pz = (cell.z - HALF_Z)*CELL;
-    createTrapMesh(px, pz, 'bomb');
-    occupiedKeys.add(`${cell.x},${cell.z}`);
-  }
-
-  const remainingForStars = allValidCells.filter(c => !occupiedKeys.has(`${c.x},${c.z}`));
-  remainingForStars.sort(() => Math.random() - 0.5);
-  const starCount = Math.min(remainingForStars.length, 10);
-  for(let i = 0; i < starCount; i++){
-    const cell = remainingForStars[i];
-    const px = (cell.x - HALF_X)*CELL, pz = (cell.z - HALF_Z)*CELL;
-    createStarMesh(px, pz);
-    occupiedKeys.add(`${cell.x},${cell.z}`);
-  }
-
-  const remainingForBoosts = allValidCells.filter(c => !occupiedKeys.has(`${c.x},${c.z}`));
-  remainingForBoosts.sort(() => Math.random() - 0.5);
-  const boostCount = Math.min(remainingForBoosts.length, 5);
-  for(let i = 0; i < boostCount; i++){
-    const cell = remainingForBoosts[i];
-    const px = (cell.x - HALF_X)*CELL, pz = (cell.z - HALF_Z)*CELL;
-    createBoostPadMesh(px, pz);
-  }
-
-  for(let z=0;z<SIZE_Z;z++) for(let x=0;x<SIZE_X;x++){
-    const c=cells[z][x],px=(x-HALF_X)*CELL,pz=(z-HALF_Z)*CELL;
-    if(c.w[0]) addWall(px,pz-CELL/2,CELL+0.25,0.4);
-    if(c.w[1]) addWall(px+CELL/2,pz,0.4,CELL+0.25);
-    if(c.w[2]&&!(x===SIZE_X-1&&z===SIZE_Z-1)) addWall(px,pz+CELL/2,CELL+0.25,0.4);
-    if(c.w[3]) addWall(px-CELL/2,pz,0.4,CELL+0.25);
-  }
-  const edgeX=HALF_X*CELL+CELL/2+0.2, edgeZ=HALF_Z*CELL+CELL/2+0.2;
-  const spanX=SIZE_X*CELL+0.6, spanZ=SIZE_Z*CELL+0.6;
-  addWall(0,-edgeZ,spanX,0.5);addWall(-edgeX,0,0.5,spanZ);addWall(edgeX,0,0.5,spanZ);
-  addWall(-CELL*1.2,edgeZ,spanX-CELL*2,0.5);
-  exitPos={x:HALF_X*CELL,z:HALF_Z*CELL};
-}
-
-
-// ===== 3D RANDOM COUNTRY FLAGS =====
-const COUNTRY_FLAGS = [
-  {code:"ID",name:"Indonesia",emoji:"🇮🇩",aliases:["indonesia"]},
-  {code:"JP",name:"Japan",emoji:"🇯🇵",aliases:["japan","日本","nippon"]},
-  {code:"US",name:"United States",emoji:"🇺🇸",aliases:["usa","us","america","united states","amerika"]},
-  {code:"BR",name:"Brazil",emoji:"🇧🇷",aliases:["brazil","brasil"]},
-  {code:"GB",name:"United Kingdom",emoji:"🇬🇧",aliases:["uk","united kingdom","britain","england","inggris"]},
-  {code:"FR",name:"France",emoji:"🇫🇷",aliases:["france","francia"]},
-  {code:"DE",name:"Germany",emoji:"🇩🇪",aliases:["germany","deutschland","jerman"]},
-  {code:"IT",name:"Italy",emoji:"🇮🇹",aliases:["italy","italia"]},
-  {code:"ES",name:"Spain",emoji:"🇪🇸",aliases:["spain","españa","espana","spanyol"]},
-  {code:"PT",name:"Portugal",emoji:"🇵🇹",aliases:["portugal"]},
-  {code:"NL",name:"Netherlands",emoji:"🇳🇱",aliases:["netherlands","holland","belanda"]},
-  {code:"BE",name:"Belgium",emoji:"🇧🇪",aliases:["belgium","belgia"]},
-  {code:"CH",name:"Switzerland",emoji:"🇨🇭",aliases:["switzerland","suisse","schweiz","swiss"]},
-  {code:"SE",name:"Sweden",emoji:"🇸🇪",aliases:["sweden","sverige","swedia"]},
-  {code:"NO",name:"Norway",emoji:"🇳🇴",aliases:["norway","norge"]},
-  {code:"DK",name:"Denmark",emoji:"🇩🇰",aliases:["denmark","danmark"]},
-  {code:"FI",name:"Finland",emoji:"🇫🇮",aliases:["finland","suomi"]},
-  {code:"PL",name:"Poland",emoji:"🇵🇱",aliases:["poland","polska","polandia"]},
-  {code:"GR",name:"Greece",emoji:"🇬🇷",aliases:["greece","hellas","yunani"]},
-  {code:"TR",name:"Turkey",emoji:"🇹🇷",aliases:["turkey","türkiye","turkiye"]},
-  {code:"RU",name:"Russia",emoji:"🇷🇺",aliases:["russia","россия","rusia"]},
-  {code:"UA",name:"Ukraine",emoji:"🇺🇦",aliases:["ukraine","україна","ukraina"]},
-  {code:"IN",name:"India",emoji:"🇮🇳",aliases:["india","bharat"]},
-  {code:"CN",name:"China",emoji:"🇨🇳",aliases:["china","中国","tiongkok"]},
-  {code:"KR",name:"South Korea",emoji:"🇰🇷",aliases:["south korea","korea","한국","korea selatan"]},
-  {code:"TH",name:"Thailand",emoji:"🇹🇭",aliases:["thailand","thai"]},
-  {code:"VN",name:"Vietnam",emoji:"🇻🇳",aliases:["vietnam","việt nam","viet nam"]},
-  {code:"PH",name:"Philippines",emoji:"🇵🇭",aliases:["philippines","pilipinas"]},
-  {code:"MY",name:"Malaysia",emoji:"🇲🇾",aliases:["malaysia"]},
-  {code:"SG",name:"Singapore",emoji:"🇸🇬",aliases:["singapore"]},
-  {code:"AU",name:"Australia",emoji:"🇦🇺",aliases:["australia"]},
-  {code:"NZ",name:"New Zealand",emoji:"🇳🇿",aliases:["new zealand","nz"]},
-  {code:"CA",name:"Canada",emoji:"🇨🇦",aliases:["canada"]},
-  {code:"MX",name:"Mexico",emoji:"🇲🇽",aliases:["mexico","méxico","mexiko"]},
-  {code:"AR",name:"Argentina",emoji:"🇦🇷",aliases:["argentina"]},
-  {code:"CL",name:"Chile",emoji:"🇨🇱",aliases:["chile"]},
-  {code:"CO",name:"Colombia",emoji:"🇨🇴",aliases:["colombia"]},
-  {code:"PE",name:"Peru",emoji:"🇵🇪",aliases:["peru","perú"]},
-  {code:"ZA",name:"South Africa",emoji:"🇿🇦",aliases:["south africa","afrika selatan"]},
-  {code:"EG",name:"Egypt",emoji:"🇪🇬",aliases:["egypt","misr","mesir"]},
-  {code:"NG",name:"Nigeria",emoji:"🇳🇬",aliases:["nigeria"]},
-  {code:"KE",name:"Kenya",emoji:"🇰🇪",aliases:["kenya"]},
-  {code:"MA",name:"Morocco",emoji:"🇲🇦",aliases:["morocco","maroc","maroko"]},
-  {code:"SA",name:"Saudi Arabia",emoji:"🇸🇦",aliases:["saudi arabia","saudi","arab saudi"]},
-  {code:"AE",name:"United Arab Emirates",emoji:"🇦🇪",aliases:["uae","united arab emirates","emirates"]},
-  {code:"IL",name:"Israel",emoji:"🇮🇱",aliases:["israel"]},
-  {code:"PK",name:"Pakistan",emoji:"🇵🇰",aliases:["pakistan"]},
-  {code:"BD",name:"Bangladesh",emoji:"🇧🇩",aliases:["bangladesh"]},
-  {code:"LK",name:"Sri Lanka",emoji:"🇱🇰",aliases:["sri lanka","srilanka"]}
-];
-
-const FLAG_COLORS = {
-  ID:["#e31b23","#ffffff"],
-  JP:["#ffffff","#bc002d"],
-  US:["#b22234","#3c3b6e"],
-  BR:["#009c3b","#ffdf00"],
-  GB:["#012169","#c8102e"],
-  FR:["#0055a4","#ef4135"],
-  DE:["#000000","#dd0000"],
-  IT:["#009246","#ce2b37"],
-  ES:["#aa151b","#f1bf00"],
-  PT:["#046a38","#da291c"],
-  NL:["#ae1c28","#21468b"],
-  BE:["#000000","#ed2939"],
-  CH:["#d52b1e","#ffffff"],
-  SE:["#006aa7","#fecc00"],
-  NO:["#ba0c2f","#00205b"],
-  DK:["#c8102e","#ffffff"],
-  FI:["#ffffff","#003580"],
-  PL:["#ffffff","#dc143c"],
-  GR:["#0d5eaf","#ffffff"],
-  TR:["#e30a17","#ffffff"],
-  RU:["#ffffff","#0039a6"],
-  UA:["#0057b7","#ffd700"],
-  IN:["#ff9933","#138808"],
-  CN:["#de2910","#ffde00"],
-  KR:["#ffffff","#cd2e3a"],
-  TH:["#a51931","#2d2a4a"],
-  VN:["#da251d","#ffde00"],
-  PH:["#0038a8","#ce1126"],
-  MY:["#010066","#cc0001"],
-  SG:["#ed2939","#ffffff"],
-  AU:["#002868","#ffffff"],
-  NZ:["#00247d","#cc142b"],
-  CA:["#d80621","#ffffff"],
-  MX:["#006847","#ce1126"],
-  AR:["#74acdf","#f6b40e"],
-  CL:["#0039a6","#d52b1e"],
-  CO:["#fcd116","#ce1126"],
-  PE:["#d91023","#ffffff"],
-  ZA:["#007749","#ffb81c"],
-  EG:["#ce1126","#000000"],
-  NG:["#008751","#ffffff"],
-  KE:["#006600","#bb1e10"],
-  MA:["#c1272d","#006233"],
-  SA:["#006c35","#ffffff"],
-  AE:["#00732f","#000000"],
-  IL:["#ffffff","#0038b8"],
-  PK:["#01411c","#ffffff"],
-  BD:["#006a4e","#f42a41"],
-  LK:["#8d153a","#ffb81c"]
-};
-
-
-function createCountryFlag(country){
-  const div=document.createElement("div");
-
-  div.textContent=country.emoji;
-  div.style.position="absolute";
-  div.style.pointerEvents="none";
-  div.style.zIndex="20";
-  div.style.fontSize="60px";
-  div.style.lineHeight="1";
-  div.style.width="auto";
-  div.style.height="auto";
-  div.style.transform="translate(-100%,-50%)";  // geser 50% ke samping
-  div.style.textShadow="0 2px 5px rgba(0,0,0,.9)";
-  div.dataset.countryCode=country.code;
-  div.dataset.countryName=country.name;
-
-  return div;
-}
-
-function removeCountryFlag(m){
-  const flag=m && m.userData ? m.userData.countryFlag : null;
-  if(!flag) return;
-
-  if(flag.parentNode){
-    flag.parentNode.removeChild(flag);
-  }
-
-  m.userData.countryFlag=null;
-}
-
-function updateCountryFlags(){
-  for(const m of marbles){
-    const flag=m.userData && m.userData.countryFlag;
-    if(!flag) continue;
-
-    const v=m.position.clone();
-    v.y += 4.2;
-
-    v.project(camera);
-
-    const x=(v.x * 0.5 + 0.5) * window.innerWidth;
-    const y=(-v.y * 0.5 + 0.5) * window.innerHeight;
-
-    flag.style.left=`${x}px`;
-    flag.style.top=`${y}px`;
-
-    flag.style.display=
-      (m.userData.finished ||
-       m.userData.eliminated ||
-       m.userData.isTeleporting)
-      ? "none"
-      : "block";
-  }
-}
-
-
-/* ============================================================
-   COUNTRY CHAT SYNC V1
-   chat_state.json -> viewer -> country -> marble / clone
-   ============================================================ */
-
-const COUNTRY_CHAT_SYNC_V1 = true;
-
-let chatStatePlayers = [];
-let chatStateSignature = "";
-let chatStateLastFetch = 0;
-let chatStateBusy = false;
-
-function removeCountryFlagSafe(m){
-  if(typeof removeCountryFlag === "function"){
-    removeCountryFlag(m);
-  }
-}
-
-function applyPlayerToMarble(m, player){
-  if(!m || !player) return false;
-
-  removeCountryFlagSafe(m);
-
-  const emoji =
-    player.countryEmoji ||
-    player.flag ||
-    "🏳️";
-
-  const countryName =
-    player.countryName ||
-    player.country ||
-    "Unknown Country";
-
-  const countryCode =
-    player.countryCode ||
-    "";
-
-  const viewerName =
-    player.viewerName ||
-    player.name ||
-    player.user ||
-    "Viewer";
-
-  const flag = createCountryFlag({
-    code: countryCode,
-    name: countryName,
-    emoji: emoji
-  });
-
-  document.body.appendChild(flag);
-
-  m.userData.viewerName = viewerName;
-  m.userData.user = viewerName;
-
-  m.userData.countryCode = countryCode;
-  m.userData.countryName = countryName;
-  m.userData.countryEmoji = emoji;
-  m.userData.countryFlag = flag;
-
-  m.userData.chatAssigned = true;
-  m.userData.chatUser = viewerName;
-
-  return true;
-}
-
-function playerKey(p){
-  return String(
-    p.user ||
-    p.viewerName ||
-    p.name ||
-    ""
-  ).trim().toLowerCase();
-}
-
-function playerCountryKey(p){
-  return String(
-    p.countryCode ||
-    p.countryName ||
-    p.country ||
-    ""
-  ).trim().toLowerCase();
-}
-
-function getAllChatPlayers(){
-  return Array.isArray(chatStatePlayers)
-    ? chatStatePlayers
-    : [];
-}
-
-function getMarblePlayers(){
-  return marbles.filter(m =>
-    !m.userData.eliminated
-  );
-}
-
-/*
- * Assign active players first.
- * Additional players use existing clones.
- *
- * A clone belongs to the same color/id as its parent,
- * so we only use a free marble when it has not already
- * been assigned to a viewer.
- */
-
-function spawnNextCountryFromQueue(sourceMarble){
-
-  const players = getAllChatPlayers();
-
-  if(!players.length){
-    console.log("[STAR] No waiting country.");
-    return false;
-  }
-
-  /*
-   * Find viewers that do not already have a marble.
-   */
-  const occupiedUsers = new Set(
-    marbles
-      .filter(m =>
-        !m.userData.eliminated &&
-        !m.userData.finished &&
-        m.userData.chatAssigned
-      )
-      .map(m =>
-        String(m.userData.chatUser || "").toLowerCase()
-      )
-  );
-
-  const nextPlayer = players.find(p => {
-    const key = playerKey(p);
-    return key && !occupiedUsers.has(key);
-  });
-
-  if(!nextPlayer){
-    console.log("[STAR] No waiting country.");
-    return false;
-  }
-
-  /*
-   * A star creates a completely NEW marble.
-   * It does NOT copy the source country's identity.
-   */
-  const id = marbles.length;
-  const cloneId = 0;
-
-  const color =
-    COLORS[Math.floor(Math.random() * COLORS.length)];
-
-  const newMarble =
-    makeMarble(color, id, cloneId);
-
-  applyPlayerToMarble(
-    newMarble,
-    nextPlayer
-  );
-
-  newMarble.userData.speed =
-    sourceMarble?.userData?.speed ||
-    (0.24 + Math.random() * 0.048);
-
-  newMarble.userData.randomFactor =
-    sourceMarble?.userData?.randomFactor ||
-    Math.random() * 5;
-
-  scene.add(newMarble);
-  marbles.push(newMarble);
-
-  /*
-   * Spawn at the normal entrance.
-   */
-  respawnMarble(
-    newMarble,
-    marbles.length - 1
-  );
-
-  updateUI();
-
-  const viewer =
-    nextPlayer.viewerName ||
-    nextPlayer.name ||
-    nextPlayer.user ||
-    "Viewer";
-
-  const country =
-    nextPlayer.countryName ||
-    nextPlayer.country ||
-    "Unknown Country";
-
-  const emoji =
-    nextPlayer.countryEmoji ||
-    nextPlayer.flag ||
-    "🏳️";
-
-  document.getElementById('status').textContent =
-    `🌍 ${emoji} ${country} — ${viewer} has entered the arena!`;
-
-  console.log(
-    "[STAR] NEW COUNTRY:",
-    emoji,
-    country,
-    "viewer:",
-    viewer
-  );
-
-  /*
-   * Do not let normal synchronization immediately
-   * treat this marble as empty.
-   */
-  newMarble.userData.chatAssigned = true;
-  newMarble.userData.chatUser = viewer;
-
-  return true;
-}
-
-function syncChatPlayersToMarbles(){
-  const players = getAllChatPlayers();
-
-  if(!players.length || !marbles.length){
-    return;
-  }
-
-  const assignedUsers = new Set();
-
-  for(const m of marbles){
-    if(m.userData.chatAssigned){
-      assignedUsers.add(
-        String(m.userData.chatUser || "").toLowerCase()
-      );
-    }
-  }
-
-  const available = marbles.filter(m =>
-    !m.userData.eliminated &&
-    !m.userData.finished &&
-    !m.userData.chatAssigned
-  );
-
-  let availableIndex = 0;
-
-  for(const player of players){
-
-    const key = playerKey(player);
-
-    if(!key || assignedUsers.has(key)){
-      continue;
-    }
-
-    if(availableIndex >= available.length){
-      break;
-    }
-
-    const marble = available[availableIndex++];
-
-    applyPlayerToMarble(marble, player);
-
-    assignedUsers.add(key);
-
-    console.log(
-      "[COUNTRY SYNC]",
-      player.countryEmoji,
-      player.countryName,
-      "->",
-      player.viewerName || player.user,
-      "marble",
-      marble.userData.id,
-      "clone",
-      marble.userData.cloneId
-    );
-  }
-
-  updateUI();
-}
-
-async function fetchChatState(){
-  if(chatStateBusy){
-    return;
-  }
-
-  chatStateBusy = true;
-
-  try{
-    const url =
-      "chat_state.json?t=" +
-      Date.now();
-
-    const response = await fetch(
-      url,
-      {
-        cache: "no-store"
-      }
-    );
-
-    if(!response.ok){
-      throw new Error(
-        "HTTP " + response.status
-      );
-    }
-
-    const state = await response.json();
-
-    const active =
-      Array.isArray(state.active)
-        ? state.active
-        : [];
-
-    const queue =
-      Array.isArray(state.queue)
-        ? state.queue
-        : [];
-
-    /*
-     * Active players are prioritized.
-     * Queue is also included so clones can be
-     * populated when they exist.
-     */
-    const players = [
-      ...active,
-      ...queue
-    ];
-
-    const signature = JSON.stringify(
-      players.map(p => ({
-        user: playerKey(p),
-        country: playerCountryKey(p)
-      }))
-    );
-
-    if(signature !== chatStateSignature){
-      chatStateSignature = signature;
-      chatStatePlayers = players;
-
-      console.log(
-        "[COUNTRY SYNC] State changed:",
-        players.length,
-        "players"
-      );
-
-      syncChatPlayersToMarbles();
-    }
-
-  }catch(error){
-    console.log(
-      "[COUNTRY SYNC] Waiting for chat_state.json...",
-      error.message
-    );
-  }finally{
-    chatStateBusy = false;
-  }
-}
-
-function startCountryChatSync(){
-
-  fetchChatState();
-
-  setInterval(
-    fetchChatState,
-    1500
-  );
-}
-
-function inheritChatPlayerToClone(parent, clone){
-
-  if(!parent || !clone){
-    return;
-  }
-
-  /*
-   * Clone created by a star inherits the same viewer/country.
-   * This keeps the existing Star -> Clone gameplay intact.
-   */
-  if(parent.userData.chatAssigned){
-
-    const player = {
-      user:
-        parent.userData.viewerName ||
-        parent.userData.user,
-
-      viewerName:
-        parent.userData.viewerName ||
-        parent.userData.user,
-
-      countryCode:
-        parent.userData.countryCode,
-
-      countryName:
-        parent.userData.countryName,
-
-      countryEmoji:
-        parent.userData.countryEmoji
-    };
-
-    applyPlayerToMarble(
-      clone,
-      player
-    );
-  }
-}
-
-function assignRandomCountry(m){
-  removeCountryFlag(m);
-
-  const country=
-    COUNTRY_FLAGS[
-      Math.floor(Math.random()*COUNTRY_FLAGS.length)
-    ];
-
-  const flag=createCountryFlag(country);
-
-  document.body.appendChild(flag);
-
-  m.userData.countryCode=country.code;
-  m.userData.countryName=country.name;
-  m.userData.countryEmoji=country.emoji;
-  m.userData.countryFlag=flag;
-}
-
-function makeMarble(color, id, cloneId = 0){
-  const mesh=new THREE.Mesh(new THREE.SphereGeometry(RADIUS,32,24),
-    new THREE.MeshStandardMaterial({color,roughness:0.2,metalness:0.25,emissive:color,emissiveIntensity:0.18})
-  );
-  mesh.castShadow=true;
-  mesh.receiveShadow=true;
-  
-  const root=new THREE.Group();
-  root.add(mesh);
-  root.userData={
-    id,
-    cloneId,
-    vx:0,
-    vz:0,
-    finished:false,
-    eliminated:false,
-    isTeleporting:false,
-    teleportPhase:'none',
-    crowdTime:0,
-    isCrowding:false,
-    boostCooldown:0,
-    boostTime:0
-  };
-  assignRandomCountry(root);
-  root.userData.chatAssigned = false;
-  root.userData.chatUser = "";
-  root.userData.viewerName = "";
-  return root;
-}
-
-function respawnMarble(m, i){
-  const startCellX = 1, startCellZ = 1;
-  const baseX = (startCellX - HALF_X) * CELL, baseZ = (startCellZ - HALF_Z) * CELL;
-  const gap = 1.85, offsets = [[-gap, -gap], [gap, -gap], [-gap, gap], [gap, gap]];
-  const [ox, oz] = offsets[i % 4];
-
-  m.scale.set(1, 1, 1);
-  m.userData.isTeleporting = false;
-  m.userData.teleportPhase = 'none';
-  m.userData.crowdTime = 0;
-  m.userData.isCrowding = false;
-  m.userData.boostCooldown = 0;
-  m.position.set(baseX + ox + (m.userData.cloneId * 0.4), RADIUS + 0.05, baseZ + oz + (m.userData.cloneId * 0.4));
-  m.userData.vx = 0; m.userData.vz = 0;
-  m.userData.stuckTime = 0;
-  m.userData.targetCell = {x: startCellX, z: startCellZ};
-  m.userData.currentCell = {x: startCellX, z: startCellZ};
-  m.userData.visited = Array.from({length: SIZE_Z}, () => Array(SIZE_X).fill(0));
-  m.userData.visited[startCellZ][startCellX] = 1;
-}
-function resetMarbles(){
-  while(marbles.length){
-    const oldMarble=marbles.pop();
-    removeCountryFlag(oldMarble);
-    scene.remove(oldMarble);
-  }
-  
-  // Pilih 4 warna berbeda secara acak dari 16 warna
-  const roundColors = [...COLORS]
-    .sort(() => Math.random() - 0.5)
-    .slice(0, 4);
-
-  for(let i=0; i<4; i++){
-    const m = makeMarble(roundColors[i], i, 0);
-    m.userData.speed = 0.24 + Math.random() * 0.048  // +20% lebih cepat;
-    m.userData.randomFactor = Math.random() * 5;
-    scene.add(m);
-    marbles.push(m);
-    respawnMarble(m, i);
-    m.userData.lastX = m.position.x; m.userData.lastZ = m.position.z;
-  }
-  updateUI();
-}
-
-
-
-function getMarbleCountry(m){
-  return {
-    emoji: m.userData.countryEmoji || '🏳️',
-    name: m.userData.countryName || 'Unknown Country'
-  };
-}
-
-function marbleLabel(m){
-  const c=getMarbleCountry(m);
-  return `${c.emoji} ${c.name}`;
-}
-
-function updateUI(){
-  const box=document.getElementById('players');
-  box.innerHTML='';
-
-  const visibleMarbles=marbles.filter(
-    m => !m.userData.eliminated
-  );
-
-  visibleMarbles.forEach((m)=>{
-    const div=document.createElement('div');
-    div.className='player';
-
-    const emoji=m.userData.countryEmoji || '🏳️';
-    const name=m.userData.countryName || 'Unknown Country';
-
-    div.innerHTML=`
-      <span class="flagEmoji">${emoji}</span>
-      <span class="countryName">${name}</span>
-    `;
-
-    box.appendChild(div);
-  });
-}
-
-function createExplosion(x,z){
-  playBombSFX();
-
-  const explosion = document.createElement("img");
-  explosion.src = "assets/explosion.gif";
-  explosion.alt = "";
-  explosion.style.cssText = `
-    position: fixed;
-    z-index: 20;
-    width: 180px;
-    height: 180px;
-    object-fit: contain;
-    pointer-events: none;
-    transform: translate(-50%, -50%);
-  `;
-
-  document.body.appendChild(explosion);
-
-  const pos = new THREE.Vector3(x, 0.15, z);
-  pos.project(camera);
-
-  explosion.style.left =
-    ((pos.x * 0.5 + 0.5) * innerWidth) + "px";
-
-  explosion.style.top =
-    ((-pos.y * 0.5 + 0.5) * innerHeight) + "px";
-
-  setTimeout(() => {
-    if (explosion.parentNode) {
-      explosion.parentNode.removeChild(explosion);
-    }
-  }, 1000);
-}
-
-
-function playFinishSFX(){
-  if(!audioCtx || audioCtx.state !== 'running') return;
-
-  const now=audioCtx.currentTime;
-  const notes=[523.25,659.25,783.99,1046.5];
-
-  notes.forEach((f,i)=>{
-    const osc=audioCtx.createOscillator();
-    const gain=audioCtx.createGain();
-
-    osc.type='sine';
-    osc.frequency.setValueAtTime(f,now+i*0.07);
-
-    gain.gain.setValueAtTime(0.001,now+i*0.07);
-    gain.gain.exponentialRampToValueAtTime(
-      0.28,
-      now+i*0.07+0.025
-    );
-    gain.gain.exponentialRampToValueAtTime(
-      0.001,
-      now+i*0.07+0.22
-    );
-
-    osc.connect(gain);
-    gain.connect(audioCtx.destination);
-
-    osc.start(now+i*0.07);
-    osc.stop(now+i*0.07+0.24);
-  });
-}
-
-function createFinishEffect(x,z,colorHex=0xffd166){
-
-  playFinishSFX();
-
-  const group=new THREE.Group();
-  group.position.set(x,0,z);
-  scene.add(group);
-
-  // Flash kemenangan
-  const flash=new THREE.Mesh(
-    new THREE.CircleGeometry(1.2,32),
-    new THREE.MeshBasicMaterial({
-      color:colorHex,
-      transparent:true,
-      opacity:0.95,
-      side:THREE.DoubleSide
-    })
-  );
-
-  flash.rotation.x=-Math.PI/2;
-  flash.position.y=0.12;
-  group.add(flash);
-
-  // Ring utama
-  const ring=new THREE.Mesh(
-    new THREE.RingGeometry(0.25,0.65,32),
-    new THREE.MeshBasicMaterial({
-      color:colorHex,
-      transparent:true,
-      opacity:1,
-      side:THREE.DoubleSide
-    })
-  );
-
-  ring.rotation.x=-Math.PI/2;
-  ring.position.y=0.15;
-  group.add(ring);
-
-  // Partikel kemenangan
-  const particleCount=18;
-  const particles=[];
-
-  for(let i=0;i<particleCount;i++){
-
-    const particle=new THREE.Mesh(
-      new THREE.SphereGeometry(0.10,8,8),
-      new THREE.MeshBasicMaterial({
-        color:i%2===0 ? colorHex : 0xffffff,
-        transparent:true,
-        opacity:1
-      })
-    );
-
-    particle.position.set(0,0.35,0);
-
-    particle.userData={
-      vx:(Math.random()-0.5)*0.20,
-      vy:0.08+Math.random()*0.14,
-      vz:(Math.random()-0.5)*0.20
-    };
-
-    group.add(particle);
-    particles.push(particle);
-  }
-
-  let life=0;
-
-  function animateFinish(){
-
-    life+=0.035;
-
-    const scale=0.8+life*2.8;
-
-    flash.scale.set(scale,scale,scale);
-    ring.scale.set(scale*1.7,scale*1.7,scale*1.7);
-
-    flash.material.opacity=Math.max(0,0.95-life*1.8);
-    ring.material.opacity=Math.max(0,1-life*1.35);
-
-    for(const particle of particles){
-      particle.position.x+=particle.userData.vx;
-      particle.position.y+=particle.userData.vy;
-      particle.position.z+=particle.userData.vz;
-
-      particle.userData.vy-=0.006;
-      particle.rotation.x+=0.15;
-      particle.rotation.z+=0.12;
-
-      particle.material.opacity=Math.max(0,1-life*1.25);
-    }
-
-    if(life<0.85){
-      requestAnimationFrame(animateFinish);
-    }else{
-      scene.remove(group);
-
-      flash.geometry.dispose();
-      ring.geometry.dispose();
-
-      flash.material.dispose();
-      ring.material.dispose();
-
-      particles.forEach(p=>{
-        p.geometry.dispose();
-        p.material.dispose();
-      });
-    }
-  }
-
-  requestAnimationFrame(animateFinish);
-}
-
-function createHolePulse(x, z, colorHex = 0x00c8ff){
-  const pulse=new THREE.Mesh(new THREE.RingGeometry(0.2,1.8,32),new THREE.MeshBasicMaterial({color:colorHex,side:THREE.DoubleSide}));
-  pulse.rotation.x=-Math.PI/2;pulse.position.set(x,0.06,z);scene.add(pulse);
-  let s=1;
-  const timer=setInterval(()=>{
-    s-=0.07;pulse.scale.set(s,s,s);
-    if(s<=0.1){scene.remove(pulse);clearInterval(timer);}
-  },25);
-}
-
-function createStarEffect(x,z){
-  playStarSFX();
-
-  const group = new THREE.Group();
-  group.position.set(x, 0, z);
-  scene.add(group);
-
-  // Flash emas di tengah
-  const flash = new THREE.Mesh(
-    new THREE.CircleGeometry(1.0, 32),
-    new THREE.MeshBasicMaterial({
-      color: 0xffff00,
-      transparent: true,
-      opacity: 1,
-      side: THREE.DoubleSide
-    })
-  );
-  flash.rotation.x = -Math.PI / 2;
-  flash.position.y = 0.16;
-  group.add(flash);
-
-  // Ring emas menyebar
-  const ring = new THREE.Mesh(
-    new THREE.RingGeometry(0.25, 0.75, 32),
-    new THREE.MeshBasicMaterial({
-      color: 0xffd000,
-      transparent: true,
-      opacity: 1,
-      side: THREE.DoubleSide
-    })
-  );
-  ring.rotation.x = -Math.PI / 2;
-  ring.position.y = 0.18;
-  group.add(ring);
-
-  // Ring putih/kuning bagian dalam
-  const innerRing = new THREE.Mesh(
-    new THREE.RingGeometry(0.1, 0.4, 32),
-    new THREE.MeshBasicMaterial({
-      color: 0xffffff,
-      transparent: true,
-      opacity: 1,
-      side: THREE.DoubleSide
-    })
-  );
-  innerRing.rotation.x = -Math.PI / 2;
-  innerRing.position.y = 0.2;
-  group.add(innerRing);
-
-  let scale = 0.6;
-  let life = 0;
-
-  const timer = setInterval(() => {
-    life += 0.05;
-    scale += 0.28;
-
-    flash.scale.set(scale, scale, scale);
-    ring.scale.set(scale * 1.8, scale * 1.8, scale * 1.8);
-    innerRing.scale.set(scale * 1.35, scale * 1.35, scale * 1.35);
-
-    const fade = Math.max(0, 1 - life / 0.75);
-
-    flash.material.opacity = fade;
-    ring.material.opacity = fade;
-    innerRing.material.opacity = fade;
-
-    if (life >= 0.75) {
-      scene.remove(group);
-
-      flash.geometry.dispose();
-      ring.geometry.dispose();
-      innerRing.geometry.dispose();
-
-      flash.material.dispose();
-      ring.material.dispose();
-      innerRing.material.dispose();
-
-      clearInterval(timer);
-    }
-  }, 25);
-}
-
-function createBoostEffect(x,z){
-  playBoostSFX();
-  const ring=new THREE.Mesh(new THREE.RingGeometry(0.2,1.5,32),new THREE.MeshBasicMaterial({color:0x00ff88,side:THREE.DoubleSide}));
-  ring.rotation.x=-Math.PI/2;ring.position.set(x,0.08,z);scene.add(ring);
-  let s=0.5;
-  const timer=setInterval(()=>{
-    s+=0.3;ring.scale.set(s,s,s);
-    if(s>3.5){scene.remove(ring);clearInterval(timer);}
-  },20);
-}
-
-function collide(m){
-  const r=RADIUS;
-  for(const w of walls){
-    const nx=Math.max(w.x-w.hw,Math.min(m.position.x,w.x+w.hw));
-    const nz=Math.max(w.z-w.hd,Math.min(m.position.z,w.z+w.hd));
-    let dx=m.position.x-nx,dz=m.position.z-nz,dist=Math.hypot(dx,dz);
-    if(dist<r&&dist>1e-6){
-      const nxx=dx/dist,nzz=dz/dist,pen=r-dist;
-      m.position.x+=nxx*pen;m.position.z+=nzz*pen;
-      const dot=m.userData.vx*nxx+m.userData.vz*nzz;
-      if(dot<0){
-        m.userData.vx-=1.95*dot*nxx;m.userData.vz-=1.95*dot*nzz;
-        if(Math.abs(dot) > 0.04) playHitSFX(0.12);
-      }
-      m.userData.vx*=0.88;m.userData.vz*=0.88;
-    }
-  }
-}
-
-function separate(dt = 0.016){
-  marbles.forEach(m => m.userData.isCrowding = false);
-
-  for(let i=0;i<marbles.length;i++) for(let j=i+1;j<marbles.length;j++){
-    const a=marbles[i],b=marbles[j];
-    if(a.userData.finished || b.userData.finished || a.userData.eliminated || b.userData.eliminated || a.userData.isTeleporting || b.userData.isTeleporting) continue;
-    let dx=b.position.x-a.position.x,dz=b.position.z-a.position.z,d=Math.hypot(dx,dz);
-    const minD=RADIUS*2.4;
-    
-    if(d<minD){
-      a.userData.isCrowding = true;
-      b.userData.isCrowding = true;
-      playHitSFX(0.18);
-
-      const newTime = Math.max(a.userData.crowdTime || 0, b.userData.crowdTime || 0) + dt;
-      a.userData.crowdTime = newTime;
-      b.userData.crowdTime = newTime;
-
-      if(newTime >= 7.0){
-        const victim = Math.random() < 0.5 ? a : b;
-        victim.userData.finished = true;
-        victim.userData.eliminated = true;
-        victim.visible = false;
-        createExplosion(victim.position.x, victim.position.z);
-        const victimName = victim.userData.countryName || 'Unknown Country' + (victim.userData.cloneId > 0 ? ` (Clone ${victim.userData.cloneId})` : '');
-        document.getElementById('status').textContent = `💥 COLLISION! ${victimName} exploded after being stuck for 7 seconds!`;
-        a.userData.crowdTime = 0;
-        b.userData.crowdTime = 0;
-        updateUI();
-        continue;
-      }
-
-      if(d > 1e-6){
-        const nx=dx/d,nz=dz/d,p=(RADIUS*2.1-d)*0.5;
-        if(p > 0){
-          a.position.x-=nx*p;a.position.z-=nz*p;
-          b.position.x+=nx*p;b.position.z+=nz*p;
+        .brand { font-size: 16px; font-weight: bold; color: var(--primary); }
+        .user-status { display: flex; align-items: center; gap: 6px; font-size: 11px; flex-wrap: wrap; }
+        
+        .wallet-badge {
+            padding: 3px 6px;
+            border-radius: 10px;
+            font-weight: bold;
+            font-size: 11px;
         }
-        const pushForce = 0.12;
-        a.userData.vx -= nx * pushForce; a.userData.vz -= nz * pushForce;
-        b.userData.vx += nx * pushForce; b.userData.vz += nz * pushForce;
-      }
-    }
-  }
+        .wb-yellow { background: #d35400; color: #f1c40f; }
+        .wb-green { background: #1e8449; color: #2ecc71; }
 
-  marbles.forEach(m => {
-    if(!m.userData.isCrowding && m.userData.crowdTime > 0){
-      m.userData.crowdTime = Math.max(0, m.userData.crowdTime - dt * 1.5);
-    }
-  });
+        /* Navigation Tabs */
+        /* --- PERBAIKAN NAVBAR TAB (AGAR TIDAK TERGESER/TERPOTONG) --- */
+.nav-tabs {
+    display: flex;
+    background: #181818;
+    border-bottom: 1px solid #333;
+    justify-content: space-between; /* Menjaga semua tab terbagi rata */
+    flex-wrap: nowrap; /* Mencegah tab turun/tergeser ke bawah */
+    gap: 4px;
+    padding: 4px;
+    overflow-x: auto; /* Jika layar sangat kecil, tetap bisa di-scroll halus */
 }
 
-function steer(m){
-  if(m.userData.finished || m.userData.eliminated || m.userData.isTeleporting) return;
-  const gx = Math.max(0, Math.min(SIZE_X - 1, Math.round(m.position.x / CELL + HALF_X)));
-  const gz = Math.max(0, Math.min(SIZE_Z - 1, Math.round(m.position.z / CELL + HALF_Z)));
+.nav-tab-btn {
+    flex: 1;
+    background: none;
+    border: none;
+    color: #888;
+    padding: 8px 6px;
+    font-size: 11px; /* Ukuran font disesuaikan agar pas di layar HP */
+    font-weight: bold;
+    cursor: pointer;
+    border-bottom: 3px solid transparent;
+    white-space: nowrap;
+    text-align: center;
+}
 
-  const targetWorldX = (m.userData.targetCell.x - HALF_X) * CELL;
-  const targetWorldZ = (m.userData.targetCell.z - HALF_Z) * CELL;
-  const distToTarget = Math.hypot(m.position.x - targetWorldX, m.position.z - targetWorldZ);
+.nav-tab-btn.active {
+    color: var(--primary);
+    border-bottom: 3px solid var(--primary);
+    background: rgba(243, 156, 18, 0.05);
+}
 
-  if(distToTarget < 0.75 || (gx !== m.userData.currentCell.x || gz !== m.userData.currentCell.z)){
-    m.userData.currentCell = {x: gx, z: gz};
-    const dirs = [[0,-1],[1,0],[0,1],[-1,0]], validMoves = [];
-
-    for(let i = 0; i < 4; i++){
-      if(!cells[gz][gx].w[i]){
-        const nx = gx + dirs[i][0], nz = gz + dirs[i][1];
-        if(nx >= 0 && nx < SIZE_X && nz >= 0 && nz < SIZE_Z){
-          const visits = m.userData.visited[nz][nx];
-          const distToExit = Math.hypot(nx - (SIZE_X - 1), nz - (SIZE_Z - 1));
-          const score = visits * 100 + distToExit + (Math.random() * m.userData.randomFactor);
-          validMoves.push({x: nx, z: nz, score, visits});
+/* --- PERBAIKAN UKURAN BANNER IKLAN (LEBIH RINGKAS & COMPACT) --- */
+.banner-box {
+    background: #2a2a2a;
+    border: 1px dashed var(--primary);
+    border-radius: 8px;
+    padding: 8px 10px; /* Padding dipangkas agar tidak memakan tempat */
+    margin-bottom: 10px;
+    font-size: 11px; /* Ukuran teks banner lebih pas */
+    color: #fff;
+    text-align: center;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+    max-height: 90px; /* Batas tinggi maksimal banner */
+    overflow: hidden; /* Mencegah banner meluap keluar */
         }
-      }
-    }
+        
 
-    if(validMoves.length > 0){
-      validMoves.sort((a, b) => a.score - b.score);
-      const chosen = validMoves[0];
-      m.userData.targetCell = {x: chosen.x, z: chosen.z};
-      m.userData.visited[chosen.z][chosen.x] += 1;
-    }
-  }
-
-  const tx = (m.userData.targetCell.x - HALF_X) * CELL, tz = (m.userData.targetCell.z - HALF_Z) * CELL;
-  const dx = tx - m.position.x, dz = tz - m.position.z;
-  const len = Math.hypot(dx, dz) || 1;
-
-  const boostMultiplier = (m.userData.boostTime > 0) ? 1.45 : 1.0;
-  const currentSpeed = m.userData.speed * boostMultiplier;
-
-  m.userData.vx = THREE.MathUtils.lerp(
-    m.userData.vx,
-    (dx / len) * currentSpeed,
-    0.85
-  );
-
-  m.userData.vz = THREE.MathUtils.lerp(
-    m.userData.vz,
-    (dz / len) * currentSpeed,
-    0.85
-  );
-}
-
-// PERBAIKAN: Kamera Zoom In & Mengikuti Marble HANYA ketika mendekati garis exit sampai keluar
-function updateCamera(){
-  camera.position.set(0, 74, 0);
-  camera.lookAt(0, 0, 0);
-}
-
-function startRound(){
-  startRollingAudio();
-  winner=false;elapsed=0;
-  document.getElementById('round').textContent=round;
-  document.getElementById('message').classList.remove('show');
-  generateMaze();
-  resetMarbles();
-  document.getElementById('status').textContent=trapMultiplier > 1 ? `MARBLE RACE STARTED! (Traps ${trapMultiplier}x)` : 'MARBLE RACE STARTED!';
-}
-
-function update(dt = 0.016){
-  if(winner) {
-    stopRollingAudio();
-    return;
-}
-
-  updateCountryFlags();
-
-
-
-  traps.forEach(t => {
-    if(t.type === 'bomb' && t.active && t.body){
-      t.body.material.emissiveIntensity = 0.5 + Math.sin(performance.now() * 0.008) * 0.4;
-    } else if(t.type === 'hole_blue' && t.active && t.ring){
-      t.ring.rotation.z += 0.08;
-    }
-  });
-
-  stars.forEach(s => {
-    if(s.active && s.mesh){
-      s.mesh.rotation.y += 0.05;
-      s.mesh.position.y = 0.8 + Math.sin(performance.now() * 0.006) * 0.2;
-    }
-  });
-
-  boosts.forEach(b => {
-    if(b.arrow){
-      b.arrow.position.y = 0.05 + Math.sin(performance.now() * 0.01) * 0.03;
-    }
-  });
-
-  for(const m of [...marbles]){
-    if(m.userData.finished || m.userData.eliminated) continue;
-
-    if(m.userData.boostCooldown > 0){
-      m.userData.boostCooldown -= dt;
-    }
-
-    // BOOST TIMER
-    if(m.userData.boostTime > 0){
-      m.userData.boostTime -= dt;
-
-      if(m.userData.boostTime <= 0){
-        m.userData.boostTime = 0;
-      }
-    }
-
-    if(m.userData.isTeleporting){
-      if(m.userData.teleportPhase === 'in'){
-        m.userData.teleportProgress = (m.userData.teleportProgress || 0) + 0.20;
-        const p = m.userData.teleportProgress;
-        m.position.x = THREE.MathUtils.lerp(m.position.x, m.userData.targetHole.x, 0.45);
-        m.position.z = THREE.MathUtils.lerp(m.position.z, m.userData.targetHole.z, 0.45);
-        const s = Math.max(0.01, 1 - p);
-        m.scale.set(s, s, s);
-
-        if(p >= 1.0){
-          const rx = Math.floor(Math.random() * SIZE_X);
-          const rz = Math.floor(Math.random() * SIZE_Z);
-          const destX = (rx - HALF_X) * CELL;
-          const destZ = (rz - HALF_Z) * CELL;
-
-          m.position.set(destX, RADIUS + 0.05, destZ);
-          createHolePulse(destX, destZ, 0x00c8ff);
-          playPortalSFX();
-          m.userData.teleportPhase = 'out';
-          m.userData.teleportProgress = 0;
-          m.userData.currentCell = {x: rx, z: rz};
-          m.userData.targetCell = {x: rx, z: rz};
+        /* --- STYLES RODA SPIN REALISTIS --- */
+        .wheel-wrapper {
+            position: relative;
+            width: 250px;
+            height: 250px;
+            margin: 20px auto;
         }
-      } else if(m.userData.teleportPhase === 'out'){
-        m.userData.teleportProgress = (m.userData.teleportProgress || 0) + 0.20;
-        const p = m.userData.teleportProgress;
-        const s = Math.min(1.0, p);
-        m.scale.set(s, s, s);
 
-        if(p >= 1.0){
-          m.scale.set(1, 1, 1);
-          m.userData.isTeleporting = false;
-          m.userData.teleportPhase = 'none';
-          m.userData.vx = (Math.random() - 0.5) * 0.4;
-          m.userData.vz = (Math.random() - 0.5) * 0.4;
+        .wheel-pointer {
+            position: absolute;
+            top: -12px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 0;
+            height: 0;
+            border-left: 14px solid transparent;
+            border-right: 14px solid transparent;
+            border-top: 24px solid #e74c3c;
+            z-index: 10;
+            filter: drop-shadow(0px 3px 2px rgba(0,0,0,0.7));
         }
-      }
-      continue;
-    }
 
-    const moved = Math.hypot(m.position.x - m.userData.lastX, m.position.z - m.userData.lastZ);
-    m.userData.lastX = m.position.x; m.userData.lastZ = m.position.z;
+        .wheel-container {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            border: 6px solid var(--primary);
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 0 15px rgba(243, 156, 18, 0.4);
+            background: conic-gradient(
+                #2c3e50 0deg 25.7deg, #34495e 25.7deg 51.4deg,
+                #2c3e50 51.4deg 77.1deg, #34495e 77.1deg 102.8deg,
+                #2c3e50 102.8deg 128.5deg, #34495e 128.5deg 154.2deg,
+                #2c3e50 154.2deg 179.9deg, #34495e 179.9deg 205.6deg,
+                #2c3e50 205.6deg 231.3deg, #34495e 231.3deg 257deg,
+                #2c3e50 257deg 282.7deg, #34495e 282.7deg 308.4deg,
+                #2c3e50 308.4deg 334.1deg, #34495e 334.1deg 360deg
+            );
+            transition: transform 5s cubic-bezier(0.15, 0.85, 0.15, 1);
+        }
 
-    if(moved < 0.02){
-      m.userData.stuckTime = (m.userData.stuckTime || 0) + 1;
-      if(m.userData.stuckTime > 8){
-        m.userData.vx += (Math.random() - 0.5) * 0.5;
-        m.userData.vz += (Math.random() - 0.5) * 0.5;
-      }
-    } else {
-      m.userData.stuckTime = Math.max(0, (m.userData.stuckTime || 0) - 1);
-    }
+        .wheel-num {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 30px;
+            height: 105px;
+            margin-left: -15px;
+            margin-top: -105px;
+            transform-origin: bottom center;
+            text-align: center;
+            font-weight: bold;
+            font-size: 14px;
+            color: #fff;
+            padding-top: 6px;
+            text-shadow: 1px 1px 2px #000;
+        }
 
-    steer(m);
-    // Gerakan dibuat berbasis waktu agar tidak terlalu cepat
-    // ketika FPS perangkat tinggi.
-    const frameScale = Math.min(dt * 60, 1.5);
+        .wheel-center-cap {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 48px;
+            height: 48px;
+            background: var(--primary);
+            color: #000;
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 18px;
+            border: 3px solid #fff;
+            box-shadow: 0 0 10px rgba(0,0,0,0.5);
+            z-index: 5;
+        }
 
-    m.position.x += m.userData.vx * frameScale;
-    m.position.z += m.userData.vz * frameScale;
+        /* Form & Grid Elements */
+        .numbers-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 6px;
+            margin: 15px 0;
+        }
 
-    m.userData.vx *= Math.pow(0.985, frameScale);
-    m.userData.vz *= Math.pow(0.985, frameScale);
-    collide(m);
-    m.rotation.x+=m.userData.vz*4.8;m.rotation.z-=m.userData.vx*4.8;
+        .num-btn {
+            background: #333;
+            color: #fff;
+            border: 1px solid #555;
+            padding: 10px 0;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+        }
 
-    for(const b of boosts){
-      const dist = Math.hypot(m.position.x - b.x, m.position.z - b.z);
-      if(dist < 1.1 && (!m.userData.boostCooldown || m.userData.boostCooldown <= 0)){
-        m.userData.boostCooldown = 1.2;
-        const dirX = m.userData.vx || (Math.random() - 0.5);
-        const dirZ = m.userData.vz || (Math.random() - 0.5);
-        const len = Math.hypot(dirX, dirZ) || 1;
+        .num-btn.selected { background: var(--primary); color: #000; font-size: 16px; }
 
-        m.userData.vx += (dirX / len) * 0.95;
-        m.userData.vz += (dirZ / len) * 0.95;
-        createBoostEffect(b.x, b.z);
-        document.getElementById('status').textContent = `⚡ SPEED BOOST! ${m.userData.countryName || 'Unknown Country'} is speeding!`;
-        break;
-      }
-    }
+        .bet-options { display: flex; justify-content: center; gap: 6px; margin-bottom: 15px; }
+        .bet-btn { background: #2c3e50; color: #fff; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer; font-size: 12px; }
+        .bet-btn.active { background: #2980b9; font-weight: bold; }
 
-    for(const s of stars){
-      if(!s.active) continue;
+        .input-group { margin-bottom: 12px; text-align: left; }
+        .input-group label { font-size: 12px; color: #ccc; display: block; margin-bottom: 4px; }
+        input, select, textarea {
+            width: 100%;
+            padding: 10px;
+            background: #2b2b2b;
+            border: 1px solid #444;
+            color: #fff;
+            border-radius: 6px;
+            font-size: 14px;
+        }
 
-      const dist = Math.hypot(
-        m.position.x - s.x,
-        m.position.z - s.z
-      );
+        .btn-main {
+            background: var(--primary);
+            color: #000;
+            border: none;
+            padding: 12px;
+            font-size: 15px;
+            font-weight: bold;
+            border-radius: 8px;
+            width: 100%;
+            cursor: pointer;
+        }
 
-      if(dist < 1.35){
-        s.active = false;
-        starGroup.remove(s.mesh);
-        createStarEffect(s.x, s.z);
+        .btn-blue { background: #3498db; color: #fff; }
+        .btn-green { background: #27ae60; color: #fff; }
+        .btn-danger { background: #e74c3c; color: #fff; padding: 4px 8px; border-radius: 4px; border: none; cursor: pointer; font-size: 11px; }
 
-        /*
-         * ============================================================
-         * STAR = ALWAYS SPAWN ONE NEW MARBLE
-         * ============================================================
-         *
-         * Ada viewer baru:
-         *   -> marble baru memakai negara viewer.
-         *
-         * Tidak ada viewer baru:
-         *   -> marble baru memakai negara random.
-         *
-         * Dalam kedua kondisi:
-         *   -> selalu marble BARU.
-         *   -> bukan clone.
-         *   -> masuk dari START.
-         */
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
 
-        const occupiedUsers = new Set(
-          marbles
-            .filter(item =>
-              !item.userData.eliminated &&
-              !item.userData.finished &&
-              item.userData.chatAssigned
-            )
-            .map(item =>
-              String(
-                item.userData.chatUser || ""
-              ).trim().toLowerCase()
-            )
-        );
+        .supply-box {
+            background: #252525;
+            border-left: 4px solid var(--primary);
+            padding: 10px;
+            font-size: 12px;
+            margin-bottom: 15px;
+            text-align: left;
+        }
 
-        const nextPlayer = getAllChatPlayers().find(player => {
-          const key = playerKey(player);
-          return key && !occupiedUsers.has(key);
+        .trans-card {
+            background: #2b2b2b;
+            border: 1px solid #444;
+            border-radius: 6px;
+            padding: 10px;
+            margin-bottom: 10px;
+            text-align: left;
+        }
+    </style>
+
+    <!-- Firebase SDK Modular -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, sendEmailVerification, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+        import { getDatabase, ref, set, get, child, onValue, update, push } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+
+        // ==========================================
+        // FIREBASE CONFIG HASIL INPUT USER
+        // ==========================================
+        const firebaseConfig = {
+            apiKey: "AIzaSyDuYq5uBIybBIoKpA5bcLsI_kEkcgvotDo",
+            authDomain: "super-spin-game.firebaseapp.com",
+            databaseURL: "https://super-spin-game-default-rtdb.asia-southeast1.firebasedatabase.app",
+            projectId: "super-spin-game",
+            storageBucket: "super-spin-game.firebasestorage.app",
+            messagingSenderId: "592699715968",
+            appId: "1:592699715968:web:2a1fe6a5864bbb97645165",
+            measurementId: "G-P2BSY4RZHY"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getDatabase(app);
+
+        let currentUser = null;
+        let yellowCoins = 0;
+        let greenCoins = 0;
+        let selectedNumber = null;
+        let selectedBetAmount = 10;
+        let selectedBetType = "yellow";
+        
+        // Dynamic Settings (Live Sync Firebase)
+        let gameFeePercent = 5; 
+        let roomDurationSeconds = 120;
+        let timerInterval = null;
+        let timeRemaining = 120;
+        let currentRotation = 0;
+        
+        const SUPER_ADMIN_EMAIL = "jojo.mrj82@gmail.com";
+
+        // --- AUTHENTICATION ---
+        window.registerUser = function() {
+            const email = document.getElementById('auth-email').value.trim();
+            const pass = document.getElementById('auth-pass').value.trim();
+
+            if(!email || !pass) return alert("Isi Email dan Password!");
+
+            createUserWithEmailAndPassword(auth, email, pass)
+                .then((userCredential) => {
+                    sendEmailVerification(userCredential.user);
+                    set(ref(db, 'users/' + userCredential.user.uid), {
+                        email: email,
+                        yellow_coins: 100,
+                        green_coins: 0,
+                        is_blocked: false,
+                        role: (email.toLowerCase() === SUPER_ADMIN_EMAIL.toLowerCase()) ? "superadmin" : "player"
+                    });
+                    alert("Pendaftaran berhasil! Cek email Anda untuk verifikasi.");
+                })
+                .catch((error) => alert(error.message));
+        };
+
+        window.loginUser = function() {
+            const email = document.getElementById('auth-email').value.trim();
+            const pass = document.getElementById('auth-pass').value.trim();
+
+            if(!email || !pass) return alert("Isi Email dan Password!");
+
+            signInWithEmailAndPassword(auth, email, pass)
+                .then((userCredential) => {
+                    if (!userCredential.user.emailVerified) {
+                        alert("Email belum diverifikasi! Silakan cek inbox email Anda.");
+                    }
+                })
+                .catch((error) => alert(error.message));
+        };
+
+        window.logout = function() {
+            signOut(auth).then(() => clearInterval(timerInterval));
+        };
+
+        window.switchTab = function(tabName) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.nav-tab-btn').forEach(el => el.classList.remove('active'));
+
+            if(tabName === 'game') {
+                document.getElementById('tab-game').classList.add('active');
+                document.getElementById('btn-tab-game').classList.add('active');
+            } else if(tabName === 'wallet') {
+                document.getElementById('tab-wallet').classList.add('active');
+                document.getElementById('btn-tab-wallet').classList.add('active');
+            } else if(tabName === 'admin') {
+                document.getElementById('tab-admin').classList.add('active');
+                document.getElementById('btn-tab-admin').classList.add('active');
+                loadAdminSettings();
+            }
+        };
+
+        // --- BUAT ANGKA RODA SPIN ---
+        function renderWheelNumbers() {
+            const wheelContainer = document.getElementById('wheel-container');
+            wheelContainer.innerHTML = '';
+            const totalNumbers = 14;
+            const degreesPerSegment = 360 / totalNumbers;
+
+            for (let i = 1; i <= totalNumbers; i++) {
+                const numElem = document.createElement('div');
+                numElem.className = 'wheel-num';
+                numElem.innerText = i;
+                const angle = (i - 1) * degreesPerSegment;
+                numElem.style.transform = `rotate(${angle}deg)`;
+                wheelContainer.appendChild(numElem);
+            }
+        }
+
+        // --- TIMER & RODA SPIN ---
+        function startTimer() {
+            clearInterval(timerInterval);
+            timeRemaining = roomDurationSeconds;
+            const timerDisplay = document.getElementById('timer-display');
+            
+            timerInterval = setInterval(() => {
+                timeRemaining--;
+                let mins = Math.floor(timeRemaining / 60);
+                let secs = timeRemaining % 60;
+                timerDisplay.innerText = `${mins < 10 ? '0' : ''}${mins}:${secs < 10 ? '0' : ''}${secs}`;
+
+                if (timeRemaining <= 0) {
+                    clearInterval(timerInterval);
+                    spinWheelReal();
+                }
+            }, 1000);
+        }
+
+        function spinWheelReal() {
+            const wheelContainer = document.getElementById('wheel-container');
+            const centerCap = document.getElementById('center-cap');
+
+            const winningNum = Math.floor(Math.random() * 14) + 1;
+            const segmentDegrees = 360 / 14;
+
+            const targetSegmentAngle = (winningNum - 1) * segmentDegrees;
+            const extraRounds = 360 * 5; 
+            const targetRotation = currentRotation + extraRounds + (360 - targetSegmentAngle);
+            
+            currentRotation = targetRotation;
+            wheelContainer.style.transform = `rotate(${targetRotation}deg)`;
+            centerCap.innerText = "🎰";
+
+            setTimeout(() => {
+                centerCap.innerText = winningNum;
+
+                if (selectedNumber === winningNum) {
+                    const rawWin = selectedBetAmount * 10;
+                    const feeDeduction = (rawWin * gameFeePercent) / 100;
+                    const netWinCoins = Math.floor(rawWin - feeDeduction);
+
+                    alert(`🎉 SELAMAT! Angka yang keluar adalah ${winningNum}.\nAnda Menang ${netWinCoins} Koin! (Potongan Fee Game: ${gameFeePercent}%)`);
+                    
+                    if(selectedBetType === "yellow") {
+                        update(ref(db, 'users/' + currentUser.uid), { yellow_coins: yellowCoins + netWinCoins });
+                    } else {
+                        update(ref(db, 'users/' + currentUser.uid), { green_coins: greenCoins + netWinCoins });
+                    }
+                } else if (selectedNumber !== null) {
+                    alert(`❌ Angka yang keluar adalah ${winningNum}. Tebakan Anda (${selectedNumber}) belum beruntung.`);
+                }
+
+                selectedNumber = null;
+                document.querySelectorAll('.num-btn').forEach(b => b.classList.remove('selected'));
+                setTimeout(startTimer, 3000);
+            }, 5000);
+        }
+
+        window.placeBet = function() {
+            if (!selectedNumber) return alert("Pilih 1 angka tebakan!");
+            
+            if (selectedBetType === "yellow") {
+                if (yellowCoins < selectedBetAmount) return alert("Koin Kuning Anda tidak cukup!");
+                yellowCoins -= selectedBetAmount;
+                update(ref(db, 'users/' + currentUser.uid), { yellow_coins: yellowCoins });
+            } else {
+                if (greenCoins < selectedBetAmount) return alert("Koin Hijau Anda tidak cukup!");
+                greenCoins -= selectedBetAmount;
+                update(ref(db, 'users/' + currentUser.uid), { green_coins: greenCoins });
+            }
+
+            alert(`Berhasil memasang ${selectedBetAmount} Koin (${selectedBetType === 'yellow' ? 'Kuning' : 'Hijau'}) pada angka ${selectedNumber}!`);
+        };
+
+        // --- SISTEM WALLET PEMAIN ---
+        window.requestDeposit = function() {
+            const amount = parseInt(document.getElementById('depo-amount').value);
+            const proof = document.getElementById('depo-note').value.trim();
+
+            if(!amount || amount <= 0) return alert("Isi nominal deposit dengan benar!");
+
+            push(ref(db, 'transactions'), {
+                uid: currentUser.uid,
+                email: currentUser.email,
+                type: "DEPOSIT",
+                amount: amount,
+                note: proof || "-",
+                status: "PENDING",
+                timestamp: Date.now()
+            }).then(() => {
+                alert("Permintaan deposit dikirim! Mohon tunggu konfirmasi Admin.");
+                document.getElementById('depo-amount').value = '';
+                document.getElementById('depo-note').value = '';
+            });
+        };
+
+        window.requestWithdraw = function() {
+            const amount = parseInt(document.getElementById('wd-amount').value);
+            const bankDetails = document.getElementById('wd-note').value.trim();
+
+            if(!amount || amount <= 0) return alert("Isi nominal withdrawal!");
+            if(!bankDetails) return alert("Isi rincian Rekening / E-Wallet tujuan!");
+            if(amount > greenCoins) return alert("Saldo Koin Hijau Anda tidak mencukupi!");
+
+            push(ref(db, 'transactions'), {
+                uid: currentUser.uid,
+                email: currentUser.email,
+                type: "WITHDRAW",
+                amount: amount,
+                note: bankDetails,
+                status: "PENDING",
+                timestamp: Date.now()
+            }).then(() => {
+                alert("Pengajuan Withdraw berhasil dikirim ke Admin!");
+                document.getElementById('wd-amount').value = '';
+                document.getElementById('wd-note').value = '';
+            });
+        };
+
+        // --- MONITOR FIREBASE AUTH & LIVE SETTINGS ---
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                currentUser = user;
+                document.getElementById('auth-section').style.display = 'none';
+                document.getElementById('main-dashboard').style.display = 'block';
+                document.getElementById('user-email-display').innerText = user.email;
+
+                renderWheelNumbers();
+
+                // Live Sync User Data
+                onValue(ref(db, 'users/' + user.uid), (snapshot) => {
+                    const data = snapshot.val();
+                    if(data) {
+                        if(data.is_blocked) {
+                            alert("Akun Anda diblokir.");
+                            signOut(auth);
+                            return;
+                        }
+                        yellowCoins = data.yellow_coins || 0;
+                        greenCoins = data.green_coins || 0;
+                        document.getElementById('user-yellow-coins').innerText = yellowCoins.toLocaleString();
+                        document.getElementById('user-green-coins').innerText = greenCoins.toLocaleString();
+                        document.getElementById('wallet-yellow-display').innerText = yellowCoins.toLocaleString();
+                        document.getElementById('wallet-green-display').innerText = greenCoins.toLocaleString();
+                    }
+                });
+
+                // Live Sync Pengaturan Admin (Fee, Timer, & Banner HTML)
+                onValue(ref(db, 'settings'), (snapshot) => {
+                    if(snapshot.exists()) {
+                        const s = snapshot.val();
+                        if(s.system_fee !== undefined) gameFeePercent = parseFloat(s.system_fee);
+                        if(s.room_duration) {
+                            roomDurationSeconds = parseInt(s.room_duration);
+                        }
+                        
+                        // Render Banner Live di Dashboard Game
+                        const bannerArea = document.getElementById('banner-display-area');
+                        if(s.banner_html && s.banner_html.trim() !== "") {
+                            bannerArea.innerHTML = s.banner_html;
+                            bannerArea.style.display = "block";
+                        } else {
+                            bannerArea.style.display = "none";
+                        }
+                    }
+                });
+
+                if(user.email.toLowerCase() === SUPER_ADMIN_EMAIL.toLowerCase()) {
+                    document.getElementById('btn-tab-admin').style.display = 'inline-block';
+                } else {
+                    document.getElementById('btn-tab-admin').style.display = 'none';
+                }
+
+                switchTab('game');
+                startTimer();
+            } else {
+                currentUser = null;
+                document.getElementById('auth-section').style.display = 'block';
+                document.getElementById('main-dashboard').style.display = 'none';
+            }
         });
 
-        /*
-         * Marble baru independen.
-         */
-        const newId = marbles.length;
+        // --- LOGIKA PANEL ADMIN ---
+        function loadAdminSettings() {
+            // Load Setting Saat Ini ke Form
+            get(child(ref(db), 'settings')).then((snapshot) => {
+                if(snapshot.exists()) {
+                    const s = snapshot.val();
+                    document.getElementById('admin-fee-input').value = s.system_fee !== undefined ? s.system_fee : 5;
+                    document.getElementById('admin-timer-input').value = s.room_duration || 120;
+                    document.getElementById('admin-banner-input').value = s.banner_html || "";
+                }
+            });
 
-        const newColor =
-          COLORS[Math.floor(Math.random() * COLORS.length)];
+            // Hitung Suplai Koin Beredar
+            get(child(ref(db), 'users')).then((snapshot) => {
+                if(snapshot.exists()) {
+                    let totalYellow = 0;
+                    let totalGreen = 0;
+                    snapshot.forEach((childSnap) => {
+                        const u = childSnap.val();
+                        totalYellow += (u.yellow_coins || 0);
+                        totalGreen += (u.green_coins || 0);
+                    });
 
-        const newMarble = makeMarble(
-          newColor,
-          newId,
-          0
-        );
+                    document.getElementById('admin-yellow-circulating').innerText = totalYellow.toLocaleString();
+                    document.getElementById('admin-green-circulating').innerText = totalGreen.toLocaleString();
+                }
+            });
 
-        let viewer = "Random";
-        let country = "Unknown Country";
-        let emoji = "🏳️";
-
-        if(nextPlayer){
-
-          /*
-           * Ada viewer baru:
-           * negara mengikuti viewer.
-           */
-          applyPlayerToMarble(
-            newMarble,
-            nextPlayer
-          );
-
-          newMarble.userData.chatAssigned = true;
-
-          viewer =
-            nextPlayer.viewerName ||
-            nextPlayer.name ||
-            nextPlayer.user ||
-            "Viewer";
-
-          country =
-            nextPlayer.countryName ||
-            nextPlayer.country ||
-            "Unknown Country";
-
-          emoji =
-            nextPlayer.countryEmoji ||
-            nextPlayer.flag ||
-            "🏳️";
-
-          console.log(
-            "[STAR] NEW VIEWER SPAWN:",
-            emoji,
-            country,
-            viewer
-          );
-
-        } else {
-
-          /*
-           * Tidak ada viewer:
-           * tetap spawn marble dengan negara random.
-           */
-          assignRandomCountry(newMarble);
-
-          newMarble.userData.chatAssigned = false;
-          newMarble.userData.chatUser = "";
-          newMarble.userData.viewerName = "";
-
-          country =
-            newMarble.userData.countryName ||
-            "Unknown Country";
-
-          emoji =
-            newMarble.userData.countryEmoji ||
-            "🏳️";
-
-          console.log(
-            "[STAR] RANDOM COUNTRY SPAWN:",
-            emoji,
-            country
-          );
+            // Load Daftar Transaksi Pending
+            onValue(ref(db, 'transactions'), (snapshot) => {
+                const list = document.getElementById('admin-trans-list');
+                list.innerHTML = '';
+                if(snapshot.exists()) {
+                    let hasPending = false;
+                    snapshot.forEach((childSnap) => {
+                        const t = childSnap.val();
+                        const key = childSnap.key;
+                        if(t.status === "PENDING") {
+                            hasPending = true;
+                            const item = document.createElement('div');
+                            item.className = "trans-card";
+                            item.innerHTML = `
+                                <div><b style="color:${t.type === 'WITHDRAW' ? '#e74c3c' : '#2ecc71'}">[${t.type}]</b> - <b>${t.email}</b></div>
+                                <div style="margin: 4px 0;">Jumlah: <b style="color:#f1c40f;">${t.amount.toLocaleString()} Koin</b></div>
+                                <div style="color:#ccc; font-size:11px;">Rekening / Catatan: <u>${t.note}</u></div>
+                                <div style="margin-top:8px; display:flex; gap:6px;">
+                                    <button class="btn-green" style="padding:4px 10px; font-size:12px; border:none; border-radius:4px; cursor:pointer;" onclick="window.approveTrans('${key}', '${t.uid}', '${t.type}', ${t.amount})">✓ Terima</button>
+                                    <button class="btn-danger" onclick="window.rejectTrans('${key}')">✕ Tolak</button>
+                                </div>
+                            `;
+                            list.appendChild(item);
+                        }
+                    });
+                    if(!hasPending) {
+                        list.innerHTML = '<p style="font-size:12px; color:#888;">Tidak ada permintaan pending saat ini.</p>';
+                    }
+                } else {
+                    list.innerHTML = '<p style="font-size:12px; color:#888;">Belum ada riwayat transaksi.</p>';
+                }
+            });
         }
 
-        /*
-         * Pertahankan karakteristik gerakan marble sumber,
-         * tetapi bukan identitasnya.
-         */
-        newMarble.userData.speed =
-          m.userData.speed ||
-          (0.24 + Math.random() * 0.048);
+        window.approveTrans = function(key, uid, type, amount) {
+            get(child(ref(db), 'users/' + uid)).then((snap) => {
+                if(snap.exists()) {
+                    const u = snap.val();
+                    let curGreen = u.green_coins || 0;
 
-        newMarble.userData.randomFactor =
-          Math.random() * 5;
+                    if(type === "DEPOSIT") {
+                        curGreen += amount;
+                    } else if(type === "WITHDRAW") {
+                        if(curGreen < amount) return alert("Pemain tidak memiliki saldo Koin Hijau yang cukup!");
+                        curGreen -= amount;
+                    }
 
-        /*
-         * Masukkan marble baru ke scene.
-         */
-        scene.add(newMarble);
-        marbles.push(newMarble);
+                    update(ref(db, 'users/' + uid), { green_coins: curGreen });
+                    update(ref(db, 'transactions/' + key), { status: "APPROVED" });
+                    alert(`Transaksi ${type} sebesar ${amount} Koin disetujui!`);
+                    loadAdminSettings();
+                }
+            });
+        };
 
-        /*
-         * Spawn dari START.
-         */
-        respawnMarble(
-          newMarble,
-          marbles.length - 1
-        );
+        window.rejectTrans = function(key) {
+            update(ref(db, 'transactions/' + key), { status: "REJECTED" });
+            alert("Transaksi ditolak!");
+            loadAdminSettings();
+        };
 
-        if(nextPlayer){
-          document.getElementById('status').textContent =
-            `🌍 ${emoji} ${country} — ${viewer} entered the arena!`;
-        } else {
-          document.getElementById('status').textContent =
-            `⭐ ${emoji} ${country} spawned from a star!`;
-        }
+        // Transfer Koin Manual (Sistem Anti-Gagal)
+        window.adminSendCoins = function() {
+            const emailTarget = document.getElementById('admin-target-email').value.trim();
+            const coinType = document.getElementById('admin-coin-type').value;
+            const amount = parseInt(document.getElementById('admin-coin-amount').value);
 
-        console.log(
-          "[STAR] MARBLE CREATED:",
-          "id:", newId,
-          "country:", country,
-          "viewer:", viewer
-        );
+            if(!emailTarget || isNaN(amount) || amount <= 0) {
+                return alert("Lengkapi email dan jumlah koin dengan benar!");
+            }
 
-        updateUI();
-        break;
-      }
-    }
-    // =========================================================
-    // BOOST PAD COLLISION
-    // =========================================================
-    for(const b of boosts){
-      if(!b || !b.mesh) continue;
+            get(ref(db, 'users')).then((snapshot) => {
+                if (!snapshot.exists()) return alert("Database pengguna kosong!");
 
-      const distBoost = Math.hypot(
-        m.position.x - b.x,
-        m.position.z - b.z
-      );
+                let foundUid = null;
+                let userData = null;
 
-      if(distBoost < CELL * 0.42 && m.userData.boostCooldown <= 0){
+                snapshot.forEach((childSnap) => {
+                    const u = childSnap.val();
+                    if(u.email && u.email.toLowerCase() === emailTarget.toLowerCase()) {
+                        foundUid = childSnap.key;
+                        userData = u;
+                    }
+                });
 
-        m.userData.boostTime = 2.0;
-        m.userData.boostCooldown = 2.5;
+                if(foundUid) {
+                    const currentYellow = userData.yellow_coins || 0;
+                    const currentGreen = userData.green_coins || 0;
 
-        createBoostEffect(b.x, b.z);
+                    const newYellow = coinType === "yellow" ? currentYellow + amount : currentYellow;
+                    const newGreen = coinType === "green" ? currentGreen + amount : currentGreen;
 
-        document.getElementById('status').textContent =
-          `⚡ SPEED BOOST! ${m.userData.countryName || 'Unknown Country'} is speeding!`;
+                    update(ref(db, 'users/' + foundUid), {
+                        yellow_coins: newYellow,
+                        green_coins: newGreen
+                    }).then(() => {
+                        alert(`✅ Berhasil mengirim ${amount.toLocaleString()} Koin (${coinType === "yellow" ? "Kuning" : "Hijau"}) ke ${emailTarget}!`);
+                        document.getElementById('admin-coin-amount').value = '';
+                        loadAdminSettings();
+                    });
+                } else {
+                    alert("❌ User dengan email '" + emailTarget + "' tidak ditemukan!");
+                }
+            });
+        };
 
-        break;
-      }
-    }
+        // Simpan Pengaturan Fee, Timer, dan Banner ke Firebase
+        window.saveAdminSettings = function() {
+            const feeInput = parseFloat(document.getElementById('admin-fee-input').value);
+            const timerInput = parseInt(document.getElementById('admin-timer-input').value);
+            const bannerInput = document.getElementById('admin-banner-input').value;
 
-    for(const t of traps){
-      if(!t.active) continue;
-      const dist = Math.hypot(m.position.x - t.x, m.position.z - t.z);
-      if(dist < 1.3){
-        if(t.type === 'bomb' && dist < 1.1){
-          const countryName = m.userData.countryName || 'Unknown Country';
+            if(isNaN(feeInput) || isNaN(timerInput) || timerInput <= 0) {
+                return alert("Mohon isi Fee (%) dan Durasi Timer dengan angka valid!");
+            }
 
-          // 1. Create explosion BEFORE hiding/removing the marble and bomb
+            update(ref(db, 'settings'), {
+                system_fee: feeInput,
+                room_duration: timerInput,
+                banner_html: bannerInput
+            }).then(() => {
+                alert("✅ Pengaturan Fee, Timer, & Banner Iklan Berhasil Disimpan!");
+                gameFeePercent = feeInput;
+                roomDurationSeconds = timerInput;
+                startTimer();
+            }).catch((err) => {
+                alert("❌ Gagal menyimpan: " + err.message);
+            });
+        };
 
+        window.selectNum = function(n, btn) {
+            selectedNumber = n;
+            document.querySelectorAll('.num-btn').forEach(b => b.classList.remove('selected'));
+            btn.classList.add('selected');
+        };
 
-          createExplosion(t.x, t.z);
+        window.selectBet = function(amt, btn) {
+            selectedBetAmount = amt;
+            document.querySelectorAll('.bet-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+        };
 
+        window.setBetType = function(type) {
+            selectedBetType = type;
+        };
+    </script>
+</head>
+<body>
 
+    <header>
+        <div class="brand">🎰 SuperSpin</div>
+        <div class="user-status">
+            <span id="user-email-display">Memuat...</span>
+            <span class="wallet-badge wb-yellow">🪙 <span id="user-yellow-coins">0</span></span>
+            <span class="wallet-badge wb-green">💵 <span id="user-green-coins">0</span></span>
+            <button class="btn-danger" onclick="window.logout()">Keluar</button>
+        </div>
+    </header>
 
-          // 2. Eliminate the marble
+    <div class="container">
+        
+        <!-- Form Auth -->
+        <div id="auth-section" class="card">
+            <h2 style="margin-bottom: 15px;">Masuk / Daftar Akun</h2>
+            
+            <div class="input-group">
+                <label>Email Pengguna</label>
+                <input type="email" id="auth-email" placeholder="contoh@gmail.com">
+            </div>
+            
+            <div class="input-group">
+                <label>Kata Sandi</label>
+                <input type="password" id="auth-pass" placeholder="Password">
+            </div>
 
+            <button class="btn-main" onclick="window.loginUser()" style="margin-bottom: 10px;">MASUK</button>
+            <button class="btn-main btn-blue" onclick="window.registerUser()">DAFTAR AKUN BARU</button>
+        </div>
 
-          m.userData.finished = true;
+        <!-- Dashboard Utama -->
+        <div id="main-dashboard" style="display: none;">
+            
+            <!-- Navbar Tab Navigasi -->
+            <div class="nav-tabs" style="margin-bottom: 15px; border-radius: 8px; overflow: hidden;">
+                <button id="btn-tab-game" class="nav-tab-btn active" onclick="window.switchTab('game')">🎮 Arena Game</button>
+                <button id="btn-tab-wallet" class="nav-tab-btn" onclick="window.switchTab('wallet')">💳 Wallet</button>
+                <button id="btn-tab-admin" class="nav-tab-btn" onclick="window.switchTab('admin')" style="display: none;">🛠️ Panel Admin</button>
+            </div>
 
+            <!-- TAB 1: ARENA GAME -->
+            <div id="tab-game" class="tab-content active">
+                
+                <!-- KOLOM BANNER / IKLAN PENGUMUMAN -->
+                <div id="banner-display-area" class="banner-box" style="display:none;"></div>
 
-          m.userData.eliminated = true;
+                <div class="card">
+                    <h2>🎰 SuperSpin Room #1</h2>
+                    <div style="font-size: 13px; color:#aaa; margin: 8px 0 10px;">
+                        Pemain: <b>1/5</b> | Sisa Waktu: <b id="timer-display" style="color:#e74c3c;">02:00</b>
+                    </div>
 
+                    <!-- DESAIN RODA SPIN REALISTIS -->
+                    <div class="wheel-wrapper">
+                        <div class="wheel-pointer"></div>
+                        <div class="wheel-container" id="wheel-container"></div>
+                        <div class="wheel-center-cap" id="center-cap">?</div>
+                    </div>
 
-          m.visible = false;
+                    <p style="text-align: left; font-size: 12px; color:#ccc;">Pilih Jenis Koin Taruhan:</p>
+                    <div style="display:flex; gap:10px; margin-bottom: 10px;">
+                        <label style="font-size:12px; cursor:pointer;"><input type="radio" name="bet_coin" checked onclick="window.setBetType('yellow')"> 🪙 Koin Kuning (Bonus)</label>
+                        <label style="font-size:12px; cursor:pointer;"><input type="radio" name="bet_coin" onclick="window.setBetType('green')"> 💵 Koin Hijau (Cash)</label>
+                    </div>
 
+                    <p style="text-align: left; font-size: 12px; color:#ccc;">Pilih 1 Angka Tebakan (1-14):</p>
+                    <div class="numbers-grid">
+                        <button class="num-btn" onclick="window.selectNum(1, this)">1</button>
+                        <button class="num-btn" onclick="window.selectNum(2, this)">2</button>
+                        <button class="num-btn" onclick="window.selectNum(3, this)">3</button>
+                        <button class="num-btn" onclick="window.selectNum(4, this)">4</button>
+                        <button class="num-btn" onclick="window.selectNum(5, this)">5</button>
+                        <button class="num-btn" onclick="window.selectNum(6, this)">6</button>
+                        <button class="num-btn" onclick="window.selectNum(7, this)">7</button>
+                        <button class="num-btn" onclick="window.selectNum(8, this)">8</button>
+                        <button class="num-btn" onclick="window.selectNum(9, this)">9</button>
+                        <button class="num-btn" onclick="window.selectNum(10, this)">10</button>
+                        <button class="num-btn" onclick="window.selectNum(11, this)">11</button>
+                        <button class="num-btn" onclick="window.selectNum(12, this)">12</button>
+                        <button class="num-btn" onclick="window.selectNum(13, this)">13</button>
+                        <button class="num-btn" onclick="window.selectNum(14, this)">14</button>
+                    </div>
 
+                    <p style="text-align: left; font-size: 12px; color:#ccc;">Pilih Nilai Taruhan:</p>
+                    <div class="bet-options">
+                        <button class="bet-btn active" onclick="window.selectBet(10, this)">10 Koin</button>
+                        <button class="bet-btn" onclick="window.selectBet(50, this)">50 Koin</button>
+                        <button class="bet-btn" onclick="window.selectBet(100, this)">100 Koin</button>
+                        <button class="bet-btn" onclick="window.selectBet(500, this)">500 Koin</button>
+                    </div>
 
-          // 3. Consume the bomb immediately
+                    <button class="btn-main" onclick="window.placeBet()">PASANG TARUHAN</button>
+                </div>
+            </div>
 
+            <!-- TAB 2: WALLET PEMAIN -->
+            <div id="tab-wallet" class="tab-content">
+                <div class="card" style="text-align: left;">
+                    <h3>💳 Dompet Saya</h3>
+                    
+                    <div style="display:flex; justify-content:space-between; margin:15px 0; background:#2b2b2b; padding:12px; border-radius:8px;">
+                        <div>
+                            <div style="font-size:11px; color:#aaa;">KOIN KUNING (BONUS)</div>
+                            <div style="font-size:18px; font-weight:bold; color:#f1c40f;">🪙 <span id="wallet-yellow-display">0</span></div>
+                            <small style="font-size:9px; color:#888;">*Khusus bermain / Taruhan</small>
+                        </div>
+                        <div>
+                            <div style="font-size:11px; color:#aaa;">KOIN HIJAU (CASH)</div>
+                            <div style="font-size:18px; font-weight:bold; color:#2ecc71;">💵 <span id="wallet-green-display">0</span></div>
+                            <small style="font-size:9px; color:#888;">*Dapat ditarik ke Rekening/DANA</small>
+                        </div>
+                    </div>
 
-          t.active = false;
+                    <hr style="border-color:#333; margin:15px 0;">
 
+                    <h4>📥 Pengajuan Deposit (Koin Hijau)</h4>
+                    <div class="input-group" style="margin-top:10px;">
+                        <label>Jumlah Koin yang Dibeli</label>
+                        <input type="number" id="depo-amount" placeholder="Contoh: 100">
+                    </div>
+                    <div class="input-group">
+                        <label>Catatan / Nama Pengirim</label>
+                        <input type="text" id="depo-note" placeholder="Nama / No Ref Transfer">
+                    </div>
+                    <button class="btn-main btn-green" onclick="window.requestDeposit()" style="margin-bottom:15px;">KIRIM PERMINTAAN DEPOSIT</button>
 
+                    <hr style="border-color:#333; margin:15px 0;">
 
-          if(t.mesh){
+                    <h4>📤 Pengajuan Withdraw / Penarikan (Koin Hijau)</h4>
+                    <div class="input-group" style="margin-top:10px;">
+                        <label>Jumlah Koin yang Ditarik</label>
+                        <input type="number" id="wd-amount" placeholder="Contoh: 50">
+                    </div>
+                    <div class="input-group">
+                        <label>Rekening / E-Wallet Tujuan (WAJIB DIISI)</label>
+                        <input type="text" id="wd-note" placeholder="DANA 08xxx a.n Nama / BCA 123456">
+                    </div>
+                    <button class="btn-main btn-blue" onclick="window.requestWithdraw()">KIRIM PENGAJUAN WITHDRAW</button>
+                </div>
+            </div>
 
+            <!-- TAB 3: PANEL ADMIN -->
+            <div id="tab-admin" class="tab-content">
+                <div class="card" style="border: 2px solid #e74c3c; text-align: left;">
+                    <h3 style="color:#e74c3c; margin-bottom: 12px; text-align: center;">🛠️ Panel Super Admin</h3>
+                    
+                    <!-- INDIKATOR SUPLAI KOIN -->
+                    <div class="supply-box">
+                        <b>📊 STATUS SUPLAI KOIN:</b><br>
+                        - Koin Kuning Beredar: <b id="admin-yellow-circulating">0</b> / Maks Suplai: <b>2.000.000</b><br>
+                        - Koin Hijau Beredar: <b id="admin-green-circulating">0</b> / Maks Suplai: <b>2.000.000</b>
+                    </div>
 
-            t.mesh.visible = false;
+                    <!-- PERSETUJUAN TRANSAKSI WITHDRAW & DEPOSIT -->
+                    <h4 style="color:var(--primary); margin-bottom: 8px;">📋 Permintaan Withdraw & Deposit</h4>
+                    <div id="admin-trans-list" style="margin-bottom:15px;">
+                        <p style="font-size:12px; color:#888;">Memuat data transaksi...</p>
+                    </div>
 
+                    <hr style="border-color:#444; margin:15px 0;">
 
-            trapGroup.remove(t.mesh);
+                    <!-- KIRIM KOIN MANUAL KE PEMAIN -->
+                    <h4 style="color:var(--primary); margin-bottom: 8px;">🎁 Tambah/Kirim Koin ke Pemain</h4>
+                    <div class="input-group">
+                        <label>Email Pemain Tujuan</label>
+                        <input type="email" id="admin-target-email" placeholder="pemain@gmail.com">
+                    </div>
+                    <div style="display:flex; gap:10px; margin-bottom:10px;">
+                        <select id="admin-coin-type">
+                            <option value="yellow">🪙 Koin Kuning (Bonus)</option>
+                            <option value="green">💵 Koin Hijau (Cash)</option>
+                        </select>
+                        <input type="number" id="admin-coin-amount" placeholder="Jumlah Koin">
+                    </div>
+                    <button class="btn-main btn-green" onclick="window.adminSendCoins()" style="margin-bottom:15px;">KIRIM KOIN SEKARANG</button>
 
+                    <hr style="border-color:#444; margin:15px 0;">
 
-          }
+                    <!-- PENGATURAN FEE, TIMER, & BANNER IKLAN -->
+                    <h4 style="color:var(--primary); margin-bottom: 8px;">📢 Pengaturan Fee, Timer, & Banner HTML</h4>
+                    <div class="input-group">
+                        <label>Potongan Fee Sistem Game (%)</label>
+                        <input type="number" id="admin-fee-input" placeholder="5">
+                    </div>
 
+                    <div class="input-group">
+                        <label>Durasi Room Spin (Detik)</label>
+                        <input type="number" id="admin-timer-input" placeholder="120">
+                    </div>
 
+                    <div class="input-group">
+                        <label>HTML Kode Banner Iklan / Pengumuman</label>
+                        <textarea id="admin-banner-input" rows="3" placeholder="Contoh: <div style='color:yellow;'><b>PROMO BANYAK BONUS DEPOSIT!</b></div>"></textarea>
+                    </div>
 
-          // 4. Clear camera target if necessary
+                    <button class="btn-main" onclick="window.saveAdminSettings()" style="background:#27ae60; color:#fff;">SIMPAN PENGATURAN ADMIN</button>
+                </div>
+            </div>
 
+        </div>
 
-          if(activeTargetMarble === m){
+    </div>
 
-
-            activeTargetMarble = null;
-
-
-          }
-
-          // 5. English event message
-          document.getElementById('status').textContent =
-            `💥 ${countryName} hit a bomb and was eliminated!`;
-
-          updateUI();
-                } else if(t.type === 'hole_blue'){
-          playPortalSFX();
-          m.userData.isTeleporting = true;
-          m.userData.teleportPhase = 'in';
-          m.userData.teleportProgress = 0;
-          m.userData.targetHole = {x: t.x, z: t.z};
-          createHolePulse(t.x, t.z, 0x00c8ff);
-          document.getElementById('status').textContent = `🌀 PORTAL! ${m.userData.countryName || 'Unknown Country'} was teleported!`;
-        }
-        break;
-      }
-    }
-
-    if(!m.userData.finished && !m.userData.eliminated && Math.hypot(m.position.x-exitPos.x, m.position.z-exitPos.z) < RADIUS + 0.45){
-      createFinishEffect(
-        m.position.x,
-        m.position.z,
-        COLORS[m.userData.id % COLORS.length]
-      );
-
-      m.userData.finished=true;winner=true;
-      trapMultiplier = 1;
-      document.getElementById('winner').textContent=m.userData.countryName || 'Unknown Country' + (m.userData.cloneId > 0 ? ` (Clone ${m.userData.cloneId})` : '') + ' WINS!!';
-      document.getElementById('status').textContent=m.userData.countryName || 'Unknown Country'+' escaped!!';
-      document.getElementById('message').classList.add('show');
-      setTimeout(()=>{round++;startRound();},3500);break;
-    }
-  }
-
-  const allEliminated = marbles.every(m => m.userData.eliminated);
-  if(allEliminated && !winner){
-    winner = true;
-    trapMultiplier = 1;
-    document.getElementById('winner').textContent = 'ALL MARBLES EXPLODED!';
-    document.getElementById('status').textContent = 'All marbles were eliminated! Restarting round...';
-    document.getElementById('message').classList.add('show');
-    setTimeout(()=>{ round++; startRound(); }, 3500);
-  }
-
-  if(elapsed >= 180 && !winner){
-    winner = true;
-    trapMultiplier *= 2;
-    document.getElementById('winner').textContent = "TIME'S UP!";
-    document.getElementById('status').textContent = `3-minute time limit reached! Traps doubled (${trapMultiplier}x)...`;
-    document.getElementById('message').classList.add('show');
-    setTimeout(()=>{ round++; startRound(); }, 3500);
-  }
-
-  separate(dt);
-  updateCamera();
-  if(++tick%12===0) updateUI();
-}
-
-function animate(t){
-  requestAnimationFrame(animate);
-  let dt = (t - last) / 1000;
-  if(dt > 0.1) dt = 0.016;
-  if(!winner) elapsed += dt;
-  last = t;
-  document.getElementById('timer').textContent=String(Math.floor(elapsed/60)).padStart(2,'0')+':'+String(Math.floor(elapsed%60)).padStart(2,'0');
-  update(dt);
-  renderer.render(scene,camera);
-}
-
-startRound();
-startCountryChatSync();
-requestAnimationFrame(animate);
-addEventListener('resize',()=>{
-  const asp = innerWidth / innerHeight;
-  camera.aspect = asp;
-  camera.fov = asp < 1 ? 64 : 44;
-  baseCamPos.y = 74;
-  baseCamPos.z = 0;
-  camera.updatePolyMatrix ? camera.updatePolyMatrix() : camera.updateProjectionMatrix();
-  renderer.setSize(innerWidth,innerHeight);
-});
-</script></body></html>
+</body>
+</html> 
