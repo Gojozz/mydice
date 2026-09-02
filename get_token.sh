@@ -2,7 +2,7 @@
 read -p "Masukkan Client ID: " CLIENT_ID
 read -p "Masukkan Client Secret: " CLIENT_SECRET
 
-URL="https://accounts.google.com/o/oauth2/v2/auth?client_id=${CLIENT_ID}&redirect_uri=http://127.0.0.1&response_type=code&scope=https://www.googleapis.com/auth/youtube.force-ssl&access_type=offline&prompt=consent"
+URL="https://accounts.google.com/o/oauth2/v2/auth?client_id=${CLIENT_ID}&redirect_uri=http://127.0.0.1&response_type=code&scope=https://www.googleapis.com/auth/youtube&access_type=offline&prompt=consent"
 
 echo -e "\n--------------------------------------------------"
 echo -e "1. Buka URL ini di Browser (Chrome):\n${URL}"

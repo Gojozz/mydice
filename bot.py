@@ -973,7 +973,6 @@ class RaceResultHandler(
                 self.end_headers()
             return
 
-        if self.path != "/race-result":
 
     def do_POST(self):
 
