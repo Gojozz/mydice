@@ -527,19 +527,56 @@ function addWall(x,z,w,d){
   walls.push({x,z,w,d,hw:w/2,hd:d/2});
 }
 
+function createPortalOverlay(){
+  const img = document.createElement("img");
+  img.src = "assets/portal.gif";
+  img.alt = "";
+  img.className = "portal-gif";
+  img.style.cssText = `
+    position:fixed;z-index:15;width:110px;height:110px;
+    object-fit:contain;pointer-events:none;
+    transform:translate(-50%,-50%);
+    display:none;
+  `;
+  document.body.appendChild(img);
+  return img;
+}
+
+function updatePortalOverlays(){
+  for(const t of traps){
+    if(t.type !== 'hole_blue' || !t.portalImg) continue;
+    if(!t.active){
+      t.portalImg.style.display = "none";
+      continue;
+    }
+    const pos = new THREE.Vector3(t.x, 0.12, t.z);
+    pos.project(camera);
+    if(pos.z > 1){
+      t.portalImg.style.display = "none";
+      continue;
+    }
+    const x = (pos.x * 0.5 + 0.5) * innerWidth;
+    const y = (-pos.y * 0.5 + 0.5) * innerHeight;
+    t.portalImg.style.left = x + "px";
+    t.portalImg.style.top = y + "px";
+    t.portalImg.style.display = "block";
+  }
+}
+
 function createTrapMesh(px, pz, type){
   if(type === 'hole_blue'){
     const holeGroup = new THREE.Group();
-    const ring = new THREE.Mesh(
-      new THREE.RingGeometry(0.6, 1.25, 32), 
-      new THREE.MeshBasicMaterial({color: 0x00c8ff, side: THREE.DoubleSide})
+    // hitbox tak terlihat (collision tetap dari x,z)
+    const holeCore = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.85, 0.85, 0.05, 16),
+      new THREE.MeshBasicMaterial({color: 0x000000, transparent: true, opacity: 0.15})
     );
-    ring.rotation.x = -Math.PI / 2; ring.position.y = 0.04;
-    const holeCore = new THREE.Mesh(new THREE.CylinderGeometry(0.85, 0.85, 0.1, 32), new THREE.MeshBasicMaterial({color: 0x000000}));
     holeCore.position.y = 0.02;
-    holeGroup.add(ring, holeCore); holeGroup.position.set(px, 0, pz);
+    holeGroup.add(holeCore);
+    holeGroup.position.set(px, 0, pz);
     trapGroup.add(holeGroup);
-    traps.push({x: px, z: pz, type, mesh: holeGroup, active: true, ring});
+    const portalImg = createPortalOverlay();
+    traps.push({x: px, z: pz, type, mesh: holeGroup, active: true, ring: holeCore, portalImg});
   } else if(type === 'bomb'){
     const bGroup = new THREE.Group();
     const bombBody = new THREE.Mesh(new THREE.SphereGeometry(0.8, 16, 16), new THREE.MeshStandardMaterial({color: 0x111111, emissive: 0xff2200, emissiveIntensity: 0.8, roughness:0.2}));
@@ -589,6 +626,8 @@ function createBoostPadMesh(px, pz){
 }
 
 function generateMaze(){
+  document.querySelectorAll('.portal-gif').forEach(el => el.remove());
+
   while(maze.children.length) maze.remove(maze.children[0]);
   while(trapGroup.children.length) trapGroup.remove(trapGroup.children[0]);
   while(starGroup.children.length) starGroup.remove(starGroup.children[0]);
