@@ -533,7 +533,7 @@ function createPortalOverlay(){
   img.alt = "";
   img.className = "portal-gif";
   img.style.cssText = `
-    position:fixed;z-index:15;width:110px;height:110px;
+    position:fixed;z-index:15;width:61px;height:61px;
     object-fit:contain;pointer-events:none;
     transform:translate(-50%,-50%);
     display:none;
@@ -551,7 +551,8 @@ function updatePortalOverlays(){
     }
     const pos = new THREE.Vector3(t.x, 0.12, t.z);
     pos.project(camera);
-    if(pos.z > 1){
+    // jangan sembunyikan hanya karena z; top-down camera sering aneh
+    if(pos.z > 1.2){
       t.portalImg.style.display = "none";
       continue;
     }
@@ -2285,6 +2286,7 @@ function animate(t){
   if(!winner) elapsed += dt;
   last = t;
   update(dt);
+  updatePortalOverlays();
   renderer.render(scene,camera);
 }
 
