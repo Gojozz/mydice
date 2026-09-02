@@ -931,6 +931,50 @@ class RaceResultHandler(
         self.send_cors_headers()
         self.end_headers()
 
+
+    def do_POST(self):
+        if self.path == "/claim-player":
+            try:
+                length = int(self.headers.get("Content-Length", "0"))
+                body = self.rfile.read(length)
+                data = json.loads(body.decode("utf-8") or "{}")
+                user = str(data.get("user", "")).strip().lower()
+                if not user:
+                    self.send_response(400)
+                    self.send_cors_headers()
+                    self.end_headers()
+                    return
+                state = load_state()
+                before_a = len(state["active"])
+                before_q = len(state["queue"])
+                state["active"] = [
+                    p for p in state["active"]
+                    if str(p.get("user", p.get("name", ""))).strip().lower() != user
+                ]
+                state["queue"] = [
+                    p for p in state["queue"]
+                    if str(p.get("user", p.get("name", ""))).strip().lower() != user
+                ]
+                save_state(state)
+                print(
+                    f"[CLAIM] {user} dihapus dari state "
+                    f"(active {before_a}->{len(state['active'])}, "
+                    f"queue {before_q}->{len(state['queue'])})"
+                )
+                self.send_response(200)
+                self.send_cors_headers()
+                self.send_header("Content-Type", "application/json")
+                self.end_headers()
+                self.wfile.write(b'{"ok":true}')
+            except Exception as e:
+                print(f"[CLAIM ERROR] {e}")
+                self.send_response(500)
+                self.send_cors_headers()
+                self.end_headers()
+            return
+
+        if self.path != "/race-result":
+
     def do_POST(self):
 
         if self.path != "/race-result":
@@ -1502,9 +1546,10 @@ def start_bot():
 
     print("====================================")
 
-    state = load_state()
-
+    # Reset join list tiap start bot / sesi stream baru
+    state = {"active": [], "queue": [], "lastUpdate": 0}
     save_state(state)
+    print("[STATE] chat_state.json di-reset (active/queue kosong)")
 
     # Rotation server lama tetap hidup.
     threading.Thread(

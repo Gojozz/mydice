@@ -852,6 +852,7 @@ function updateCountryFlags(){
 const COUNTRY_CHAT_SYNC_V1 = true;
 
 let chatStatePlayers = [];
+let claimedChatUsers = new Set(); // user yang sudah pernah masuk marble/star
 let chatStateSignature = "";
 let chatStateLastFetch = 0;
 let chatStateBusy = false;
@@ -905,6 +906,7 @@ function applyPlayerToMarble(m, player){
 
   m.userData.chatAssigned = true;
   m.userData.chatUser = viewerName;
+  claimChatUser(viewerName);
 
   return true;
 }
@@ -925,6 +927,23 @@ function playerCountryKey(p){
     p.country ||
     ""
   ).trim().toLowerCase();
+}
+
+
+function claimChatUser(user){
+  const key = String(user || "").trim().toLowerCase();
+  if(!key) return;
+  claimedChatUsers.add(key);
+  // hapus dari list lokal
+  chatStatePlayers = chatStatePlayers.filter(p => playerKey(p) !== key);
+  // minta bot hapus dari chat_state.json supaya tidak muncul di sesi/round berikutnya
+  try{
+    fetch("http://127.0.0.1:8765/claim-player", {
+      method: "POST",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({user: key})
+    }).catch(()=>{});
+  }catch(e){}
 }
 
 function getAllChatPlayers(){
@@ -962,19 +981,17 @@ function spawnNextCountryFromQueue(sourceMarble){
    */
   const occupiedUsers = new Set(
     marbles
-      .filter(m =>
-        !m.userData.eliminated &&
-        !m.userData.finished &&
-        m.userData.chatAssigned
-      )
+      .filter(m => m.userData.chatAssigned)
       .map(m =>
         String(m.userData.chatUser || "").toLowerCase()
       )
   );
+  // user yang sudah claimed juga dihitung occupied
+  for(const u of claimedChatUsers){ occupiedUsers.add(u); }
 
   const nextPlayer = players.find(p => {
     const key = playerKey(p);
-    return key && !occupiedUsers.has(key);
+    return key && !occupiedUsers.has(key) && !claimedChatUsers.has(key);
   });
 
   if(!nextPlayer){
@@ -1087,7 +1104,7 @@ function syncChatPlayersToMarbles(){
 
     const key = playerKey(player);
 
-    if(!key || assignedUsers.has(key)){
+    if(!key || assignedUsers.has(key) || claimedChatUsers.has(key)){
       continue;
     }
 
