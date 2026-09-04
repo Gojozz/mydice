@@ -1,4 +1,5 @@
 import os
+import random
 import sys
 from datetime import datetime, timezone
 
@@ -127,6 +128,27 @@ This is an entertainment live game for general audiences. Not made for kids.
 #MarbleRace #MarbleMaze #CountryRace #LiveGame #InteractiveGame #YouTubeLive #GamingLive #Shorts"""
 
 
+
+TITLE_POOL = [
+    "Marble Country Race LIVE | Type Your Country in Chat",
+    "Marble Maze LIVE | Join With Your Country Flag",
+    "Country Marble Race | Type Country Name to Enter",
+    "Live Marble Arena | Cheer for Your Country",
+    "Marble Labyrinth LIVE | One Country One Marble",
+    "Flag Marble Race LIVE | Chat to Join the Maze",
+    "Interactive Marble Race | Type Your Country Now",
+    "Marble Mayhem Soft Live | Country vs Country",
+]
+
+def pick_broadcast_title():
+    # beda tiap kali script dijalankan (tiap sesi live)
+    base = random.choice(TITLE_POOL)
+    stamp = datetime.now().strftime("%b %d")
+    # contoh: "... | Mar 05"
+    if len(base) + len(stamp) + 3 <= 100:
+        return f"{base} | {stamp}"
+    return base
+
 def create_broadcasts():
     youtube = build(
         "youtube",
@@ -140,7 +162,7 @@ def create_broadcasts():
     if not landscape_key:
         raise RuntimeError("YOUTUBE_STREAM_KEY belum tersedia.")
 
-    landscape_title = "Marble Country Race LIVE | Type Your Country in Chat"
+    landscape_title = pick_broadcast_title()
     land_broadcast_id, land_stream_id = create_and_bind_broadcast(
         youtube,
         landscape_title,
@@ -159,7 +181,7 @@ def create_broadcasts():
     print(land_broadcast_id)
 
     if vertical_key:
-        vertical_title = "Marble Country Race LIVE | Type Your Country in Chat"
+        vertical_title = landscape_title  # sama dengan landscape sesi ini
         vert_broadcast_id, vert_stream_id = create_and_bind_broadcast(
             youtube,
             vertical_title,
