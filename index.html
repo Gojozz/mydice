@@ -516,6 +516,77 @@ function startDynamicStarSystem(){
 
 
 const wallMat=new THREE.MeshStandardMaterial({color:0x35251b,roughness:0.5});
+
+/* ===== THEME SYSTEM: ganti tiap N ronde ===== */
+const THEME_EVERY = 3;
+const THEMES = [
+  {
+    id: "wood",
+    name: "WOOD ARENA",
+    bg: 0x120a05,
+    board: 0x17120f,
+    floor: 0x8b6948,
+    wall: 0x35251b
+  },
+  {
+    id: "ice",
+    name: "ICE LABYRINTH",
+    bg: 0x0a1520,
+    board: 0x0e1a28,
+    floor: 0x6eb6c9,
+    wall: 0x9ad4e6
+  },
+  {
+    id: "lava",
+    name: "LAVA PIT",
+    bg: 0x1a0805,
+    board: 0x140806,
+    floor: 0x5a2a12,
+    wall: 0x8b2e12
+  },
+  {
+    id: "night",
+    name: "NIGHT MAZE",
+    bg: 0x050510,
+    board: 0x0a0a18,
+    floor: 0x2a2a48,
+    wall: 0x4a4a78
+  },
+  {
+    id: "forest",
+    name: "FOREST RUN",
+    bg: 0x061208,
+    board: 0x0a160c,
+    floor: 0x3d6b3a,
+    wall: 0x2f4f2f
+  },
+  {
+    id: "sand",
+    name: "DESERT DUNES",
+    bg: 0x1a1408,
+    board: 0x1c160a,
+    floor: 0xc2a15a,
+    wall: 0x8a6a32
+  }
+];
+
+function applyThemeForRound(r){
+  const theme = THEMES[Math.floor((Math.max(1, r) - 1) / THEME_EVERY) % THEMES.length];
+  try {
+    scene.background.setHex(theme.bg);
+    if (board && board.material && board.material.color) board.material.color.setHex(theme.board);
+    if (mazeFloor && mazeFloor.material && mazeFloor.material.color) mazeFloor.material.color.setHex(theme.floor);
+    if (wallMat && wallMat.color) wallMat.color.setHex(theme.wall);
+    // update dinding yang sudah dibuat di ronde ini setelah generateMaze
+    maze.children.forEach(ch => {
+      if (ch.material && ch.material.color) ch.material.color.setHex(theme.wall);
+    });
+  } catch (e) {
+    console.warn("[THEME]", e);
+  }
+  return theme;
+}
+
 let cells = [], exitPos={x:HALF_X*CELL, z:HALF_Z*CELL};
 
 function addWall(x,z,w,d){
@@ -1846,8 +1917,13 @@ function startRound(){
   document.getElementById('round').textContent=round;
   document.getElementById('message').classList.remove('show');
   generateMaze();
+  const theme = applyThemeForRound(round);
   resetMarbles();
-  document.getElementById('status').textContent=trapMultiplier > 1 ? `MARBLE RACE STARTED! (Traps ${trapMultiplier}x)` : 'MARBLE RACE STARTED!';
+  const trapTxt = trapMultiplier > 1 ? ` (Traps ${trapMultiplier}x)` : '';
+  document.getElementById('status').textContent =
+    `MARBLE RACE STARTED! · \( {theme.name} \){trapTxt}`;
+  const sub = document.querySelector('#hud .sub');
+  if (sub) sub.textContent = theme.name + ' · LIVE';
 }
 
 function update(dt = 0.016){
