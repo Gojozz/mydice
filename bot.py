@@ -211,21 +211,21 @@ last_tts_time = 0.0
 CHAT_COOLDOWN = 4.0
 last_chat_response = {}
 
-ENGAGEMENT_INTERVAL = 90
+ENGAGEMENT_INTERVAL = 300
 last_engagement_time = time.time() - 10000
 engagement_index = 0
 
 ENGAGE_PROMOS = [
-    "If you enjoy the marble maze, please like the stream!",
-    "Don't forget to subscribe for more marble maze action!",
-    "Enjoying the game? Leave a comment and tell us your favorite country!",
-    "Hit like if you want to see more marble maze battles!",
-    "Subscribe and stay tuned for the next marble maze!",
-    "Tell us where you are watching from in the comments!",
-    "Like, subscribe, and leave a comment to support the game!",
-    "Which country are you cheering for? Tell us in the comments!",
-    "If you are enjoying the maze, show some love with a like!",
-    "Subscribe so you don't miss the next marble maze!",
+    "Type your country name in chat to join the marble race.",
+    "New round incoming. Type a country to enter the maze.",
+    "Cheer for your country. One country, one marble.",
+    "Traps, boosts, and stars are live. Watch the maze.",
+    "Which country are you cheering for? Type it in chat.",
+    "Spots open. Type your country name to join.",
+    "If you are enjoying the marble maze, a like helps the stream.",
+    "Tell us where you are watching from.",
+    "Next race starts soon. Type a country to join.",
+    "Subscribe if you want more marble country races.",
 ]
 
 

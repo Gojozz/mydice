@@ -2223,7 +2223,7 @@ function update(dt = 0.016){
 
           // 5. English event message
           document.getElementById('status').textContent =
-            `💥 ${countryName} hit a bomb and was eliminated!`;
+            `💥 ${countryName} hit a trap and is out!`;
 
           updateUI();
                 } else if(t.type === 'hole_blue'){
@@ -2259,8 +2259,8 @@ function update(dt = 0.016){
   if(allEliminated && !winner){
     winner = true;
     trapMultiplier = 1;
-    document.getElementById('winner').textContent = 'ALL MARBLES EXPLODED!';
-    document.getElementById('status').textContent = 'All marbles were eliminated! Restarting round...';
+    document.getElementById('winner').textContent = 'ALL MARBLES OUT!';
+    document.getElementById('status').textContent = 'All marbles are out! Starting next round...';
     document.getElementById('message').classList.add('show');
     setTimeout(()=>{ round++; startRound(); }, 3500);
   }

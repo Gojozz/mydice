@@ -108,38 +108,23 @@ def create_and_bind_broadcast(youtube, title, description, stream_key, label):
     return broadcast_id, stream_id
 
 
-DESCRIPTION = """🌍 MARBLE MAYHEM LIVE! 🏁
+DESCRIPTION = """Marble Country Race LIVE
 
-Want to join the race? YOU CAN! 🔥
+Free interactive marble maze. No betting and no real-money prizes.
 
-💬 TYPE YOUR COUNTRY NAME IN THE LIVE CHAT!
+How to join:
+1. Type your country name in live chat
+2. Your flag and country name appear on a marble
+3. Watch the race and cheer for your country
 
-When you type your country name, your country can enter the maze with its own 🇮🇩 FLAG + COUNTRY NAME!
+One country = one marble each round.
+Avoid traps, grab boosts and stars, reach the finish first.
 
-🏁 Watch your country's marble race through the maze!
-💣 Avoid deadly bombs!
-⚡ Hit the boosts!
-⭐ Collect stars!
-🏆 Fight to reach the finish first!
+New rounds keep starting, so you can join again anytime.
 
-🌎 ONE COUNTRY = ONE MARBLE
+This is an entertainment live game for general audiences. Not made for kids.
 
-Which country will survive?
-Which country will be the fastest?
-Which country will become the champion? 👑
-
-👇 JOIN NOW:
-1️⃣ Type your COUNTRY NAME in the chat
-2️⃣ Get your country's FLAG + NAME
-3️⃣ Watch your marble enter the race!
-4️⃣ Cheer for your country! 🔥
-
-⚠️ New rounds bring new races and new chances to win!
-
-🌍 REPRESENT YOUR COUNTRY!
-🏁 LET THE MARBLE RACE BEGIN!
-
-#MarbleMayhem #MarbleRace #MarbleMaze #CountryRace #CountryMarbles #LiveGame #InteractiveGame #YouTubeLive #GamingLive #Shorts"""
+#MarbleRace #MarbleMaze #CountryRace #LiveGame #InteractiveGame #YouTubeLive #GamingLive #Shorts"""
 
 
 def create_broadcasts():
@@ -155,7 +140,7 @@ def create_broadcasts():
     if not landscape_key:
         raise RuntimeError("YOUTUBE_STREAM_KEY belum tersedia.")
 
-    landscape_title = "🌍 MARBLE MAYHEM LIVE 🏁 | Type Your Country & Join the Race!"
+    landscape_title = "Marble Country Race LIVE | Type Your Country in Chat"
     land_broadcast_id, land_stream_id = create_and_bind_broadcast(
         youtube,
         landscape_title,
@@ -174,7 +159,7 @@ def create_broadcasts():
     print(land_broadcast_id)
 
     if vertical_key:
-        vertical_title = "🌍 MARBLE MAYHEM LIVE 🏁 | Type Your Country & Join the Race!"
+        vertical_title = "Marble Country Race LIVE | Type Your Country in Chat"
         vert_broadcast_id, vert_stream_id = create_and_bind_broadcast(
             youtube,
             vertical_title,
